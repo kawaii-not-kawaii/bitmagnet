@@ -35,11 +35,11 @@ func (c transmissionClient) download(ctx context.Context, content *content) erro
 		dir := *settings.DownloadDir + "/" + category
 
 		magnet := item.Torrent.MagnetURI()
+
 		_, err = tbt.TorrentAdd(ctx, transmissionrpc.TorrentAddPayload{
 			Filename:    &magnet,
 			DownloadDir: &dir,
 		})
-
 		if err != nil {
 			return err
 		}
