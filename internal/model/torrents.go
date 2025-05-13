@@ -203,10 +203,7 @@ outer:
 			}
 			i++
 		}
-		for {
-			if i == 0 || !lexer.IsWordChar(rune(f.Path[i])) {
-				break
-			}
+		for i != 0 && lexer.IsWordChar(rune(f.Path[i])) {
 			i--
 		}
 		firstPass = append(firstPass, f.Path[i:])
@@ -221,13 +218,9 @@ outer:
 		for j := range i {
 			l := 0
 
-			for {
-				if l >= len(firstPass[i]) ||
-					l >= len(firstPass[j]) ||
-					firstPass[i][len(firstPass[i])-l-1] != firstPass[j][len(firstPass[j])-l-1] {
-					break
-				}
-
+			for l < len(firstPass[i]) &&
+				l < len(firstPass[j]) &&
+				firstPass[i][len(firstPass[i])-l-1] == firstPass[j][len(firstPass[j])-l-1] {
 				l++
 			}
 
@@ -236,12 +229,8 @@ outer:
 			}
 		}
 
-		for {
-			if longestSuffixLength == 0 ||
-				!lexer.IsWordChar(rune(firstPass[i][len(firstPass[i])-longestSuffixLength])) {
-				break
-			}
-
+		for longestSuffixLength != 0 &&
+			lexer.IsWordChar(rune(firstPass[i][len(firstPass[i])-longestSuffixLength])) {
 			longestSuffixLength--
 		}
 

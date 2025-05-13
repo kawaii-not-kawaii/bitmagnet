@@ -1,11 +1,11 @@
-package fts
+package fts_test
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
+	"github.com/bitmagnet-io/bitmagnet/internal/database/fts"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestParseTsvector(t *testing.T) {
@@ -13,12 +13,12 @@ func TestParseTsvector(t *testing.T) {
 
 	tests := []struct {
 		input   string
-		wantTsv Tsvector
+		wantTsv fts.Tsvector
 		wantStr string
 	}{
 		{
 			input: " 'a':1A bb:2b 'cc ccc':3C  'dD''Dd''':4D e a bb:5 ",
-			wantTsv: Tsvector{
+			wantTsv: fts.Tsvector{
 				"a": {
 					1: 'A',
 				},
@@ -41,7 +41,7 @@ func TestParseTsvector(t *testing.T) {
 		t.Run(test.input, func(t *testing.T) {
 			t.Parallel()
 
-			got, err := ParseTsvector(test.input)
+			got, err := fts.ParseTsvector(test.input)
 
 			require.NoError(t, err)
 			assert.Equal(t, test.wantTsv, got)
