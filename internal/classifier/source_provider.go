@@ -99,7 +99,6 @@ func (yamlSourceProvider) providers(path string, wildcard bool) []sourceProvider
 	}
 
 	paths, err := filepath.Glob(glob)
-
 	if err != nil {
 		return []sourceProvider{yamlSourceProvider{err: err}}
 	}
