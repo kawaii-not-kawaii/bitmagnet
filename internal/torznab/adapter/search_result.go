@@ -30,7 +30,8 @@ func torrentContentResultToTorznabResult(
 }
 
 func torrentContentResultItemToTorznabResultItem(
-	item search.TorrentContentResultItem, profile torznab.Profile) torznab.SearchResultItem {
+	item search.TorrentContentResultItem, profile torznab.Profile,
+) torznab.SearchResultItem {
 	category := "Unknown"
 	if item.ContentType.Valid {
 		category = item.ContentType.ContentType.Label()
