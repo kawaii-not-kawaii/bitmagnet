@@ -81,11 +81,8 @@ func torrentContentResultItemToTorznabResultItem(
 			AttrName:  torznab.AttrPublishDate,
 			AttrValue: item.PublishedAt.Format(torznab.RssDateDefaultFormat),
 		},
-		{
-			AttrName:  torznab.AttrCoverURL,
-			AttrValue: item.Torrent.PermaLink(profile.BaseURL),
-		},
 	}
+
 	seeders := item.Torrent.Seeders()
 	leechers := item.Torrent.Leechers()
 
@@ -175,14 +172,12 @@ func torrentContentResultItemToTorznabResultItem(
 		})
 	}
 
-	return torznab.SearchResultItem{
+	res := torznab.SearchResultItem{
 		Title:    item.Torrent.Name,
 		Size:     item.Torrent.Size,
 		Category: category,
 		GUID:     item.InfoHash.String(),
 		PubDate:  torznab.RSSDate(item.PublishedAt),
-		Comments: item.Torrent.PermaLink(profile.BaseURL),
-		Link:     item.Torrent.PermaLink(profile.BaseURL),
 		Enclosure: torznab.SearchResultItemEnclosure{
 			URL:    item.Torrent.MagnetURI(),
 			Type:   "application/x-bittorrent;x-scheme-handler/magnet",
@@ -190,4 +185,12 @@ func torrentContentResultItemToTorznabResultItem(
 		},
 		TorznabAttrs: attrs,
 	}
+
+	permalink := item.Torrent.PermaLink(profile.BaseURL)
+	if permalink.Valid {
+		res.Comments = permalink.String
+		res.Link = permalink.String
+	}
+
+	return res
 }
