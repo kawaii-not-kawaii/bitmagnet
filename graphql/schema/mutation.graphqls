@@ -1,7 +1,7 @@
 type Mutation {
   torrent: TorrentMutation!
   queue: QueueMutation!
-  downloadclient: DownloadClientMutation!
+  client: ClientMutation!
 }
 
 type TorrentMutation {
@@ -20,6 +20,6 @@ input TorrentReprocessInput {
   localSearchDisabled: Boolean
 }
 
-type DownloadClientMutation {
-  download(infoHashes: [Hash20!]): Void
+type ClientMutation {
+  sendTo(clientID: ClientID, infoHashes: [Hash20!]): Void
 }

@@ -50,25 +50,6 @@ tasks:
     cmds:
       - npm run i18n:extract
 
-  i18n-translate:
-    cmds:
-      - for:
-          [
-            "ar",
-            "de",
-            "es",
-            "fr",
-            "hi",
-            "ja",
-            "nl",
-            "pt",
-            "ru",
-            "tr",
-            "uk",
-            "zh",
-          ]
-        cmd: npx i18n-auto-translation -k $API_KEY -d webui/src/app/i18n/translations -t {{ .ITEM }}
-
   lint:
     cmds:
       # Removing golang-ci lint as the Nix package is currently broken

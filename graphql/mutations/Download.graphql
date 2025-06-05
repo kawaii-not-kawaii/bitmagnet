@@ -1,5 +1,0 @@
-mutation Download($infoHashes: [Hash20!]!) {
-  downloadclient {
-    download(infoHashes: $infoHashes)
-  }
-}

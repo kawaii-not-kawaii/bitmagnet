@@ -29,6 +29,23 @@ export type ClientId =
   | 'QBittorrent'
   | 'Transmission';
 
+export type ClientMutation = {
+  __typename?: 'ClientMutation';
+  sendTo?: Maybe<Scalars['Void']['output']>;
+};
+
+
+export type ClientMutationSendToArgs = {
+  clientID?: InputMaybe<ClientId>;
+  infoHashes?: InputMaybe<Array<Scalars['Hash20']['input']>>;
+};
+
+export type ClientSendToConfigQuery = {
+  __typename?: 'ClientSendToConfigQuery';
+  enabled: Scalars['Boolean']['output'];
+  sendTo: Array<ClientId>;
+};
+
 export type Content = {
   __typename?: 'Content';
   adult?: Maybe<Scalars['Boolean']['output']>;
@@ -96,21 +113,6 @@ export type ContentTypeAgg = {
 export type ContentTypeFacetInput = {
   aggregate?: InputMaybe<Scalars['Boolean']['input']>;
   filter?: InputMaybe<Array<InputMaybe<ContentType>>>;
-};
-
-export type DownloadClientConfigQuery = {
-  __typename?: 'DownloadClientConfigQuery';
-  enabled: Scalars['Boolean']['output'];
-};
-
-export type DownloadClientMutation = {
-  __typename?: 'DownloadClientMutation';
-  download?: Maybe<Scalars['Void']['output']>;
-};
-
-
-export type DownloadClientMutationDownloadArgs = {
-  infoHashes?: InputMaybe<Array<Scalars['Hash20']['input']>>;
 };
 
 export type Episodes = {
@@ -275,16 +277,16 @@ export type MetricsBucketDuration =
 
 export type Mutation = {
   __typename?: 'Mutation';
-  downloadclient: DownloadClientMutation;
+  client: ClientMutation;
   queue: QueueMutation;
   torrent: TorrentMutation;
 };
 
 export type Query = {
   __typename?: 'Query';
-  downloadClient: DownloadClientConfigQuery;
   health: HealthQuery;
   queue: QueueQuery;
+  sendToConfig: ClientSendToConfigQuery;
   torrent: TorrentQuery;
   torrentContent: TorrentContentQuery;
   version: Scalars['String']['output'];
@@ -899,12 +901,13 @@ export type TorrentFileFragment = { __typename?: 'TorrentFile', infoHash: string
 
 export type TorrentFilesQueryResultFragment = { __typename?: 'TorrentFilesQueryResult', totalCount: number, hasNextPage?: boolean | null, items: Array<{ __typename?: 'TorrentFile', infoHash: string, index: number, path: string, size: number, fileType?: FileType | null, createdAt: string, updatedAt: string }> };
 
-export type DownloadMutationVariables = Exact<{
+export type ClientSendToMutationVariables = Exact<{
+  clientID?: InputMaybe<ClientId>;
   infoHashes: Array<Scalars['Hash20']['input']> | Scalars['Hash20']['input'];
 }>;
 
 
-export type DownloadMutation = { __typename?: 'Mutation', downloadclient: { __typename?: 'DownloadClientMutation', download?: void | null } };
+export type ClientSendToMutation = { __typename?: 'Mutation', client: { __typename?: 'ClientMutation', sendTo?: void | null } };
 
 export type QueueEnqueueReprocessTorrentsBatchMutationVariables = Exact<{
   input: QueueEnqueueReprocessTorrentsBatchInput;
@@ -958,10 +961,10 @@ export type TorrentSetTagsMutationVariables = Exact<{
 
 export type TorrentSetTagsMutation = { __typename?: 'Mutation', torrent: { __typename?: 'TorrentMutation', setTags?: void | null } };
 
-export type DownloadClientEnabledQueryVariables = Exact<{ [key: string]: never; }>;
+export type SendToConfigQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type DownloadClientEnabledQuery = { __typename?: 'Query', downloadClient: { __typename?: 'DownloadClientConfigQuery', enabled: boolean } };
+export type SendToConfigQuery = { __typename?: 'Query', sendToConfig: { __typename?: 'ClientSendToConfigQuery', enabled: boolean, sendTo: Array<ClientId> } };
 
 export type HealthCheckQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1249,10 +1252,10 @@ export const TorrentFilesQueryResultFragmentDoc = gql`
   hasNextPage
 }
     ${TorrentFileFragmentDoc}`;
-export const DownloadDocument = gql`
-    mutation Download($infoHashes: [Hash20!]!) {
-  downloadclient {
-    download(infoHashes: $infoHashes)
+export const ClientSendToDocument = gql`
+    mutation ClientSendTo($clientID: ClientID, $infoHashes: [Hash20!]!) {
+  client {
+    sendTo(clientID: $clientID, infoHashes: $infoHashes)
   }
 }
     `;
@@ -1260,8 +1263,8 @@ export const DownloadDocument = gql`
   @Injectable({
     providedIn: 'root'
   })
-  export class DownloadGQL extends Apollo.Mutation<DownloadMutation, DownloadMutationVariables> {
-    override document = DownloadDocument;
+  export class ClientSendToGQL extends Apollo.Mutation<ClientSendToMutation, ClientSendToMutationVariables> {
+    override document = ClientSendToDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
@@ -1393,10 +1396,11 @@ export const TorrentSetTagsDocument = gql`
       super(apollo);
     }
   }
-export const DownloadClientEnabledDocument = gql`
-    query DownloadClientEnabled {
-  downloadClient {
+export const SendToConfigDocument = gql`
+    query SendToConfig {
+  sendToConfig {
     enabled
+    sendTo
   }
 }
     `;
@@ -1404,8 +1408,8 @@ export const DownloadClientEnabledDocument = gql`
   @Injectable({
     providedIn: 'root'
   })
-  export class DownloadClientEnabledGQL extends Apollo.Query<DownloadClientEnabledQuery, DownloadClientEnabledQueryVariables> {
-    override document = DownloadClientEnabledDocument;
+  export class SendToConfigGQL extends Apollo.Query<SendToConfigQuery, SendToConfigQueryVariables> {
+    override document = SendToConfigDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

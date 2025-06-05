@@ -105,10 +105,11 @@ func (r *queryResolver) TorrentContent(ctx context.Context) (gqlmodel.TorrentCon
 	}, nil
 }
 
-// DownloadClient is the resolver for the downloadClient field.
-func (r *queryResolver) DownloadClient(ctx context.Context) (gen.DownloadClientConfigQuery, error) {
-	return gen.DownloadClientConfigQuery{
+// SendToConfig is the resolver for the sendToConfig field.
+func (r *queryResolver) SendToConfig(ctx context.Context) (gen.ClientSendToConfigQuery, error) {
+	return gen.ClientSendToConfigQuery{
 		Enabled: r.ClientConfig.Enabled,
+		SendTo:  r.ClientConfig.All(),
 	}, nil
 }
 

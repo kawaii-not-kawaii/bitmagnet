@@ -20,7 +20,7 @@ type content = []search.TorrentContentResultItem
 
 type clientWorker interface {
 	AddInfoHashes(ctx context.Context, req AddInfoHashesRequest) error
-	download(ctx context.Context, content *content) error
+	sendTo(ctx context.Context, content *content) error
 }
 
 type CommonClient struct {
@@ -48,13 +48,13 @@ func (c CommonClient) downloadCategory(contentType model.ContentType) string {
 }
 
 func (c CommonClient) AddInfoHashes(ctx context.Context, req AddInfoHashesRequest) error {
-	switch c.config.DownloadClient {
+	switch req.ClientID {
 	case gen.ClientIDTransmission:
 		c.client = transmissionClient{CommonClient: c}
 	case gen.ClientIDQBittorrent:
 		c.client = qBitClient{CommonClient: c}
 	default:
-		return fmt.Errorf("not implemented %s", c.config.DownloadClient)
+		return fmt.Errorf("not implemented %s", req.ClientID)
 	}
 
 	options := []q.Option{
@@ -72,5 +72,5 @@ func (c CommonClient) AddInfoHashes(ctx context.Context, req AddInfoHashesReques
 		return err
 	}
 
-	return c.client.download(ctx, &sr.Items)
+	return c.client.sendTo(ctx, &sr.Items)
 }

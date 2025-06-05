@@ -40,7 +40,8 @@ export class TorrentsBulkActionsComponent implements OnInit {
   selectedItems = new Array<generated.TorrentContent>();
   selectedInfoHashes = new Array<string>();
 
-  downloadEnabled = false;
+  sendToEnabled = false;
+  sendToTargets = new Array<generated.ClientId>();
 
   ngOnInit() {
     this.selectedItems$.subscribe((items) => {
@@ -48,9 +49,10 @@ export class TorrentsBulkActionsComponent implements OnInit {
       this.selectedInfoHashes = items.map((i) => i.infoHash);
     });
     this.newTagCtrl.reset();
-    this.graphQLService.downloadClientEnabledQuery().subscribe({
-      next: (enabled: boolean) => {
-        this.downloadEnabled = enabled;
+    this.graphQLService.clentSendToConfig().subscribe({
+      next: (config: generated.ClientSendToConfigQuery) => {
+        this.sendToTargets = config.sendTo;
+        this.sendToEnabled = config.enabled && config.sendTo.length > 0;
       },
     });
   }
@@ -208,15 +210,13 @@ export class TorrentsBulkActionsComponent implements OnInit {
       .subscribe();
   }
 
-  downloadTorrents() {
+  sendToTorrents(sendTo: generated.ClientId) {
     const infoHashes = this.selectedItems.map(({ infoHash }) => infoHash);
     this.graphQLService
-      .clientDownload({ infoHashes })
+      .clientSendToTarget({ clientID: sendTo, infoHashes: infoHashes })
       .pipe(
         catchError((err: Error) => {
-          this.errorsService.addError(
-            `Error downloading torrents: ${err.message}`,
-          );
+          this.errorsService.addError(`Error sending torrents: ${err.message}`);
           return EMPTY;
         }),
       )

@@ -15,6 +15,11 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/protocol"
 )
 
+type ClientSendToConfigQuery struct {
+	Enabled bool       `json:"enabled"`
+	SendTo  []ClientID `json:"sendTo"`
+}
+
 type ContentTypeAgg struct {
 	Value      *model.ContentType `json:"value,omitempty"`
 	Label      string             `json:"label"`
@@ -25,10 +30,6 @@ type ContentTypeAgg struct {
 type ContentTypeFacetInput struct {
 	Aggregate graphql.Omittable[*bool]                `json:"aggregate,omitempty"`
 	Filter    graphql.Omittable[[]*model.ContentType] `json:"filter,omitempty"`
-}
-
-type DownloadClientConfigQuery struct {
-	Enabled bool `json:"enabled"`
 }
 
 type GenreAgg struct {

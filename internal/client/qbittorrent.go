@@ -5,17 +5,23 @@ import (
 	"fmt"
 
 	"github.com/autobrr/go-qbittorrent"
+	"github.com/bitmagnet-io/bitmagnet/internal/gql/gqlmodel/gen"
 )
 
 type qBitClient struct {
 	CommonClient
 }
 
-func (c qBitClient) download(ctx context.Context, content *content) error {
+func (c qBitClient) sendTo(ctx context.Context, content *content) error {
+	sendTo, ok := c.config.GetSendTo(gen.ClientIDQBittorrent)
+	if !ok {
+		return fmt.Errorf("undefined sendTo: %+v", c.config.SendTo)
+	}
+
 	qb := qbittorrent.NewClient(qbittorrent.Config{
-		Host:     fmt.Sprintf("http://%v:%v/", c.config.Qbittorrent.Host, c.config.Qbittorrent.Port),
-		Username: c.config.Qbittorrent.Username,
-		Password: c.config.Qbittorrent.Password,
+		Host:     fmt.Sprintf("http://%v:%v/", sendTo.Host, sendTo.Port),
+		Username: sendTo.Username,
+		Password: sendTo.Password,
 		Timeout:  1,
 	})
 

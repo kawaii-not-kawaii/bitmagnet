@@ -47,8 +47,8 @@ type Config struct {
 }
 
 type ResolverRoot interface {
+	ClientMutation() ClientMutationResolver
 	Content() ContentResolver
-	DownloadClientMutation() DownloadClientMutationResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
 	QueueJob() QueueJobResolver
@@ -63,6 +63,15 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
+	ClientMutation struct {
+		SendTo func(childComplexity int, clientID *gen.ClientID, infoHashes []protocol.ID) int
+	}
+
+	ClientSendToConfigQuery struct {
+		Enabled func(childComplexity int) int
+		SendTo  func(childComplexity int) int
+	}
+
 	Content struct {
 		Adult            func(childComplexity int) int
 		Attributes       func(childComplexity int) int
@@ -112,14 +121,6 @@ type ComplexityRoot struct {
 		Value      func(childComplexity int) int
 	}
 
-	DownloadClientConfigQuery struct {
-		Enabled func(childComplexity int) int
-	}
-
-	DownloadClientMutation struct {
-		Download func(childComplexity int, infoHashes []protocol.ID) int
-	}
-
 	Episodes struct {
 		Label   func(childComplexity int) int
 		Seasons func(childComplexity int) int
@@ -167,15 +168,15 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		Downloadclient func(childComplexity int) int
-		Queue          func(childComplexity int) int
-		Torrent        func(childComplexity int) int
+		Client  func(childComplexity int) int
+		Queue   func(childComplexity int) int
+		Torrent func(childComplexity int) int
 	}
 
 	Query struct {
-		DownloadClient func(childComplexity int) int
 		Health         func(childComplexity int) int
 		Queue          func(childComplexity int) int
+		SendToConfig   func(childComplexity int) int
 		Torrent        func(childComplexity int) int
 		TorrentContent func(childComplexity int) int
 		Version        func(childComplexity int) int
@@ -442,16 +443,16 @@ type ComplexityRoot struct {
 	}
 }
 
+type ClientMutationResolver interface {
+	SendTo(ctx context.Context, obj *gqlmodel.ClientMutation, clientID *gen.ClientID, infoHashes []protocol.ID) (*string, error)
+}
 type ContentResolver interface {
 	OriginalLanguage(ctx context.Context, obj *model.Content) (*model.Language, error)
-}
-type DownloadClientMutationResolver interface {
-	Download(ctx context.Context, obj *gqlmodel.DownloadClientMutation, infoHashes []protocol.ID) (*string, error)
 }
 type MutationResolver interface {
 	Torrent(ctx context.Context) (gqlmodel.TorrentMutation, error)
 	Queue(ctx context.Context) (gqlmodel.QueueMutation, error)
-	Downloadclient(ctx context.Context) (gqlmodel.DownloadClientMutation, error)
+	Client(ctx context.Context) (gqlmodel.ClientMutation, error)
 }
 type QueryResolver interface {
 	Version(ctx context.Context) (string, error)
@@ -460,7 +461,7 @@ type QueryResolver interface {
 	Queue(ctx context.Context) (gqlmodel.QueueQuery, error)
 	Torrent(ctx context.Context) (gqlmodel.TorrentQuery, error)
 	TorrentContent(ctx context.Context) (gqlmodel.TorrentContentQuery, error)
-	DownloadClient(ctx context.Context) (gen.DownloadClientConfigQuery, error)
+	SendToConfig(ctx context.Context) (gen.ClientSendToConfigQuery, error)
 }
 type QueueJobResolver interface {
 	RanAt(ctx context.Context, obj *model.QueueJob) (*time.Time, error)
@@ -504,6 +505,32 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e, 0, 0, nil}
 	_ = ec
 	switch typeName + "." + field {
+
+	case "ClientMutation.sendTo":
+		if e.complexity.ClientMutation.SendTo == nil {
+			break
+		}
+
+		args, err := ec.field_ClientMutation_sendTo_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.ClientMutation.SendTo(childComplexity, args["clientID"].(*gen.ClientID), args["infoHashes"].([]protocol.ID)), true
+
+	case "ClientSendToConfigQuery.enabled":
+		if e.complexity.ClientSendToConfigQuery.Enabled == nil {
+			break
+		}
+
+		return e.complexity.ClientSendToConfigQuery.Enabled(childComplexity), true
+
+	case "ClientSendToConfigQuery.sendTo":
+		if e.complexity.ClientSendToConfigQuery.SendTo == nil {
+			break
+		}
+
+		return e.complexity.ClientSendToConfigQuery.SendTo(childComplexity), true
 
 	case "Content.adult":
 		if e.complexity.Content.Adult == nil {
@@ -764,25 +791,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.ContentTypeAgg.Value(childComplexity), true
 
-	case "DownloadClientConfigQuery.enabled":
-		if e.complexity.DownloadClientConfigQuery.Enabled == nil {
-			break
-		}
-
-		return e.complexity.DownloadClientConfigQuery.Enabled(childComplexity), true
-
-	case "DownloadClientMutation.download":
-		if e.complexity.DownloadClientMutation.Download == nil {
-			break
-		}
-
-		args, err := ec.field_DownloadClientMutation_download_args(context.TODO(), rawArgs)
-		if err != nil {
-			return 0, false
-		}
-
-		return e.complexity.DownloadClientMutation.Download(childComplexity, args["infoHashes"].([]protocol.ID)), true
-
 	case "Episodes.label":
 		if e.complexity.Episodes.Label == nil {
 			break
@@ -937,12 +945,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.MetadataSource.Name(childComplexity), true
 
-	case "Mutation.downloadclient":
-		if e.complexity.Mutation.Downloadclient == nil {
+	case "Mutation.client":
+		if e.complexity.Mutation.Client == nil {
 			break
 		}
 
-		return e.complexity.Mutation.Downloadclient(childComplexity), true
+		return e.complexity.Mutation.Client(childComplexity), true
 
 	case "Mutation.queue":
 		if e.complexity.Mutation.Queue == nil {
@@ -958,13 +966,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Torrent(childComplexity), true
 
-	case "Query.downloadClient":
-		if e.complexity.Query.DownloadClient == nil {
-			break
-		}
-
-		return e.complexity.Query.DownloadClient(childComplexity), true
-
 	case "Query.health":
 		if e.complexity.Query.Health == nil {
 			break
@@ -978,6 +979,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.Queue(childComplexity), true
+
+	case "Query.sendToConfig":
+		if e.complexity.Query.SendToConfig == nil {
+			break
+		}
+
+		return e.complexity.Query.SendToConfig(childComplexity), true
 
 	case "Query.torrent":
 		if e.complexity.Query.Torrent == nil {
@@ -2642,7 +2650,7 @@ type ContentCollection {
 	{Name: "../../graphql/schema/mutation.graphqls", Input: `type Mutation {
   torrent: TorrentMutation!
   queue: QueueMutation!
-  downloadclient: DownloadClientMutation!
+  client: ClientMutation!
 }
 
 type TorrentMutation {
@@ -2661,8 +2669,8 @@ input TorrentReprocessInput {
   localSearchDisabled: Boolean
 }
 
-type DownloadClientMutation {
-  download(infoHashes: [Hash20!]): Void
+type ClientMutation {
+  sendTo(clientID: ClientID, infoHashes: [Hash20!]): Void
 }
 `, BuiltIn: false},
 	{Name: "../../graphql/schema/query.graphqls", Input: `type Query {
@@ -2672,7 +2680,7 @@ type DownloadClientMutation {
   queue: QueueQuery!
   torrent: TorrentQuery!
   torrentContent: TorrentContentQuery!
-  downloadClient: DownloadClientConfigQuery!
+  sendToConfig: ClientSendToConfigQuery!
 }
 
 type TorrentQuery {
@@ -2736,8 +2744,9 @@ type HealthQuery {
   checks: [HealthCheck!]!
 }
 
-type DownloadClientConfigQuery {
+type ClientSendToConfigQuery {
   enabled: Boolean!
+  sendTo: [ClientID!]!
 }
 `, BuiltIn: false},
 	{Name: "../../graphql/schema/queue.graphqls", Input: `type QueueQuery {
@@ -3051,17 +3060,40 @@ var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
 // region    ***************************** args.gotpl *****************************
 
-func (ec *executionContext) field_DownloadClientMutation_download_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+func (ec *executionContext) field_ClientMutation_sendTo_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
-	arg0, err := ec.field_DownloadClientMutation_download_argsInfoHashes(ctx, rawArgs)
+	arg0, err := ec.field_ClientMutation_sendTo_argsClientID(ctx, rawArgs)
 	if err != nil {
 		return nil, err
 	}
-	args["infoHashes"] = arg0
+	args["clientID"] = arg0
+	arg1, err := ec.field_ClientMutation_sendTo_argsInfoHashes(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["infoHashes"] = arg1
 	return args, nil
 }
-func (ec *executionContext) field_DownloadClientMutation_download_argsInfoHashes(
+func (ec *executionContext) field_ClientMutation_sendTo_argsClientID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (*gen.ClientID, error) {
+	if _, ok := rawArgs["clientID"]; !ok {
+		var zeroVal *gen.ClientID
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("clientID"))
+	if tmp, ok := rawArgs["clientID"]; ok {
+		return ec.unmarshalOClientID2ᚖgithubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐClientID(ctx, tmp)
+	}
+
+	var zeroVal *gen.ClientID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_ClientMutation_sendTo_argsInfoHashes(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) ([]protocol.ID, error) {
@@ -3659,6 +3691,146 @@ func (ec *executionContext) field___Type_fields_argsIncludeDeprecated(
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
+
+func (ec *executionContext) _ClientMutation_sendTo(ctx context.Context, field graphql.CollectedField, obj *gqlmodel.ClientMutation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClientMutation_sendTo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ClientMutation().SendTo(rctx, obj, fc.Args["clientID"].(*gen.ClientID), fc.Args["infoHashes"].([]protocol.ID))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOVoid2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClientMutation_sendTo(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClientMutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Void does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_ClientMutation_sendTo_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClientSendToConfigQuery_enabled(ctx context.Context, field graphql.CollectedField, obj *gen.ClientSendToConfigQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClientSendToConfigQuery_enabled(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Enabled, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClientSendToConfigQuery_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClientSendToConfigQuery",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ClientSendToConfigQuery_sendTo(ctx context.Context, field graphql.CollectedField, obj *gen.ClientSendToConfigQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ClientSendToConfigQuery_sendTo(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SendTo, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]gen.ClientID)
+	fc.Result = res
+	return ec.marshalNClientID2ᚕgithubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐClientIDᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ClientSendToConfigQuery_sendTo(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ClientSendToConfigQuery",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ClientID does not have child fields")
+		},
+	}
+	return fc, nil
+}
 
 func (ec *executionContext) _Content_type(ctx context.Context, field graphql.CollectedField, obj *model.Content) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Content_type(ctx, field)
@@ -5315,102 +5487,6 @@ func (ec *executionContext) fieldContext_ContentTypeAgg_isEstimate(_ context.Con
 	return fc, nil
 }
 
-func (ec *executionContext) _DownloadClientConfigQuery_enabled(ctx context.Context, field graphql.CollectedField, obj *gen.DownloadClientConfigQuery) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DownloadClientConfigQuery_enabled(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.Enabled, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DownloadClientConfigQuery_enabled(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DownloadClientConfigQuery",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _DownloadClientMutation_download(ctx context.Context, field graphql.CollectedField, obj *gqlmodel.DownloadClientMutation) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_DownloadClientMutation_download(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
-		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.DownloadClientMutation().Download(rctx, obj, fc.Args["infoHashes"].([]protocol.ID))
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		return graphql.Null
-	}
-	res := resTmp.(*string)
-	fc.Result = res
-	return ec.marshalOVoid2ᚖstring(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_DownloadClientMutation_download(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "DownloadClientMutation",
-		Field:      field,
-		IsMethod:   true,
-		IsResolver: true,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Void does not have child fields")
-		},
-	}
-	defer func() {
-		if r := recover(); r != nil {
-			err = ec.Recover(ctx, r)
-			ec.Error(ctx, err)
-		}
-	}()
-	ctx = graphql.WithFieldContext(ctx, fc)
-	if fc.Args, err = ec.field_DownloadClientMutation_download_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
-		ec.Error(ctx, err)
-		return fc, err
-	}
-	return fc, nil
-}
-
 func (ec *executionContext) _Episodes_label(ctx context.Context, field graphql.CollectedField, obj *gqlmodel.Episodes) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Episodes_label(ctx, field)
 	if err != nil {
@@ -6504,8 +6580,8 @@ func (ec *executionContext) fieldContext_Mutation_queue(_ context.Context, field
 	return fc, nil
 }
 
-func (ec *executionContext) _Mutation_downloadclient(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Mutation_downloadclient(ctx, field)
+func (ec *executionContext) _Mutation_client(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_client(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6518,7 +6594,7 @@ func (ec *executionContext) _Mutation_downloadclient(ctx context.Context, field 
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().Downloadclient(rctx)
+		return ec.resolvers.Mutation().Client(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6530,12 +6606,12 @@ func (ec *executionContext) _Mutation_downloadclient(ctx context.Context, field 
 		}
 		return graphql.Null
 	}
-	res := resTmp.(gqlmodel.DownloadClientMutation)
+	res := resTmp.(gqlmodel.ClientMutation)
 	fc.Result = res
-	return ec.marshalNDownloadClientMutation2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚐDownloadClientMutation(ctx, field.Selections, res)
+	return ec.marshalNClientMutation2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚐClientMutation(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Mutation_downloadclient(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Mutation_client(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Mutation",
 		Field:      field,
@@ -6543,10 +6619,10 @@ func (ec *executionContext) fieldContext_Mutation_downloadclient(_ context.Conte
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "download":
-				return ec.fieldContext_DownloadClientMutation_download(ctx, field)
+			case "sendTo":
+				return ec.fieldContext_ClientMutation_sendTo(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type DownloadClientMutation", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type ClientMutation", field.Name)
 		},
 	}
 	return fc, nil
@@ -6846,8 +6922,8 @@ func (ec *executionContext) fieldContext_Query_torrentContent(_ context.Context,
 	return fc, nil
 }
 
-func (ec *executionContext) _Query_downloadClient(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Query_downloadClient(ctx, field)
+func (ec *executionContext) _Query_sendToConfig(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_sendToConfig(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -6860,7 +6936,7 @@ func (ec *executionContext) _Query_downloadClient(ctx context.Context, field gra
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().DownloadClient(rctx)
+		return ec.resolvers.Query().SendToConfig(rctx)
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -6872,12 +6948,12 @@ func (ec *executionContext) _Query_downloadClient(ctx context.Context, field gra
 		}
 		return graphql.Null
 	}
-	res := resTmp.(gen.DownloadClientConfigQuery)
+	res := resTmp.(gen.ClientSendToConfigQuery)
 	fc.Result = res
-	return ec.marshalNDownloadClientConfigQuery2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐDownloadClientConfigQuery(ctx, field.Selections, res)
+	return ec.marshalNClientSendToConfigQuery2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐClientSendToConfigQuery(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Query_downloadClient(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Query_sendToConfig(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Query",
 		Field:      field,
@@ -6886,9 +6962,11 @@ func (ec *executionContext) fieldContext_Query_downloadClient(_ context.Context,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
 			case "enabled":
-				return ec.fieldContext_DownloadClientConfigQuery_enabled(ctx, field)
+				return ec.fieldContext_ClientSendToConfigQuery_enabled(ctx, field)
+			case "sendTo":
+				return ec.fieldContext_ClientSendToConfigQuery_sendTo(ctx, field)
 			}
-			return nil, fmt.Errorf("no field named %q was found under type DownloadClientConfigQuery", field.Name)
+			return nil, fmt.Errorf("no field named %q was found under type ClientSendToConfigQuery", field.Name)
 		},
 	}
 	return fc, nil
@@ -17355,6 +17433,117 @@ func (ec *executionContext) unmarshalInputVideoSourceFacetInput(ctx context.Cont
 
 // region    **************************** object.gotpl ****************************
 
+var clientMutationImplementors = []string{"ClientMutation"}
+
+func (ec *executionContext) _ClientMutation(ctx context.Context, sel ast.SelectionSet, obj *gqlmodel.ClientMutation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, clientMutationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ClientMutation")
+		case "sendTo":
+			field := field
+
+			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ClientMutation_sendTo(ctx, field, obj)
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var clientSendToConfigQueryImplementors = []string{"ClientSendToConfigQuery"}
+
+func (ec *executionContext) _ClientSendToConfigQuery(ctx context.Context, sel ast.SelectionSet, obj *gen.ClientSendToConfigQuery) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, clientSendToConfigQueryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ClientSendToConfigQuery")
+		case "enabled":
+			out.Values[i] = ec._ClientSendToConfigQuery_enabled(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "sendTo":
+			out.Values[i] = ec._ClientSendToConfigQuery_sendTo(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var contentImplementors = []string{"Content"}
 
 func (ec *executionContext) _Content(ctx context.Context, sel ast.SelectionSet, obj *model.Content) graphql.Marshaler {
@@ -17651,112 +17840,6 @@ func (ec *executionContext) _ContentTypeAgg(ctx context.Context, sel ast.Selecti
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var downloadClientConfigQueryImplementors = []string{"DownloadClientConfigQuery"}
-
-func (ec *executionContext) _DownloadClientConfigQuery(ctx context.Context, sel ast.SelectionSet, obj *gen.DownloadClientConfigQuery) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, downloadClientConfigQueryImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("DownloadClientConfigQuery")
-		case "enabled":
-			out.Values[i] = ec._DownloadClientConfigQuery_enabled(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch(ctx)
-	if out.Invalids > 0 {
-		return graphql.Null
-	}
-
-	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
-
-	for label, dfs := range deferred {
-		ec.processDeferredGroup(graphql.DeferredGroup{
-			Label:    label,
-			Path:     graphql.GetPath(ctx),
-			FieldSet: dfs,
-			Context:  ctx,
-		})
-	}
-
-	return out
-}
-
-var downloadClientMutationImplementors = []string{"DownloadClientMutation"}
-
-func (ec *executionContext) _DownloadClientMutation(ctx context.Context, sel ast.SelectionSet, obj *gqlmodel.DownloadClientMutation) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, downloadClientMutationImplementors)
-
-	out := graphql.NewFieldSet(fields)
-	deferred := make(map[string]*graphql.FieldSet)
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("DownloadClientMutation")
-		case "download":
-			field := field
-
-			innerFunc := func(ctx context.Context, _ *graphql.FieldSet) (res graphql.Marshaler) {
-				defer func() {
-					if r := recover(); r != nil {
-						ec.Error(ctx, ec.Recover(ctx, r))
-					}
-				}()
-				res = ec._DownloadClientMutation_download(ctx, field, obj)
-				return res
-			}
-
-			if field.Deferrable != nil {
-				dfs, ok := deferred[field.Deferrable.Label]
-				di := 0
-				if ok {
-					dfs.AddField(field)
-					di = len(dfs.Values) - 1
-				} else {
-					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
-					deferred[field.Deferrable.Label] = dfs
-				}
-				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
-					return innerFunc(ctx, dfs)
-				})
-
-				// don't run the out.Concurrently() call below
-				out.Values[i] = graphql.Null
-				continue
-			}
-
-			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -18192,9 +18275,9 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
-		case "downloadclient":
+		case "client":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
-				return ec._Mutation_downloadclient(ctx, field)
+				return ec._Mutation_client(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -18373,7 +18456,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
-		case "downloadClient":
+		case "sendToConfig":
 			field := field
 
 			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
@@ -18382,7 +18465,7 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 						ec.Error(ctx, ec.Recover(ctx, r))
 					}
 				}()
-				res = ec._Query_downloadClient(ctx, field)
+				res = ec._Query_sendToConfig(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -21064,6 +21147,85 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNClientID2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐClientID(ctx context.Context, v any) (gen.ClientID, error) {
+	var res gen.ClientID
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNClientID2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐClientID(ctx context.Context, sel ast.SelectionSet, v gen.ClientID) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) unmarshalNClientID2ᚕgithubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐClientIDᚄ(ctx context.Context, v any) ([]gen.ClientID, error) {
+	var vSlice []any
+	if v != nil {
+		vSlice = graphql.CoerceList(v)
+	}
+	var err error
+	res := make([]gen.ClientID, len(vSlice))
+	for i := range vSlice {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithIndex(i))
+		res[i], err = ec.unmarshalNClientID2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐClientID(ctx, vSlice[i])
+		if err != nil {
+			return nil, err
+		}
+	}
+	return res, nil
+}
+
+func (ec *executionContext) marshalNClientID2ᚕgithubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐClientIDᚄ(ctx context.Context, sel ast.SelectionSet, v []gen.ClientID) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNClientID2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐClientID(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
+func (ec *executionContext) marshalNClientMutation2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚐClientMutation(ctx context.Context, sel ast.SelectionSet, v gqlmodel.ClientMutation) graphql.Marshaler {
+	return ec._ClientMutation(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNClientSendToConfigQuery2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐClientSendToConfigQuery(ctx context.Context, sel ast.SelectionSet, v gen.ClientSendToConfigQuery) graphql.Marshaler {
+	return ec._ClientSendToConfigQuery(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNContentAttribute2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋmodelᚐContentAttribute(ctx context.Context, sel ast.SelectionSet, v model.ContentAttribute) graphql.Marshaler {
 	return ec._ContentAttribute(ctx, sel, &v)
 }
@@ -21193,14 +21355,6 @@ func (ec *executionContext) marshalNDateTime2timeᚐTime(ctx context.Context, se
 		}
 	}
 	return res
-}
-
-func (ec *executionContext) marshalNDownloadClientConfigQuery2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐDownloadClientConfigQuery(ctx context.Context, sel ast.SelectionSet, v gen.DownloadClientConfigQuery) graphql.Marshaler {
-	return ec._DownloadClientConfigQuery(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNDownloadClientMutation2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚐDownloadClientMutation(ctx context.Context, sel ast.SelectionSet, v gqlmodel.DownloadClientMutation) graphql.Marshaler {
-	return ec._DownloadClientMutation(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalNExternalLink2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋmodelᚐExternalLink(ctx context.Context, sel ast.SelectionSet, v model.ExternalLink) graphql.Marshaler {
@@ -22496,6 +22650,22 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	}
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOClientID2ᚖgithubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐClientID(ctx context.Context, v any) (*gen.ClientID, error) {
+	if v == nil {
+		return nil, nil
+	}
+	var res = new(gen.ClientID)
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOClientID2ᚖgithubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐClientID(ctx context.Context, sel ast.SelectionSet, v *gen.ClientID) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return v
 }
 
 func (ec *executionContext) marshalOContent2ᚖgithubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋmodelᚐContent(ctx context.Context, sel ast.SelectionSet, v *model.Content) graphql.Marshaler {

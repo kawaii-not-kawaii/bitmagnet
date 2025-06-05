@@ -82,25 +82,29 @@ export class GraphQLService {
       .pipe(map((r) => r.data.torrent.suggestTags));
   }
 
-  clientDownload(input: generated.DownloadMutationVariables): Observable<void> {
+  clientSendToTarget(
+    input: generated.ClientSendToMutationVariables,
+  ): Observable<void> {
     return this.apollo
-      .mutate<generated.DownloadMutation, generated.DownloadMutationVariables>({
-        mutation: generated.DownloadDocument,
+      .mutate<
+        generated.ClientSendToMutation,
+        generated.ClientSendToMutationVariables
+      >({
+        mutation: generated.ClientSendToDocument,
         variables: input,
         fetchPolicy,
       })
       .pipe(map(() => void 0));
   }
 
-  downloadClientEnabledQuery(): Observable<boolean> {
+  clentSendToConfig(): Observable<generated.ClientSendToConfigQuery> {
     return this.apollo
-      .query<
-        generated.DownloadClientEnabledQuery,
-        generated.DownloadClientEnabledQueryVariables
-      >({
-        query: generated.DownloadClientEnabledDocument,
-      })
-      .pipe(map((r) => r.data.downloadClient.enabled));
+      .query<generated.SendToConfigQuery, generated.SendToConfigQueryVariables>(
+        {
+          query: generated.SendToConfigDocument,
+        },
+      )
+      .pipe(map((r) => r.data.sendToConfig));
   }
 }
 

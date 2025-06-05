@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 
+	"github.com/bitmagnet-io/bitmagnet/internal/gql/gqlmodel/gen"
 	"github.com/hekmon/transmissionrpc/v3"
 )
 
@@ -12,9 +13,14 @@ type transmissionClient struct {
 	CommonClient
 }
 
-func (c transmissionClient) download(ctx context.Context, content *content) error {
+func (c transmissionClient) sendTo(ctx context.Context, content *content) error {
+	sendTo, ok := c.config.GetSendTo(gen.ClientIDTransmission)
+	if !ok {
+		return nil
+	}
+
 	endpoint, err := url.Parse(
-		fmt.Sprintf("http://%v:%v/transmission/rpc", c.config.Transmission.Host, c.config.Transmission.Port))
+		fmt.Sprintf("http://%v:%v/transmission/rpc", sendTo.Host, sendTo.Port))
 	if err != nil {
 		return err
 	}
