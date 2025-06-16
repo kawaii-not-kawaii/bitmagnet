@@ -1,11 +1,11 @@
-package client
+package adapter
 
 import (
 	"context"
 	"fmt"
 	"net/url"
 
-	"github.com/bitmagnet-io/bitmagnet/internal/gql/gqlmodel/gen"
+	"github.com/bitmagnet-io/bitmagnet/internal/client/model"
 	"github.com/hekmon/transmissionrpc/v3"
 )
 
@@ -14,9 +14,9 @@ type transmissionClient struct {
 }
 
 func (c transmissionClient) sendTo(ctx context.Context, content *content) error {
-	sendTo, ok := c.config.GetSendTo(gen.ClientIDTransmission)
+	sendTo, ok := c.config.GetSendTo(model.IDTransmission)
 	if !ok {
-		return nil
+		return model.ErrInvalidID
 	}
 
 	endpoint, err := url.Parse(

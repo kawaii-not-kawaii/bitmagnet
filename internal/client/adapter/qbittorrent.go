@@ -1,11 +1,11 @@
-package client
+package adapter
 
 import (
 	"context"
 	"fmt"
 
 	"github.com/autobrr/go-qbittorrent"
-	"github.com/bitmagnet-io/bitmagnet/internal/gql/gqlmodel/gen"
+	"github.com/bitmagnet-io/bitmagnet/internal/client/model"
 )
 
 type qBitClient struct {
@@ -13,9 +13,9 @@ type qBitClient struct {
 }
 
 func (c qBitClient) sendTo(ctx context.Context, content *content) error {
-	sendTo, ok := c.config.GetSendTo(gen.ClientIDQBittorrent)
+	sendTo, ok := c.config.GetSendTo(model.IDQBittorrent)
 	if !ok {
-		return fmt.Errorf("undefined sendTo: %+v", c.config.SendTo)
+		return model.ErrInvalidID
 	}
 
 	qb := qbittorrent.NewClient(qbittorrent.Config{

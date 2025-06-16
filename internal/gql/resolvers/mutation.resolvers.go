@@ -9,6 +9,8 @@ import (
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
 	"github.com/bitmagnet-io/bitmagnet/internal/client"
+	"github.com/bitmagnet-io/bitmagnet/internal/client/adapter"
+	"github.com/bitmagnet-io/bitmagnet/internal/client/model"
 	"github.com/bitmagnet-io/bitmagnet/internal/gql"
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/gqlmodel"
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/gqlmodel/gen"
@@ -17,8 +19,8 @@ import (
 )
 
 // SendTo is the resolver for the sendTo field.
-func (r *clientMutationResolver) SendTo(ctx context.Context, obj *gqlmodel.ClientMutation, clientID *gen.ClientID, infoHashes []protocol.ID) (*string, error) {
-	return nil, client.New(&r.ClientConfig, r.Search).AddInfoHashes(ctx,
+func (r *clientMutationResolver) SendTo(ctx context.Context, obj *gqlmodel.ClientMutation, clientID *model.ID, infoHashes []protocol.ID) (*string, error) {
+	return nil, adapter.New(&r.ClientConfig, r.Search).AddInfoHashes(ctx,
 		client.AddInfoHashesRequest{
 			ClientID:   *clientID,
 			InfoHashes: infoHashes,

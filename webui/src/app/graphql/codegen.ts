@@ -32,6 +32,7 @@ const config: CodegenConfig = {
           Hash20: "string",
           Void: "void",
           Year: "number",
+          ClientID: "string",
         },
       },
     },

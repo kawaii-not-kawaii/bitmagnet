@@ -1,7 +1,7 @@
 package client
 
 import (
-	"github.com/bitmagnet-io/bitmagnet/internal/gql/gqlmodel/gen"
+	clientmodel "github.com/bitmagnet-io/bitmagnet/internal/client/model"
 	"github.com/bitmagnet-io/bitmagnet/internal/model"
 )
 
@@ -33,7 +33,7 @@ func NewDefaultConfig() Config {
 	return cfg
 }
 
-func (c Config) GetSendTo(id gen.ClientID) (SendTo, bool) {
+func (c Config) GetSendTo(id clientmodel.ID) (SendTo, bool) {
 	for _, c := range c.SendTo {
 		if c.ID == string(id) {
 			return c, true
@@ -43,14 +43,13 @@ func (c Config) GetSendTo(id gen.ClientID) (SendTo, bool) {
 	return SendTo{}, false
 }
 
-func (c Config) All() []gen.ClientID {
-	all := make([]gen.ClientID, 0)
+func (c Config) All() []clientmodel.ID {
+	all := make([]clientmodel.ID, 0)
 
 	for _, s := range c.SendTo {
-		for _, valid := range gen.AllClientID {
-			if s.ID == valid.String() {
-				all = append(all, valid)
-			}
+		id, err := clientmodel.ParseID(s.ID)
+		if err == nil {
+			all = append(all, id)
 		}
 	}
 

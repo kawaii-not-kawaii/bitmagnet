@@ -41,7 +41,7 @@ export class TorrentsBulkActionsComponent implements OnInit {
   selectedInfoHashes = new Array<string>();
 
   sendToEnabled = false;
-  sendToTargets = new Array<generated.ClientId>();
+  sendToTargets = new Array<generated.Scalars["ClientID"]["input"]>();
 
   ngOnInit() {
     this.selectedItems$.subscribe((items) => {
@@ -210,7 +210,7 @@ export class TorrentsBulkActionsComponent implements OnInit {
       .subscribe();
   }
 
-  sendToTorrents(sendTo: generated.ClientId) {
+  sendToTorrents(sendTo: generated.Scalars["ClientID"]["input"]) {
     const infoHashes = this.selectedItems.map(({ infoHash }) => infoHash);
     this.graphQLService
       .clientSendToTarget({ clientID: sendTo, infoHashes: infoHashes })

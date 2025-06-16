@@ -180,3 +180,12 @@ models:
   TorrentMetricsBucket:
     model:
       - github.com/bitmagnet-io/bitmagnet/internal/metrics/torrentmetrics.Bucket
+  ClientID:
+    model: github.com/bitmagnet-io/bitmagnet/internal/client/model.ID
+    enum_values:
+      Ntfy:
+        value: github.com/bitmagnet-io/bitmagnet/internal/client/model.IDNtfy
+      QBittorrent:
+        value: github.com/bitmagnet-io/bitmagnet/internal/client/model.IDQBittorrent
+      Transmission:
+        value: github.com/bitmagnet-io/bitmagnet/internal/client/model.IDTransmission
