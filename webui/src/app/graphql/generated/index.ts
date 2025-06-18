@@ -17,7 +17,6 @@ export type Scalars = {
   Boolean: { input: boolean; output: boolean; }
   Int: { input: number; output: number; }
   Float: { input: number; output: number; }
-  ClientID: { input: string; output: string; }
   Date: { input: string; output: string; }
   DateTime: { input: string; output: string; }
   Duration: { input: string; output: string; }
@@ -26,6 +25,11 @@ export type Scalars = {
   Year: { input: number; output: number; }
 };
 
+export type ClientId =
+  | 'Ntfy'
+  | 'QBittorrent'
+  | 'Transmission';
+
 export type ClientMutation = {
   __typename?: 'ClientMutation';
   sendTo?: Maybe<Scalars['Void']['output']>;
@@ -33,14 +37,14 @@ export type ClientMutation = {
 
 
 export type ClientMutationSendToArgs = {
-  clientID?: InputMaybe<Scalars['ClientID']['input']>;
+  clientID?: InputMaybe<ClientId>;
   infoHashes?: InputMaybe<Array<Scalars['Hash20']['input']>>;
 };
 
 export type ClientSendToConfigQuery = {
   __typename?: 'ClientSendToConfigQuery';
   enabled: Scalars['Boolean']['output'];
-  sendTo: Array<Scalars['ClientID']['output']>;
+  sendTo: Array<ClientId>;
 };
 
 export type Content = {
@@ -899,7 +903,7 @@ export type TorrentFileFragment = { __typename?: 'TorrentFile', infoHash: string
 export type TorrentFilesQueryResultFragment = { __typename?: 'TorrentFilesQueryResult', totalCount: number, hasNextPage?: boolean | null, items: Array<{ __typename?: 'TorrentFile', infoHash: string, index: number, path: string, size: number, fileType?: FileType | null, createdAt: string, updatedAt: string }> };
 
 export type ClientSendToMutationVariables = Exact<{
-  clientID?: InputMaybe<Scalars['ClientID']['input']>;
+  clientID?: InputMaybe<ClientId>;
   infoHashes: Array<Scalars['Hash20']['input']> | Scalars['Hash20']['input'];
 }>;
 
@@ -961,7 +965,7 @@ export type TorrentSetTagsMutation = { __typename?: 'Mutation', torrent: { __typ
 export type SendToConfigQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type SendToConfigQuery = { __typename?: 'Query', sendToConfig: { __typename?: 'ClientSendToConfigQuery', enabled: boolean, sendTo: Array<string> } };
+export type SendToConfigQuery = { __typename?: 'Query', sendToConfig: { __typename?: 'ClientSendToConfigQuery', enabled: boolean, sendTo: Array<ClientId> } };
 
 export type HealthCheckQueryVariables = Exact<{ [key: string]: never; }>;
 

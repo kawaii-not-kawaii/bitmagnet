@@ -6,7 +6,7 @@ import (
 )
 
 type SendTo struct {
-	ID       string
+	ID       clientmodel.ID
 	Host     string
 	Port     string
 	Username string
@@ -35,7 +35,7 @@ func NewDefaultConfig() Config {
 
 func (c Config) GetSendTo(id clientmodel.ID) (SendTo, bool) {
 	for _, c := range c.SendTo {
-		if c.ID == string(id) {
+		if c.ID == id {
 			return c, true
 		}
 	}
@@ -47,9 +47,8 @@ func (c Config) All() []clientmodel.ID {
 	all := make([]clientmodel.ID, 0)
 
 	for _, s := range c.SendTo {
-		id, err := clientmodel.ParseID(s.ID)
-		if err == nil {
-			all = append(all, id)
+		if s.ID.IsValid() {
+			all = append(all, s.ID)
 		}
 	}
 
