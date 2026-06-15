@@ -60,7 +60,8 @@ func (r responder) Respond(_ context.Context, msg dht.RecvMsg) (ret dht.Return, 
 		}
 
 		closestNodes := r.kTable.GetClosestNodes(args.Target)
-		ret.Nodes = nodeInfosFromNodes(closestNodes...)
+
+		ret.Nodes, ret.Nodes6 = nodeInfosFromNodes(closestNodes...)
 	case dht.QGetPeers:
 		if args.InfoHash == [20]byte{} {
 			err = ErrMissingArguments
@@ -78,8 +79,7 @@ func (r responder) Respond(_ context.Context, msg dht.RecvMsg) (ret dht.Return, 
 
 			ret.Values = values
 		}
-
-		ret.Nodes = nodeInfosFromNodes(result.ClosestNodes...)
+		ret.Nodes, ret.Nodes6 = nodeInfosFromNodes(result.ClosestNodes...)
 		token := r.announceToken(args.InfoHash, args.ID, msg.From.Addr())
 		ret.Token = &token
 	case dht.QAnnouncePeer:
@@ -105,7 +105,7 @@ func (r responder) Respond(_ context.Context, msg dht.RecvMsg) (ret dht.Return, 
 		}
 
 		ret.Samples = &samples
-		ret.Nodes = nodeInfosFromNodes(result.Nodes...)
+		ret.Nodes, ret.Nodes6 = nodeInfosFromNodes(result.Nodes...)
 		numInt64 := int64(result.TotalHashes)
 		ret.Num = &numInt64
 		ret.Interval = &r.sampleInfoHashesInterval
@@ -136,17 +136,41 @@ func (r responder) announceToken(infoHash protocol.ID, nodeID protocol.ID, nodeA
 	return hex.EncodeToString(tokenHash[:])
 }
 
-func nodeInfosFromNodes(ns ...ktable.Node) []dht.NodeInfo {
+func nodeInfosFromNodes(ns ...ktable.Node) ([]dht.NodeInfo, []dht.NodeInfo) {
 	if len(ns) == 0 {
-		return nil
+		return nil, nil
 	}
-
-	nodes := make([]dht.NodeInfo, 0, len(ns))
+	ns_count, ns6_count := 0, 0
 	for _, n := range ns {
-		nodes = append(nodes, nodeInfoFromNode(n))
+		if n.Addr().Addr().Is4() {
+			ns_count += 1
+		}
 	}
+	for _, n := range ns {
+		if n.Addr().Addr().Is6() || n.Addr().Addr().Is4In6() {
+			ns6_count += 1
+		}
+	}
+	nodes6 := make([]dht.NodeInfo, 0, ns_count)
 
-	return nodes
+	nodes := make([]dht.NodeInfo, 0, ns6_count)
+	for _, n := range ns {
+		if n.Addr().Addr().Is4() {
+			nodes = append(nodes, nodeInfoFromNode(n))
+		}
+	}
+	for _, n := range ns {
+		if n.Addr().Addr().Is6() || n.Addr().Addr().Is4In6() {
+			nodes6 = append(nodes6, nodeInfoFromNode(n))
+		}
+	}
+	if len(nodes) == 0 {
+		nodes = nil
+	}
+	if len(nodes6) == 0 {
+		nodes6 = nil
+	}
+	return nodes, nodes6
 }
 
 func nodeInfoFromNode(n ktable.Node) dht.NodeInfo {
