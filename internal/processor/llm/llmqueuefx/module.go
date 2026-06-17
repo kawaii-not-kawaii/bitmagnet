@@ -1,4 +1,4 @@
-package llmqueue
+package llmqueuefx
 
 import (
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
