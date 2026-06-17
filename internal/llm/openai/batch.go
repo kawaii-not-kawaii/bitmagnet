@@ -49,10 +49,8 @@ func NewBatchClient(provider llm.Provider, batchSize int, flushAfter time.Durati
 func (bc *BatchClient) Name() string { return bc.provider.Name() }
 
 func (bc *BatchClient) Classify(ctx context.Context, input llm.ClassifyInput) (*llm.ClassifyResult, error) {
-	// Check if provider supports batch
-	bp, ok := bc.provider.(llm.BatchProvider)
-	if !ok {
-		// Fallback to single request
+	// If provider doesn't support batch, fall through to single request
+	if _, ok := bc.provider.(llm.BatchProvider); !ok {
 		return bc.provider.Classify(ctx, input)
 	}
 
