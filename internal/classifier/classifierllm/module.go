@@ -1,6 +1,8 @@
 package classifierllm
 
 import (
+	"context"
+
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm/openai"
@@ -65,7 +67,7 @@ func New(p Params) Result {
 	providers := registry.All()
 	// Register shutdown hook to flush LLM config changes.
 	p.Lifecycle.Append(fx.Hook{
-		OnStop: func(ctx interface{ }) error {
+	OnStop: func(ctx context.Context) error {
 			if err := registry.Flush(); err != nil {
 				p.Logger.Warnf("failed to flush LLM config on shutdown: %v", err)
 				return nil // don't block shutdown for config persistence
