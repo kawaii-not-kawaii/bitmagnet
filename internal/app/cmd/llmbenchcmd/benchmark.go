@@ -61,23 +61,20 @@ func RunBenchmark(ctx context.Context, p BenchmarkParams, count int) (*Benchmark
 		return nil, fmt.Errorf("dao: %w", err)
 	}
 
-	// Fetch unknown torrents
-	var torrents []model.Torrent
-	err = d.Torrent.WithContext(ctx).
-		Find(&torrents).
-		Error
+	// Fetch torrents
+	torrentResults, err := d.Torrent.WithContext(ctx).
+		Find()
 	if err != nil {
 		return nil, fmt.Errorf("query torrents: %w", err)
 	}
-	// Filter to only unknowns
-	var unknowns []model.Torrent
-	for _, t := range torrents {
-		if len(unknowns) >= count {
+	// Take first N
+	torrents := make([]model.Torrent, 0, count)
+	for i, t := range torrentResults {
+		if i >= count {
 			break
 		}
-		unknowns = append(unknowns, t)
+		torrents = append(torrents, *t)
 	}
-	torrents = unknowns
 
 	if len(torrents) == 0 {
 		return nil, fmt.Errorf("no unknown torrents found")
