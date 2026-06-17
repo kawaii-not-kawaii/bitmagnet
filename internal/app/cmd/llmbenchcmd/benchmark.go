@@ -105,19 +105,17 @@ func RunBenchmark(ctx context.Context, p BenchmarkParams, count int) (*Benchmark
 		if err != nil {
 			failures++
 			record.Error = err.Error()
+			fmt.Fprintf(os.Stderr, "  ERR [%d/%d] %s -> %v (%.2fs)\n",
+				len(records)+1, len(torrents), truncate(t.Name, 40), err, duration.Seconds())
 		} else {
 			successes++
 			record.ContentType = result.ContentType
 			record.Title = result.Title
+			fmt.Fprintf(os.Stderr, "  OK  [%d/%d] %s -> %s (%.2fs)\n",
+				len(records)+1, len(torrents), truncate(t.Name, 40), record.ContentType, duration.Seconds())
 		}
 
 		records = append(records, record)
-
-		fmt.Fprintf(os.Stderr, "  [%d/%d] %s -> %s (%.2fs)\n",
-			len(records), len(torrents),
-			truncate(t.Name, 50),
-			record.ContentType,
-			duration.Seconds())
 	}
 
 	totalDuration := time.Since(start)
