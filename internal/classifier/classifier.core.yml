@@ -63,7 +63,7 @@ workflows:
     - if_else:
         condition: "result.contentType == contentType.unknown"
         if_action:
-          - llm_classify
+          llm_classify: llm_classify
     # if the name contains a full date, attach it to the result as it's a good indicator of content type:
     - find_match:
         - parse_date
