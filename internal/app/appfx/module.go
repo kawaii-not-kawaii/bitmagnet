@@ -44,7 +44,7 @@ func New() fx.Option {
 		"app",
 		blockingfx.New(),
 		classifierfx.New(),
-		classifierllm.New(),
+		fx.Provide(classifierllm.New),
 		configfx.New(),
 		dhtcrawlerfx.New(),
 		dhtfx.New(),
