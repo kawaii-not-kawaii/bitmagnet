@@ -15,23 +15,17 @@ type Config struct {
 }
 
 // LlmConfig holds the configuration for LLM-based classification.
+// Flattened to single-provider to avoid config resolver issues with map[string]struct.
 type LlmConfig struct {
-	Providers  map[string]LlmProviderConfig
-	BatchSize  int
-	MaxContext int
-	MaxTokens  int
-	Interval   time.Duration
-	Timeout    time.Duration
-}
-
-// LlmProviderConfig holds a single LLM provider's configuration.
-// Providers are referenced by name in workflow actions via llm_classify.
-type LlmProviderConfig struct {
-	BaseURL      string        `yaml:"base_url" json:"base_url"`
-	Model        string        `yaml:"model"    json:"model"`
-	APIKey       string        `yaml:"api_key"  json:"api_key,omitempty"`
-	Timeout      time.Duration `yaml:"timeout"  json:"timeout,omitempty"`
-	SystemPrompt string        `yaml:"system_prompt" json:"system_prompt,omitempty"`
+	ProviderName    string
+	ProviderBaseURL string
+	ProviderModel   string
+	ProviderAPIKey  string
+	BatchSize       int
+	MaxContext      int
+	MaxTokens       int
+	Interval        time.Duration
+	Timeout         time.Duration
 }
 
 func NewDefaultConfig() Config {
