@@ -57,7 +57,7 @@ func New() fx.Option {
 		metainfofx.New(),
 		metricsfx.New(),
 		processorfx.New(),
-		llmqueuefx.NewFx(),
+		fx.Provide(llmqueuefx.NewFx),
 		queuefx.New(),
 		telemetryfx.New(),
 		tmdbfx.New(),
