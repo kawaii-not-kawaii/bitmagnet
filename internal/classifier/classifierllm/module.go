@@ -1,7 +1,6 @@
 package classifierllm
 
 import (
-	"context"
 	"time"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
@@ -80,17 +79,6 @@ func New(p Params) Result {
 
 	registry := llm.NewRegistry(regCfg, factory, "")
 	providers := registry.All()
-
-	p.Lifecycle.Append(fx.Hook{
-		OnStop: func(ctx context.Context) error {
-			if err := registry.Flush(); err != nil {
-				p.Logger.Warnf("failed to flush LLM config on shutdown: %v", err)
-				return nil
-			}
-			p.Logger.Info("LLM config flushed to disk")
-			return nil
-		},
-	})
 
 	return Result{
 		Registry:     registry,

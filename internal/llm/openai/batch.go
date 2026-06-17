@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"sync"
 	"time"
 
@@ -111,6 +112,9 @@ func (bc *BatchClient) flush() {
 	results, err := bc.provider.(llm.BatchProvider).BatchClassify(ctx, inputs)
 
 	// Distribute results
+	if err == nil && len(results) != len(batch) {
+		log.Printf("llm batch: expected %d results, got %d — filling short positions with ErrNoResult", len(batch), len(results))
+	}
 	for i, r := range batch {
 		if err != nil {
 			r.result <- batchResult{err: err}

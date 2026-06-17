@@ -1,7 +1,6 @@
 package classifier
 
 import (
-	"context"
 	"strings"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier/classification"
@@ -74,7 +73,7 @@ func (llmClassifyAction) compileAction(ctx compilerContext) (action, error) {
 			}
 
 			// Call LLM
-			result, err := provider.Classify(context.Background(), input)
+			result, err := provider.Classify(ctx, input)
 			if err != nil {
 				ctx.logger.Warnw("llm classification failed",
 					"provider", provider.Name(),
@@ -151,10 +150,7 @@ func applyLLMResult(cl classification.Result, r *llm.ClassifyResult) classificat
 }
 
 func buildContentTypeList() string {
-	return strings.Join([]string{
-		"movie", "tv_show", "music", "ebook", "comic",
-		"audiobook", "game", "software", "xxx",
-	}, ", ")
+	return strings.Join(model.ContentTypeNames(), ", ")
 }
 
 // sanitizeTag normalizes an LLM-generated tag to match the torrent_tags CHECK constraint:
@@ -181,9 +177,3 @@ func sanitizeTag(tag string) string {
 	return result
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}

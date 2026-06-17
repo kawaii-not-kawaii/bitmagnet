@@ -131,9 +131,24 @@ func (c *client) BatchClassify(ctx context.Context, inputs []llm.ClassifyInput) 
 		return []*llm.ClassifyResult{r}, nil
 	}
 
-	// Build batch prompt
+	// Build batch prompt — merge content types from all inputs to avoid using only inputs[0].
+	seen := make(map[string]struct{})
+	var mergedTypes []string
+	for _, inp := range inputs {
+		for _, ct := range strings.Split(inp.ContentTypes, ", ") {
+			ct = strings.TrimSpace(ct)
+			if ct != "" {
+				if _, ok := seen[ct]; !ok {
+					seen[ct] = struct{}{}
+					mergedTypes = append(mergedTypes, ct)
+				}
+			}
+		}
+	}
+	mergedInput := llm.ClassifyInput{ContentTypes: strings.Join(mergedTypes, ", ")}
+
 	userContent := BatchClassifyJSONString(inputs)
-	systemContent := c.buildSystemMessage(inputs[0]) + "\n\nYou are classifying multiple torrents at once. Return a JSON object with a \"results\" array containing one classification per torrent, in the same order."
+	systemContent := c.buildSystemMessage(mergedInput) + "\n\nYou are classifying multiple torrents at once. Return a JSON object with a \"results\" array containing one classification per torrent, in the same order."
 
 	messages := []chatMessage{
 		{Role: "system", Content: systemContent},
@@ -207,15 +222,13 @@ func (c *client) buildUserMessage(input llm.ClassifyInput, batchMode bool) strin
 	b.WriteByte('\n')
 
 	for i, f := range input.Files {
+		if i >= 20 {
+			b.WriteString(fmt.Sprintf("... and %d more files\n", len(input.Files)-20))
+			break
+		}
 		b.WriteString("File: ")
 		b.WriteString(f)
 		b.WriteByte('\n')
-		if i >= 20 {
-			b.WriteString("... and ")
-			b.WriteString(fmt.Sprintf("%d more files", len(input.Files)-i-1))
-			b.WriteByte('\n')
-			break
-		}
 	}
 
 	return b.String()
@@ -228,85 +241,18 @@ func (c *client) estimateMaxTokens(input llm.ClassifyInput) int {
 }
 
 func (c *client) doRequest(ctx context.Context, reqBody []byte) (*llm.ClassifyResult, error) {
-	url := strings.TrimRight(c.config.BaseURL, "/") + "/v1/chat/completions"
-
-	var lastErr error
-	for attempt := 0; attempt <= maxRetries; attempt++ {
-		if attempt > 0 {
-			// Backoff: 100ms, 200ms, 400ms
-			backoff := time.Duration(100*math.Pow(2, float64(attempt-1))) * time.Millisecond
-			select {
-			case <-ctx.Done():
-				return nil, ctx.Err()
-			case <-time.After(backoff):
-			}
-		}
-
-		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(reqBody))
-		if err != nil {
-			return nil, fmt.Errorf("openai: create request: %w", err)
-		}
-		httpReq.Header.Set("Content-Type", "application/json")
-		if c.config.APIKey != "" {
-			httpReq.Header.Set("Authorization", "Bearer "+c.config.APIKey)
-		}
-
-		resp, err := c.http.Do(httpReq)
-		if err != nil {
-			lastErr = fmt.Errorf("openai: request failed: %w", err)
-			continue
-		}
-
-		body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20)) // 1MB limit
-		resp.Body.Close()
-		if err != nil {
-			lastErr = fmt.Errorf("openai: read response: %w", err)
-			continue
-		}
-
-		if resp.StatusCode != http.StatusOK {
-			lastErr = fmt.Errorf("openai: HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
-			// Don't retry 4xx errors.
-			if resp.StatusCode >= 400 && resp.StatusCode < 500 {
-				return nil, lastErr
-			}
-			continue
-		}
-
-		var chatResp chatResponse
-		if err := json.Unmarshal(body, &chatResp); err != nil {
-			lastErr = fmt.Errorf("openai: parse response: %w", err)
-			continue
-		}
-
-		// Check for API-level error (e.g. model overloaded).
-		if chatResp.Error != nil && chatResp.Error.Message != "" {
-			lastErr = fmt.Errorf("openai: API error: %s (%s)", chatResp.Error.Message, chatResp.Error.Type)
-			continue
-		}
-
-		if len(chatResp.Choices) == 0 {
-			return nil, llm.ErrNoResult
-		}
-
-		content := chatResp.Choices[0].Message.Content
-		if content == "" {
-			return nil, llm.ErrNoResult
-		}
-
-		var result llm.ClassifyResult
-		if err := json.Unmarshal([]byte(content), &result); err != nil {
-			return nil, fmt.Errorf("%w: %s", llm.ErrInvalidJSON, err)
-		}
-
-		if result.ContentType == "" {
-			return nil, llm.ErrNoResult
-		}
-
-		return &result, nil
+	content, err := c.doRequestRaw(ctx, reqBody)
+	if err != nil {
+		return nil, err
 	}
-
-	return nil, fmt.Errorf("openai: %w (after %d retries)", lastErr, maxRetries)
+	var result llm.ClassifyResult
+	if err := json.Unmarshal([]byte(content), &result); err != nil {
+		return nil, fmt.Errorf("%w: %s", llm.ErrInvalidJSON, err)
+	}
+	if result.ContentType == "" {
+		return nil, llm.ErrNoResult
+	}
+	return &result, nil
 }
 
 // doRequestRaw sends the request and returns the raw content string from the first choice.
