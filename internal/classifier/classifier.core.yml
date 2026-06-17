@@ -58,9 +58,7 @@ workflows:
                     - "([torrent.baseName] + torrent.files.map(f, f.basePath)).join(' ').matches(keywords.xxx)"
                 if_action:
                   set_content_type: xxx
-                else_action:
-                  # if all normal classification failed, try LLM:
-                  llm_classify: llm_classify
+                else_action: llm_classify
     # if the name contains a full date, attach it to the result as it's a good indicator of content type:
     - find_match:
         - parse_date
