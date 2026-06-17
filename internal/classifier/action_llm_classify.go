@@ -141,7 +141,10 @@ func applyLLMResult(cl classification.Result, r *llm.ClassifyResult) classificat
 			cl.Tags.Add = make(map[string]struct{})
 		}
 		for _, tag := range r.Tags {
-			cl.Tags.Add[tag] = struct{}{}
+			sanitized := sanitizeTag(tag)
+			if sanitized != "" {
+				cl.Tags.Add[sanitized] = struct{}{}
+			}
 		}
 	}
 	return cl
@@ -152,6 +155,30 @@ func buildContentTypeList() string {
 		"movie", "tv_show", "music", "ebook", "comic",
 		"audiobook", "game", "software", "xxx",
 	}, ", ")
+}
+
+// sanitizeTag normalizes an LLM-generated tag to match the torrent_tags CHECK constraint:
+// ^[a-z0-9]+(-[a-z0-9]+)*$
+func sanitizeTag(tag string) string {
+	tag = strings.ToLower(strings.TrimSpace(tag))
+	// replace spaces and underscores with hyphens
+	tag = strings.ReplaceAll(tag, " ", "-")
+	tag = strings.ReplaceAll(tag, "_", "-")
+	// remove invalid characters
+	var b strings.Builder
+	for _, r := range tag {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
+			b.WriteRune(r)
+		}
+	}
+	result := b.String()
+	// collapse multiple hyphens
+	for strings.Contains(result, "--") {
+		result = strings.ReplaceAll(result, "--", "-")
+	}
+	// trim leading/trailing hyphens
+	result = strings.Trim(result, "-")
+	return result
 }
 
 func min(a, b int) int {
