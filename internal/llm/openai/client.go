@@ -116,6 +116,51 @@ func (c *client) Classify(ctx context.Context, input llm.ClassifyInput) (*llm.Cl
 	return result, nil
 }
 
+// BatchClassify implements llm.BatchProvider. It sends multiple torrents
+// in a single chat completion request without response_format constraint
+// (to allow JSON array output).
+func (c *client) BatchClassify(ctx context.Context, inputs []llm.ClassifyInput) ([]*llm.ClassifyResult, error) {
+	if len(inputs) == 0 {
+		return nil, nil
+	}
+	if len(inputs) == 1 {
+		r, err := c.Classify(ctx, inputs[0])
+		if err != nil {
+			return nil, err
+		}
+		return []*llm.ClassifyResult{r}, nil
+	}
+
+	// Build batch prompt
+	userContent := BatchClassifyJSONString(inputs)
+	systemContent := c.buildSystemMessage(inputs[0]) + "\n\nYou are classifying multiple torrents at once. Return a JSON object with a \"results\" array containing one classification per torrent, in the same order."
+
+	messages := []chatMessage{
+		{Role: "system", Content: systemContent},
+		{Role: "user", Content: userContent},
+	}
+
+	req := chatRequest{
+		Model:          c.config.Model,
+		Messages:       messages,
+		Temperature:    0.1,
+		MaxTokens:      256 * len(inputs),
+		// No response_format — allow free JSON array output
+	}
+
+	reqBytes, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("openai: build batch request: %w", err)
+	}
+
+	content, err := c.doRequestRaw(ctx, reqBytes)
+	if err != nil {
+		return nil, err
+	}
+
+	return ParseBatchResponse(content)
+}
+
 func (c *client) buildRequest(input llm.ClassifyInput) ([]byte, error) {
 	userContent := c.buildUserMessage(input, false)
 	messages := []chatMessage{
@@ -262,4 +307,76 @@ func (c *client) doRequest(ctx context.Context, reqBody []byte) (*llm.ClassifyRe
 	}
 
 	return nil, fmt.Errorf("openai: %w (after %d retries)", lastErr, maxRetries)
+}
+
+// doRequestRaw sends the request and returns the raw content string from the first choice.
+// Used by BatchClassify which needs the raw content for array parsing.
+func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, error) {
+	url := strings.TrimRight(c.config.BaseURL, "/") + "/v1/chat/completions"
+
+	var lastErr error
+	for attempt := 0; attempt <= maxRetries; attempt++ {
+		if attempt > 0 {
+			backoff := time.Duration(100*math.Pow(2, float64(attempt-1))) * time.Millisecond
+			select {
+			case <-ctx.Done():
+				return "", ctx.Err()
+			case <-time.After(backoff):
+			}
+		}
+
+		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(reqBody))
+		if err != nil {
+			return "", fmt.Errorf("openai: create request: %w", err)
+		}
+		httpReq.Header.Set("Content-Type", "application/json")
+		if c.config.APIKey != "" {
+			httpReq.Header.Set("Authorization", "Bearer "+c.config.APIKey)
+		}
+
+		resp, err := c.http.Do(httpReq)
+		if err != nil {
+			lastErr = fmt.Errorf("openai: request failed: %w", err)
+			continue
+		}
+
+		body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+		resp.Body.Close()
+		if err != nil {
+			lastErr = fmt.Errorf("openai: read response: %w", err)
+			continue
+		}
+
+		if resp.StatusCode != http.StatusOK {
+			lastErr = fmt.Errorf("openai: HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+			if resp.StatusCode >= 400 && resp.StatusCode < 500 {
+				return "", lastErr
+			}
+			continue
+		}
+
+		var chatResp chatResponse
+		if err := json.Unmarshal(body, &chatResp); err != nil {
+			lastErr = fmt.Errorf("openai: parse response: %w", err)
+			continue
+		}
+
+		if chatResp.Error != nil && chatResp.Error.Message != "" {
+			lastErr = fmt.Errorf("openai: API error: %s (%s)", chatResp.Error.Message, chatResp.Error.Type)
+			continue
+		}
+
+		if len(chatResp.Choices) == 0 {
+			return "", llm.ErrNoResult
+		}
+
+		content := chatResp.Choices[0].Message.Content
+		if content == "" {
+			return "", llm.ErrNoResult
+		}
+
+		return content, nil
+	}
+
+	return "", fmt.Errorf("openai: %w (after %d retries)", lastErr, maxRetries)
 }

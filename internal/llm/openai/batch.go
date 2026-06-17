@@ -1,0 +1,186 @@
+package openai
+
+import (
+	"context"
+	"encoding/json"
+	"fmt"
+	"sync"
+	"time"
+
+	"github.com/bitmagnet-io/bitmagnet/internal/llm"
+)
+
+// BatchClient wraps a Provider and accumulates single Classify requests
+// into batch calls of up to batchSize, flushing on size or timer.
+type BatchClient struct {
+	provider   llm.Provider
+	batchSize  int
+	flushAfter time.Duration
+
+	mu     sync.Mutex
+	pending []pendingRequest
+	timer  *time.Timer
+}
+
+type pendingRequest struct {
+	input  llm.ClassifyInput
+	result chan<- batchResult
+}
+
+type batchResult struct {
+	result *llm.ClassifyResult
+	err    error
+}
+
+// NewBatchClient wraps a provider with automatic batching.
+// batchSize=1 disables batching (passthrough).
+func NewBatchClient(provider llm.Provider, batchSize int, flushAfter time.Duration) llm.Provider {
+	if batchSize <= 1 {
+		return provider // no batching needed
+	}
+	bc := &BatchClient{
+		provider:   provider,
+		batchSize:  batchSize,
+		flushAfter: flushAfter,
+	}
+	return bc
+}
+
+func (bc *BatchClient) Name() string { return bc.provider.Name() }
+
+func (bc *BatchClient) Classify(ctx context.Context, input llm.ClassifyInput) (*llm.ClassifyResult, error) {
+	// Check if provider supports batch
+	bp, ok := bc.provider.(llm.BatchProvider)
+	if !ok {
+		// Fallback to single request
+		return bc.provider.Classify(ctx, input)
+	}
+
+	resultCh := make(chan batchResult, 1)
+	req := pendingRequest{input: input, result: resultCh}
+
+	bc.mu.Lock()
+	bc.pending = append(bc.pending, req)
+
+	// Start timer on first pending item
+	if len(bc.pending) == 1 {
+		bc.timer = time.AfterFunc(bc.flushAfter, bc.timedFlush)
+	}
+
+	shouldFlush := len(bc.pending) >= bc.batchSize
+	bc.mu.Unlock()
+
+	if shouldFlush {
+		bc.flush()
+	}
+
+	select {
+	case r := <-resultCh:
+		return r.result, r.err
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	}
+}
+
+func (bc *BatchClient) timedFlush() {
+	bc.flush()
+}
+
+func (bc *BatchClient) flush() {
+	bc.mu.Lock()
+	if len(bc.pending) == 0 {
+		bc.mu.Unlock()
+		return
+	}
+	if bc.timer != nil {
+		bc.timer.Stop()
+		bc.timer = nil
+	}
+	batch := bc.pending
+	bc.pending = nil
+	bc.mu.Unlock()
+
+	// Extract inputs
+	inputs := make([]llm.ClassifyInput, len(batch))
+	for i, r := range batch {
+		inputs[i] = r.input
+	}
+
+	// Call batch classify
+	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	defer cancel()
+
+	results, err := bc.provider.(llm.BatchProvider).BatchClassify(ctx, inputs)
+
+	// Distribute results
+	for i, r := range batch {
+		if err != nil {
+			r.result <- batchResult{err: err}
+			continue
+		}
+		if i < len(results) && results[i] != nil {
+			r.result <- batchResult{result: results[i]}
+		} else {
+			r.result <- batchResult{err: llm.ErrNoResult}
+		}
+	}
+}
+
+// BatchClassifyJSON sends multiple torrents in a single chat completion request.
+// This is the actual batch implementation that works with OpenAI-compatible endpoints
+// by constructing a prompt with multiple torrents and parsing the array response.
+type batchChatRequest struct {
+	Model       string        `json:"model"`
+	Messages    []chatMessage `json:"messages"`
+	Temperature float64       `json:"temperature"`
+	MaxTokens   int           `json:"max_tokens,omitempty"`
+}
+
+// BatchClassifyJSONString builds a user message containing multiple torrents.
+func BatchClassifyJSONString(inputs []llm.ClassifyInput) string {
+	var msg string
+	for i, input := range inputs {
+		msg += fmt.Sprintf("[%d] Name: %s\n", i+1, input.Name)
+		if len(input.Files) > 0 {
+			maxFiles := 5
+			if len(input.Files) < maxFiles {
+				maxFiles = len(input.Files)
+			}
+			msg += "    Files: "
+			for j := 0; j < maxFiles; j++ {
+				if j > 0 {
+					msg += " | "
+				}
+				msg += input.Files[j]
+			}
+			msg += "\n"
+		}
+	}
+	msg += "\nReturn a JSON object: {\"results\": [{\"content_type\": \"...\", \"title\": \"...\", \"year\": 0}, ...]} with one entry per torrent in order."
+	return msg
+}
+
+// ParseBatchResponse parses a batch response containing multiple results.
+func ParseBatchResponse(content string) ([]*llm.ClassifyResult, error) {
+	// Try to parse as JSON object with "results" array
+	var wrapper struct {
+		Results []*llm.ClassifyResult `json:"results"`
+	}
+	if err := json.Unmarshal([]byte(content), &wrapper); err == nil && len(wrapper.Results) > 0 {
+		return wrapper.Results, nil
+	}
+
+	// Try as bare JSON array
+	var arr []*llm.ClassifyResult
+	if err := json.Unmarshal([]byte(content), &arr); err == nil {
+		return arr, nil
+	}
+
+	// Try as single result (model didn't batch)
+	var single llm.ClassifyResult
+	if err := json.Unmarshal([]byte(content), &single); err == nil {
+		return []*llm.ClassifyResult{&single}, nil
+	}
+
+	return nil, llm.ErrInvalidJSON
+}

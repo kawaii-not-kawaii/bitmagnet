@@ -2,6 +2,7 @@ package classifierllm
 
 import (
 	"context"
+	"time"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
@@ -53,19 +54,28 @@ func New(p Params) Result {
 	}
 
 	defaultTimeout := regCfg.Timeout
+	batchSize := regCfg.BatchSize
+	flushAfter := regCfg.Interval
+	if flushAfter <= 0 {
+		flushAfter = 5 * time.Second
+	}
 	factory := func(name string, cfg llm.ProviderConfig) llm.Provider {
 		timeout := cfg.Timeout
 		if timeout <= 0 {
 			timeout = defaultTimeout
 		}
-		p.Logger.Infof("llm provider '%s' ready: %s", name, cfg.BaseURL)
-		return openai.New(openai.Config{
+		p.Logger.Infof("llm provider '%s' ready: %s (batch=%d)", name, cfg.BaseURL, batchSize)
+		base := openai.New(openai.Config{
 			Name:    name,
 			BaseURL: cfg.BaseURL,
 			Model:   cfg.Model,
 			APIKey:  cfg.APIKey,
 			Timeout: timeout,
 		})
+		if batchSize > 1 {
+			return openai.NewBatchClient(base, batchSize, flushAfter)
+		}
+		return base
 	}
 
 	registry := llm.NewRegistry(regCfg, factory, "")
