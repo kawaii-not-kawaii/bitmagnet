@@ -61,8 +61,9 @@ func RunBenchmark(ctx context.Context, p BenchmarkParams, count int) (*Benchmark
 		return nil, fmt.Errorf("dao: %w", err)
 	}
 
-	// Fetch torrents
+	// Fetch torrents (limited to count to avoid loading millions of rows)
 	torrentResults, err := d.Torrent.WithContext(ctx).
+		Limit(count).
 		Find()
 	if err != nil {
 		return nil, fmt.Errorf("query torrents: %w", err)
