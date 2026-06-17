@@ -5,18 +5,22 @@ import (
 
 	"github.com/bitmagnet-io/bitmagnet/internal/database/search"
 	"github.com/bitmagnet-io/bitmagnet/internal/lazy"
+	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 	"github.com/bitmagnet-io/bitmagnet/internal/tmdb"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
+
+
 type Params struct {
 	fx.In
-	Config     Config
-	TmdbConfig tmdb.Config
-	Search     lazy.Lazy[search.Search]
-	TmdbClient lazy.Lazy[tmdb.Client]
-	Logger     *zap.SugaredLogger
+	Config       Config
+	TmdbConfig   tmdb.Config
+	Search       lazy.Lazy[search.Search]
+	TmdbClient   lazy.Lazy[tmdb.Client]
+	LlmProviders map[string]llm.Provider
+	Logger       *zap.SugaredLogger
 }
 
 type Result struct {
@@ -43,7 +47,6 @@ func New(params Params) Result {
 		if verbose == true {
 			logger = params.Logger
 		}
-
 		return compiler{
 			options: []compilerOption{
 				compilerFeatures(defaultFeatures),
@@ -54,9 +57,10 @@ func New(params Params) Result {
 					search:    localSearch{s},
 					semaphore: make(chan struct{}, 1),
 				},
-				tmdbClient: tmdbClient,
-				_logger:    logger,
-				logger:     logger,
+				tmdbClient:   tmdbClient,
+				llmProviders: params.LlmProviders,
+				_logger:      logger,
+				logger:       logger,
 			},
 		}, nil
 	})

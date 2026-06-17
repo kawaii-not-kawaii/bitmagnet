@@ -1,0 +1,108 @@
+{
+  "workflow_version": "1.2.0",
+  "timestamps": {
+    "started": "2026-06-15T20:15:00Z",
+    "last_updated": "2026-06-15T20:25:00Z",
+    "completed": "2026-06-15T20:25:00Z"
+  },
+  "mode": "initial_scan",
+  "scan_level": "exhaustive",
+  "project_root": "/home/yun/bitmagnet",
+  "project_knowledge": "/home/yun/bitmagnet/docs",
+  "completed_steps": [
+    {
+      "step": "step_1",
+      "status": "completed",
+      "timestamp": "2026-06-15T20:15:00Z",
+      "summary": "Classified as multi-part project with 2 parts: backend (Go/GIN), webui (Angular 18)"
+    },
+    {
+      "step": "step_2",
+      "status": "completed",
+      "timestamp": "2026-06-15T20:16:00Z",
+      "summary": "Discovered existing docs: bitmagnet.io site, README, website"
+    },
+    {
+      "step": "step_3",
+      "status": "completed",
+      "timestamp": "2026-06-15T20:16:00Z",
+      "summary": "Tech stack analyzed: Go 1.23 + Gin + gqlgen backend, Angular 18 frontend"
+    },
+    {
+      "step": "step_4",
+      "status": "completed",
+      "timestamp": "2026-06-15T20:24:00Z",
+      "summary": "Exhaustive analysis complete: DHT crawler pipeline, classifier engine, processor, queue, all internal packages, GraphQL schema, Angular frontend"
+    },
+    {
+      "step": "step_5",
+      "status": "completed",
+      "timestamp": "2026-06-15T20:24:00Z",
+      "summary": "Source tree documented with annotated directory tree"
+    },
+    {
+      "step": "step_6",
+      "status": "completed",
+      "timestamp": "2026-06-15T20:24:00Z",
+      "summary": "Dev/deployment guides written: Taskfile commands, Docker, CI/CD pipeline"
+    },
+    {
+      "step": "step_8",
+      "status": "completed",
+      "timestamp": "2026-06-15T20:24:00Z",
+      "summary": "Architecture documentation written for both parts"
+    },
+    {
+      "step": "step_9",
+      "status": "completed",
+      "timestamp": "2026-06-15T20:25:00Z",
+      "summary": "Supporting docs: project-overview, development-guide, deployment-guide, source-tree-analysis, api-contracts, data-models"
+    },
+    {
+      "step": "step_10",
+      "status": "completed",
+      "timestamp": "2026-06-15T20:25:00Z",
+      "summary": "Master index generated: docs/index.md"
+    },
+    {
+      "step": "step_11",
+      "status": "completed",
+      "timestamp": "2026-06-15T20:25:00Z",
+      "summary": "Validation complete: 8 files generated, no incomplete markers"
+    },
+    {
+      "step": "step_12",
+      "status": "completed",
+      "timestamp": "2026-06-15T20:25:00Z",
+      "summary": "Workflow complete"
+    }
+  ],
+  "current_step": "completed",
+  "findings": {
+    "project_classification": "multi-part, 2 parts, Go + Angular"
+  },
+  "outputs_generated": [
+    "project-scan-report.json",
+    "project-overview.md",
+    "source-tree-analysis.md",
+    "architecture.md",
+    "api-contracts.md",
+    "data-models.md",
+    "development-guide.md",
+    "deployment-guide.md",
+    "index.md"
+  ],
+  "project_types": [
+    {
+      "part_id": "backend",
+      "project_type_id": "backend",
+      "display_name": "Backend Server"
+    },
+    {
+      "part_id": "webui",
+      "project_type_id": "web",
+      "display_name": "Web UI"
+    }
+  ],
+  "batches_completed": []
+}

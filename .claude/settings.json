@@ -1,0 +1,5 @@
+{
+  "env": {
+    "STORY_AUTOMATOR_RUNTIME_PROVIDER": "omp"
+  }
+}

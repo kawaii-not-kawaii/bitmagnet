@@ -1,0 +1,162 @@
+package classifier
+
+import (
+	"context"
+	"strings"
+
+	"github.com/bitmagnet-io/bitmagnet/internal/classifier/classification"
+	"github.com/bitmagnet-io/bitmagnet/internal/llm"
+	"github.com/bitmagnet-io/bitmagnet/internal/model"
+)
+
+const llmClassifyActionName = "llm_classify"
+
+type llmClassifyAction struct{}
+
+func (llmClassifyAction) name() string {
+	return llmClassifyActionName
+}
+
+var llmClassifyPayloadSpec = payloadLiteral[string]{
+	literal:     llmClassifyActionName,
+	description: "Classify a torrent using an LLM provider when normal classification fails",
+}
+
+func (llmClassifyAction) compileAction(ctx compilerContext) (action, error) {
+	if _, err := llmClassifyPayloadSpec.Unmarshal(ctx); err != nil {
+		return action{}, ctx.error(err)
+	}
+
+	path := ctx.path
+
+	return action{
+		run: func(ctx executionContext) (classification.Result, error) {
+			cl := ctx.result
+
+			// Only classify if content type is not yet determined
+			if cl.ContentType.Valid {
+				return cl, nil
+			}
+
+			// Get a provider from the dependencies
+			providers := ctx.llmProviders
+			if len(providers) == 0 {
+				ctx.logger.Warn("no llm providers configured, skipping llm classification")
+				return cl, classification.RuntimeError{
+					Cause: classification.ErrUnmatched,
+					Path:  path,
+				}
+			}
+
+			// Use first available provider
+			var provider llm.Provider
+			for _, p := range providers {
+				provider = p
+				break
+			}
+
+			// Build input from torrent
+			input := llm.ClassifyInput{
+				Name:         ctx.torrent.Name,
+				ContentTypes: buildContentTypeList(),
+			}
+
+			// Include file paths if available
+			if len(ctx.torrent.Files) > 0 {
+				files := make([]string, 0, min(len(ctx.torrent.Files), 20))
+				for i, f := range ctx.torrent.Files {
+					if i >= 20 {
+						break
+					}
+					files = append(files, f.Path)
+				}
+				input.Files = files
+			}
+
+			// Call LLM
+			result, err := provider.Classify(context.Background(), input)
+			if err != nil {
+				ctx.logger.Warnw("llm classification failed",
+					"provider", provider.Name(),
+					"error", err)
+				return cl, classification.RuntimeError{
+					Cause: classification.ErrUnmatched,
+					Path:  path,
+				}
+			}
+
+			// Apply result
+			cl = applyLLMResult(cl, result)
+			ctx.logger.Infow("llm classification",
+				"provider", provider.Name(),
+				"content_type", result.ContentType,
+				"title", result.Title)
+
+			return cl, nil
+		},
+	}, nil
+}
+
+func (llmClassifyAction) JSONSchema() JSONSchema {
+	return llmClassifyPayloadSpec.JSONSchema()
+}
+
+// applyLLMResult maps LLM output onto classification attributes.
+func applyLLMResult(cl classification.Result, r *llm.ClassifyResult) classification.Result {
+	if r.ContentType != "" {
+		cl.ContentType = model.NewNullContentType(r.ContentType)
+	}
+	if r.Title != "" {
+		cl.BaseTitle = model.NewNullString(r.Title)
+	}
+	if r.Year > 0 {
+		cl.Date = model.Date{Year: model.Year(r.Year)}
+	}
+	if r.Season > 0 && r.Episode > 0 {
+		if cl.Episodes == nil {
+			cl.Episodes = make(model.Episodes)
+		}
+		if cl.Episodes[r.Season] == nil {
+			cl.Episodes[r.Season] = make(map[int]struct{})
+		}
+		cl.Episodes[r.Season][r.Episode] = struct{}{}
+	}
+	if r.VideoResolution != "" {
+		cl.VideoResolution = model.NewNullVideoResolution(r.VideoResolution)
+	}
+	if r.VideoSource != "" {
+		cl.VideoSource = model.NewNullVideoSource(r.VideoSource)
+	}
+	if r.VideoCodec != "" {
+		cl.VideoCodec = model.NewNullVideoCodec(r.VideoCodec)
+	}
+	if r.ReleaseGroup != "" {
+		cl.ReleaseGroup = model.NewNullString(r.ReleaseGroup)
+	}
+	if len(r.Tags) > 0 {
+		if cl.Tags == nil {
+			cl.Tags = classification.NewTagAction()
+		}
+		if cl.Tags.Add == nil {
+			cl.Tags.Add = make(map[string]struct{})
+		}
+		for _, tag := range r.Tags {
+			cl.Tags.Add[tag] = struct{}{}
+		}
+	}
+	return cl
+}
+
+func buildContentTypeList() string {
+	return strings.Join([]string{
+		"movie", "tv_show", "music", "ebook", "comic",
+		"audiobook", "game", "software", "xxx",
+	}, ", ")
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
