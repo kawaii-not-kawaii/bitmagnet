@@ -9,8 +9,10 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/app/cmd/processcmd"
 	"github.com/bitmagnet-io/bitmagnet/internal/app/cmd/reprocesscmd"
 	"github.com/bitmagnet-io/bitmagnet/internal/app/cmd/workercmd"
+	"github.com/bitmagnet-io/bitmagnet/internal/app/cmd/llmbenchcmd"
 	"github.com/bitmagnet-io/bitmagnet/internal/blocking/blockingfx"
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier/classifierfx"
+	"github.com/bitmagnet-io/bitmagnet/internal/classifier/classifierllm"
 	"github.com/bitmagnet-io/bitmagnet/internal/client/clientfx"
 	"github.com/bitmagnet-io/bitmagnet/internal/config/configfx"
 	"github.com/bitmagnet-io/bitmagnet/internal/database/databasefx"
@@ -23,6 +25,7 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/logging/loggingfx"
 	"github.com/bitmagnet-io/bitmagnet/internal/metrics/metricsfx"
 	"github.com/bitmagnet-io/bitmagnet/internal/processor/processorfx"
+	"github.com/bitmagnet-io/bitmagnet/internal/processor/llm/llmqueuefx"
 	"github.com/bitmagnet-io/bitmagnet/internal/protocol/dht/dhtfx"
 	"github.com/bitmagnet-io/bitmagnet/internal/protocol/metainfo/metainfofx"
 	"github.com/bitmagnet-io/bitmagnet/internal/queue/queuefx"
@@ -41,6 +44,7 @@ func New() fx.Option {
 		"app",
 		blockingfx.New(),
 		classifierfx.New(),
+		classifierllm.New(),
 		configfx.New(),
 		dhtcrawlerfx.New(),
 		dhtfx.New(),
@@ -53,6 +57,7 @@ func New() fx.Option {
 		metainfofx.New(),
 		metricsfx.New(),
 		processorfx.New(),
+		llmqueuefx.NewFx(),
 		queuefx.New(),
 		telemetryfx.New(),
 		tmdbfx.New(),
@@ -67,6 +72,7 @@ func New() fx.Option {
 			hooks.New,
 			// cli commands:
 			classifiercmd.New,
+		llmbenchcmd.New,
 			configcmd.New,
 			reprocesscmd.New,
 			processcmd.New,

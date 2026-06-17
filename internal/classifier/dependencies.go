@@ -4,16 +4,17 @@ import (
 	"encoding/json"
 	"regexp"
 
+	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 	"github.com/bitmagnet-io/bitmagnet/internal/model"
 	"github.com/bitmagnet-io/bitmagnet/internal/tmdb"
-	"go.uber.org/zap"
 )
 
 type dependencies struct {
-	search     LocalSearch
-	tmdbClient tmdb.Client
-	_logger    *zap.SugaredLogger
-	logger		 *zap.SugaredLogger
+	search       LocalSearch
+	tmdbClient   tmdb.Client
+	llmProviders map[string]llm.Provider
+	_logger      *zap.SugaredLogger
+	logger       *zap.SugaredLogger
 }
 
 func (d *dependencies) CleanObj(o interface{}) map[string]any {
