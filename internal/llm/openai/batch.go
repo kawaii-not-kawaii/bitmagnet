@@ -11,6 +11,10 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 )
 
+// flushTimeout is the maximum wall-clock time a single batch HTTP call may take,
+// sized to cover the worst-case retry chain: (maxRetries+1) × per-request HTTP timeout.
+const flushTimeout = (maxRetries + 1) * defaultTimeout
+
 // BatchClient wraps a Provider and accumulates single Classify requests
 // into batch calls of up to batchSize, flushing on size or timer.
 type BatchClient struct {
@@ -21,6 +25,9 @@ type BatchClient struct {
 	mu      sync.Mutex
 	pending []pendingRequest
 	timer   *time.Timer
+	drained bool // set by Drain(); checked in Classify to reject post-shutdown enqueues
+
+	wg sync.WaitGroup // tracks in-flight flush() calls for graceful shutdown
 
 	lifecycleCtx    context.Context
 	lifecycleCancel context.CancelFunc
@@ -42,6 +49,7 @@ func NewBatchClient(provider llm.Provider, batchSize int, flushAfter time.Durati
 	if batchSize <= 1 {
 		return provider // no batching needed
 	}
+
 	ctx, cancel := context.WithCancel(context.Background())
 	bc := &BatchClient{
 		provider:        provider,
@@ -50,6 +58,7 @@ func NewBatchClient(provider llm.Provider, batchSize int, flushAfter time.Durati
 		lifecycleCtx:    ctx,
 		lifecycleCancel: cancel,
 	}
+
 	return bc
 }
 
@@ -65,6 +74,11 @@ func (bc *BatchClient) Classify(ctx context.Context, input llm.ClassifyInput) (*
 	req := pendingRequest{input: input, result: resultCh}
 
 	bc.mu.Lock()
+	if bc.drained {
+		bc.mu.Unlock()
+		return nil, fmt.Errorf("llm batch: shutting down")
+	}
+
 	bc.pending = append(bc.pending, req)
 
 	// Start timer on first pending item
@@ -76,7 +90,7 @@ func (bc *BatchClient) Classify(ctx context.Context, input llm.ClassifyInput) (*
 	bc.mu.Unlock()
 
 	if shouldFlush {
-		bc.flush()
+		bc.flush() //nolint:contextcheck // flush uses its own lifecycle context to serve multiple callers
 	}
 
 	select {
@@ -97,13 +111,19 @@ func (bc *BatchClient) flush() {
 		bc.mu.Unlock()
 		return
 	}
+
 	if bc.timer != nil {
 		bc.timer.Stop()
 		bc.timer = nil
 	}
+
 	batch := bc.pending
 	bc.pending = nil
+	// Add to WaitGroup while holding the lock so Drain()'s wg.Wait() cannot
+	// race past this point before the counter is incremented.
+	bc.wg.Add(1)
 	bc.mu.Unlock()
+	defer bc.wg.Done()
 
 	// Extract inputs
 	inputs := make([]llm.ClassifyInput, len(batch))
@@ -117,23 +137,30 @@ func (bc *BatchClient) flush() {
 		for _, r := range batch {
 			r.result <- batchResult{err: fmt.Errorf("llm: provider does not implement BatchProvider")}
 		}
+
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(bc.lifecycleCtx, 60*time.Second)
+	ctx, cancel := context.WithTimeout(bc.lifecycleCtx, flushTimeout)
 	defer cancel()
 
 	results, err := bp.BatchClassify(ctx, inputs)
 
 	// Distribute results
 	if err == nil && len(results) != len(batch) {
-		log.Printf("llm batch: expected %d results, got %d — filling short positions with ErrNoResult", len(batch), len(results))
+		log.Printf(
+			"llm batch: expected %d results, got %d — filling short positions with ErrNoResult",
+			len(batch),
+			len(results),
+		)
 	}
+
 	for i, r := range batch {
 		if err != nil {
 			r.result <- batchResult{err: err}
 			continue
 		}
+
 		if i < len(results) && results[i] != nil {
 			r.result <- batchResult{result: results[i]}
 		} else {
@@ -144,32 +171,29 @@ func (bc *BatchClient) flush() {
 
 // Drain stops accepting new requests, routes any pending callers to error, and
 // cancels the lifecycle context so in-flight HTTP requests are aborted.
-// Call this during application shutdown.
+// It blocks until all in-flight flush goroutines have returned.
+// Call this during application shutdown before the HTTP stack tears down.
 func (bc *BatchClient) Drain() {
 	bc.mu.Lock()
+
+	bc.drained = true
 	if bc.timer != nil {
 		bc.timer.Stop()
 		bc.timer = nil
 	}
+
 	batch := bc.pending
 	bc.pending = nil
 	bc.mu.Unlock()
 
+	// Cancel in-flight HTTP requests, then wait for flush goroutines to exit.
 	bc.lifecycleCancel()
 
 	for _, r := range batch {
 		r.result <- batchResult{err: fmt.Errorf("llm batch: shutting down")}
 	}
-}
 
-// BatchClassifyJSON sends multiple torrents in a single chat completion request.
-// This is the actual batch implementation that works with OpenAI-compatible endpoints
-// by constructing a prompt with multiple torrents and parsing the array response.
-type batchChatRequest struct {
-	Model       string        `json:"model"`
-	Messages    []chatMessage `json:"messages"`
-	Temperature float64       `json:"temperature"`
-	MaxTokens   int           `json:"max_tokens,omitempty"`
+	bc.wg.Wait()
 }
 
 // BatchClassifyJSONString builds a user message containing multiple torrents.
@@ -177,22 +201,31 @@ func BatchClassifyJSONString(inputs []llm.ClassifyInput) string {
 	var msg string
 	for i, input := range inputs {
 		msg += fmt.Sprintf("[%d] Name: %s\n", i+1, input.Name)
+
 		if len(input.Files) > 0 {
 			maxFiles := 5
 			if len(input.Files) < maxFiles {
 				maxFiles = len(input.Files)
 			}
+
 			msg += "    Files: "
-			for j := 0; j < maxFiles; j++ {
+
+			for j := range maxFiles {
 				if j > 0 {
 					msg += " | "
 				}
+
 				msg += input.Files[j]
 			}
+
 			msg += "\n"
 		}
 	}
-	msg += "\nReturn a JSON object: {\"results\": [{\"content_type\": \"...\", \"title\": \"...\", \"year\": 0}, ...]} with one entry per torrent in order."
+
+	msg += "\nReturn a JSON object: {\"results\":" +
+		" [{\"content_type\": \"...\", \"title\": \"...\", \"year\": 0}, ...]}" +
+		" with one entry per torrent in order."
+
 	return msg
 }
 
@@ -202,6 +235,7 @@ func ParseBatchResponse(content string) ([]*llm.ClassifyResult, error) {
 	var wrapper struct {
 		Results []*llm.ClassifyResult `json:"results"`
 	}
+
 	if err := json.Unmarshal([]byte(content), &wrapper); err == nil && len(wrapper.Results) > 0 {
 		return wrapper.Results, nil
 	}

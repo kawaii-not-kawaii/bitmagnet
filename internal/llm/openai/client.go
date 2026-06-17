@@ -44,6 +44,7 @@ func (c *Config) timeout() time.Duration {
 	if c.Timeout <= 0 {
 		return defaultTimeout
 	}
+
 	return c.Timeout
 }
 
@@ -72,10 +73,10 @@ type chatMessage struct {
 
 // chatRequest is the request body for /v1/chat/completions.
 type chatRequest struct {
-	Model       string         `json:"model"`
-	Messages    []chatMessage  `json:"messages"`
-	Temperature float64        `json:"temperature"`
-	MaxTokens   int            `json:"max_tokens,omitempty"`
+	Model          string          `json:"model"`
+	Messages       []chatMessage   `json:"messages"`
+	Temperature    float64         `json:"temperature"`
+	MaxTokens      int             `json:"max_tokens,omitempty"`
 	ResponseFormat *responseFormat `json:"response_format,omitempty"`
 }
 
@@ -83,23 +84,31 @@ type responseFormat struct {
 	Type string `json:"type"`
 }
 
+type chatResponseMessage struct {
+	Content string `json:"content"`
+}
+
+type chatResponseChoice struct {
+	Message      chatResponseMessage `json:"message"`
+	FinishReason string              `json:"finish_reason"`
+}
+
+type chatResponseUsage struct {
+	PromptTokens     int `json:"prompt_tokens"`
+	CompletionTokens int `json:"completion_tokens"`
+	TotalTokens      int `json:"total_tokens"`
+}
+
+type chatResponseError struct {
+	Message string `json:"message"`
+	Type    string `json:"type"`
+}
+
 // chatResponse is the response body from /v1/chat/completions.
 type chatResponse struct {
-	Choices []struct {
-		Message struct {
-			Content string `json:"content"`
-		} `json:"message"`
-		FinishReason string `json:"finish_reason"`
-	} `json:"choices"`
-	Usage struct {
-		PromptTokens     int `json:"prompt_tokens"`
-		CompletionTokens int `json:"completion_tokens"`
-		TotalTokens      int `json:"total_tokens"`
-	} `json:"usage"`
-	Error *struct {
-		Message string `json:"message"`
-		Type    string `json:"type"`
-	} `json:"error,omitempty"`
+	Choices []chatResponseChoice `json:"choices"`
+	Usage   chatResponseUsage    `json:"usage"`
+	Error   *chatResponseError   `json:"error,omitempty"`
 }
 
 func (c *client) Classify(ctx context.Context, input llm.ClassifyInput) (*llm.ClassifyResult, error) {
@@ -123,32 +132,41 @@ func (c *client) BatchClassify(ctx context.Context, inputs []llm.ClassifyInput) 
 	if len(inputs) == 0 {
 		return nil, nil
 	}
+
 	if len(inputs) == 1 {
 		r, err := c.Classify(ctx, inputs[0])
 		if err != nil {
 			return nil, err
 		}
+
 		return []*llm.ClassifyResult{r}, nil
 	}
 
 	// Build batch prompt — merge content types from all inputs to avoid using only inputs[0].
 	seen := make(map[string]struct{})
+
 	var mergedTypes []string
+
 	for _, inp := range inputs {
 		for _, ct := range strings.Split(inp.ContentTypes, ", ") {
 			ct = strings.TrimSpace(ct)
 			if ct != "" {
 				if _, ok := seen[ct]; !ok {
 					seen[ct] = struct{}{}
+
 					mergedTypes = append(mergedTypes, ct)
 				}
 			}
 		}
 	}
+
 	mergedInput := llm.ClassifyInput{ContentTypes: strings.Join(mergedTypes, ", ")}
 
 	userContent := BatchClassifyJSONString(inputs)
-	systemContent := c.buildSystemMessage(mergedInput) + "\n\nYou are classifying multiple torrents at once. Return a JSON object with a \"results\" array containing one classification per torrent, in the same order."
+	batchSuffix := "\n\nYou are classifying multiple torrents at once." +
+		" Return a JSON object with a \"results\" array" +
+		" containing one classification per torrent, in the same order."
+	systemContent := c.buildSystemMessage(mergedInput) + batchSuffix
 
 	messages := []chatMessage{
 		{Role: "system", Content: systemContent},
@@ -156,10 +174,10 @@ func (c *client) BatchClassify(ctx context.Context, inputs []llm.ClassifyInput) 
 	}
 
 	req := chatRequest{
-		Model:          c.config.Model,
-		Messages:       messages,
-		Temperature:    0.1,
-		MaxTokens:      256 * len(inputs),
+		Model:       c.config.Model,
+		Messages:    messages,
+		Temperature: 0.1,
+		MaxTokens:   256 * len(inputs),
 		// No response_format — allow free JSON array output
 	}
 
@@ -184,39 +202,39 @@ func (c *client) buildRequest(input llm.ClassifyInput) ([]byte, error) {
 	}
 
 	req := chatRequest{
-		Model:       c.config.Model,
-		Messages:    messages,
-		Temperature: 0.1,
-		MaxTokens:   c.estimateMaxTokens(input),
+		Model:          c.config.Model,
+		Messages:       messages,
+		Temperature:    0.1,
+		MaxTokens:      c.estimateMaxTokens(input),
 		ResponseFormat: &responseFormat{Type: "json_object"},
 	}
 
 	return json.Marshal(req)
 }
 
+const defaultSystemPromptFmt = "You are a BitTorrent content classifier." +
+	" Given a torrent name and optional file list, determine the content type and extract metadata." +
+	"\n\nAvailable content types: %s" +
+	"\n\nReturn valid JSON with fields: content_type, title, year, season, episode," +
+	" language, video_resolution, video_source, video_codec, release_group, tags." +
+	"\n\nRules:" +
+	"\n- Use filename structure and file list to determine content type" +
+	"\n- Look for S01E01 patterns for tv_show" +
+	"\n- Look for years (1900-2099) to identify movies" +
+	"\n- Music releases typically have .mp3/.flac files" +
+	"\n- Return ONLY valid JSON"
+
 func (c *client) buildSystemMessage(input llm.ClassifyInput) string {
 	if c.config.SystemPrompt != "" {
-		s := c.config.SystemPrompt
-		s = strings.ReplaceAll(s, "{{.ContentTypes}}", input.ContentTypes)
-		return s
+		return strings.ReplaceAll(c.config.SystemPrompt, "{{.ContentTypes}}", input.ContentTypes)
 	}
-	// Default system prompt.
-	return fmt.Sprintf(`You are a BitTorrent content classifier. Given a torrent name and optional file list, determine the content type and extract metadata.
 
-Available content types: %s
-
-Return valid JSON with fields: content_type, title, year, season, episode, language, video_resolution, video_source, video_codec, release_group, tags.
-
-Rules:
-- Use filename structure and file list to determine content type
-- Look for S01E01 patterns for tv_show
-- Look for years (1900-2099) to identify movies
-- Music releases typically have .mp3/.flac files
-- Return ONLY valid JSON`, input.ContentTypes)
+	return fmt.Sprintf(defaultSystemPromptFmt, input.ContentTypes)
 }
 
-func (c *client) buildUserMessage(input llm.ClassifyInput) string {
+func (*client) buildUserMessage(input llm.ClassifyInput) string {
 	var b strings.Builder
+
 	b.WriteString("Name: ")
 	b.WriteString(input.Name)
 	b.WriteByte('\n')
@@ -226,6 +244,7 @@ func (c *client) buildUserMessage(input llm.ClassifyInput) string {
 			b.WriteString(fmt.Sprintf("... and %d more files\n", len(input.Files)-20))
 			break
 		}
+
 		b.WriteString("File: ")
 		b.WriteString(f)
 		b.WriteByte('\n')
@@ -234,7 +253,7 @@ func (c *client) buildUserMessage(input llm.ClassifyInput) string {
 	return b.String()
 }
 
-func (c *client) estimateMaxTokens(input llm.ClassifyInput) int {
+func (*client) estimateMaxTokens(input llm.ClassifyInput) int {
 	// Rough estimate: 256 tokens for output is typically enough for a single classification result.
 	_ = input
 	return 256
@@ -245,13 +264,16 @@ func (c *client) doRequest(ctx context.Context, reqBody []byte) (*llm.ClassifyRe
 	if err != nil {
 		return nil, err
 	}
+
 	var result llm.ClassifyResult
 	if err := json.Unmarshal([]byte(content), &result); err != nil {
-		return nil, fmt.Errorf("%w: %s", llm.ErrInvalidJSON, err)
+		return nil, fmt.Errorf("%w: %w", llm.ErrInvalidJSON, err)
 	}
+
 	if result.ContentType == "" {
 		return nil, llm.ErrNoResult
 	}
+
 	return &result, nil
 }
 
@@ -261,6 +283,7 @@ func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, erro
 	url := strings.TrimRight(c.config.BaseURL, "/") + "/v1/chat/completions"
 
 	var lastErr error
+
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		if attempt > 0 {
 			backoff := time.Duration(100*math.Pow(2, float64(attempt-1))) * time.Millisecond
@@ -275,7 +298,9 @@ func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, erro
 		if err != nil {
 			return "", fmt.Errorf("openai: create request: %w", err)
 		}
+
 		httpReq.Header.Set("Content-Type", "application/json")
+
 		if c.config.APIKey != "" {
 			httpReq.Header.Set("Authorization", "Bearer "+c.config.APIKey)
 		}
@@ -288,6 +313,7 @@ func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, erro
 
 		body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
 		resp.Body.Close()
+
 		if err != nil {
 			lastErr = fmt.Errorf("openai: read response: %w", err)
 			continue
@@ -298,6 +324,7 @@ func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, erro
 			if resp.StatusCode >= 400 && resp.StatusCode < 500 {
 				return "", lastErr
 			}
+
 			continue
 		}
 
@@ -308,15 +335,20 @@ func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, erro
 		}
 
 		if chatResp.Error != nil {
-			if chatResp.Error.Message != "" {
-				lastErr = fmt.Errorf("openai: API error: %s (%s)", chatResp.Error.Message, chatResp.Error.Type)
-				return "", lastErr // identifiable permanent error, no point retrying
+			if chatResp.Error.Message != "" || chatResp.Error.Type != "" {
+				// At least one field is set — identifiable error; retrying won't help.
+				msg := chatResp.Error.Message
+				if msg == "" {
+					msg = "(no message)"
+				}
+
+				lastErr = fmt.Errorf("openai: API error: %s (type=%s)", msg, chatResp.Error.Type)
+
+				return "", lastErr
 			}
-			errType := chatResp.Error.Type
-			if errType == "" {
-				errType = "unknown"
-			}
-			lastErr = fmt.Errorf("openai: API error: empty message (type=%s)", errType)
+			// Both fields empty — ambiguous transient condition; retry.
+			lastErr = fmt.Errorf("openai: API error: empty error object")
+
 			continue
 		}
 

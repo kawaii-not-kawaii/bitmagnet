@@ -3,14 +3,15 @@ package llmqueue
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier/classification"
 	"github.com/bitmagnet-io/bitmagnet/internal/database/dao"
 	"github.com/bitmagnet-io/bitmagnet/internal/lazy"
-	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 	"github.com/bitmagnet-io/bitmagnet/internal/model"
+	"github.com/bitmagnet-io/bitmagnet/internal/protocol"
 	"github.com/bitmagnet-io/bitmagnet/internal/queue/handler"
 	"go.uber.org/fx"
 )
@@ -23,9 +24,9 @@ type MessageParams struct {
 
 type Params struct {
 	fx.In
-	Classifier  lazy.Lazy[classifier.Runner]
-	Dao         lazy.Lazy[*dao.Query]
-	Logger      interface{ Infof(string, ...interface{}) }
+	Classifier lazy.Lazy[classifier.Runner]
+	Dao        lazy.Lazy[*dao.Query]
+	Logger     interface{ Infof(string, ...interface{}) }
 }
 
 type Result struct {
@@ -64,21 +65,23 @@ func New(p Params) Result {
 
 func processBatch(ctx context.Context, runner classifier.Runner, d *dao.Query, msg *MessageParams) error {
 	for _, hash := range msg.InfoHashes {
-		infoHash, err := model.NewHash20FromHex(hash)
+		infoHash, err := protocol.ParseID(hash)
 		if err != nil {
 			continue
 		}
 
-		torrent, err := d.Torrent.GetByInfoHash(ctx, infoHash)
+		torrent, err := d.Torrent.WithContext(ctx).Where(d.Torrent.InfoHash.Eq(infoHash)).First()
 		if err != nil {
 			continue
 		}
 
 		result, err := runner.Run(ctx, "default", nil, *torrent)
 		if err != nil {
-			if classification.IsRuntimeError(err) {
+			var re classification.RuntimeError
+			if errors.As(err, &re) {
 				continue
 			}
+
 			continue
 		}
 
@@ -88,9 +91,6 @@ func processBatch(ctx context.Context, runner classifier.Runner, d *dao.Query, m
 		}
 		if result.ContentType.Valid {
 			content.ContentType = model.NewNullContentType(result.ContentType.ContentType)
-		}
-		if result.BaseTitle.Valid {
-			// Map to torrent content title
 		}
 
 		// TODO: implement proper persistence matching the existing processor pattern

@@ -24,13 +24,13 @@ type BenchmarkParams struct {
 }
 
 type BenchmarkResult struct {
-	Provider      string        `json:"provider"`
-	TorrentCount  int           `json:"torrent_count"`
-	TotalDuration time.Duration `json:"total_duration"`
-	AvgPerTorrent time.Duration `json:"avg_per_torrent"`
-	Throughput    float64       `json:"throughput_per_second"`
-	Successes     int           `json:"successes"`
-	Failures      int           `json:"failures"`
+	Provider        string           `json:"provider"`
+	TorrentCount    int              `json:"torrent_count"`
+	TotalDuration   time.Duration    `json:"total_duration"`
+	AvgPerTorrent   time.Duration    `json:"avg_per_torrent"`
+	Throughput      float64          `json:"throughput_per_second"`
+	Successes       int              `json:"successes"`
+	Failures        int              `json:"failures"`
 	Classifications []ClassifyRecord `json:"classifications"`
 }
 
@@ -49,10 +49,13 @@ func RunBenchmark(ctx context.Context, p BenchmarkParams, count int) (*Benchmark
 
 	// Pick first provider
 	var provider llm.Provider
+
 	var providerName string
+
 	for name, prov := range p.Providers {
 		provider = prov
 		providerName = name
+
 		break
 	}
 
@@ -70,10 +73,12 @@ func RunBenchmark(ctx context.Context, p BenchmarkParams, count int) (*Benchmark
 	}
 	// Take first N
 	torrents := make([]model.Torrent, 0, count)
+
 	for i, t := range torrentResults {
 		if i >= count {
 			break
 		}
+
 		torrents = append(torrents, *t)
 	}
 
@@ -138,34 +143,38 @@ func RunBenchmark(ctx context.Context, p BenchmarkParams, count int) (*Benchmark
 func PrintJSON(r *BenchmarkResult) error {
 	enc := json.NewEncoder(os.Stdout)
 	enc.SetIndent("", "  ")
+
 	return enc.Encode(r)
 }
 
 func PrintSummary(r *BenchmarkResult) {
-	fmt.Printf("\n=== Benchmark Results ===\n")
-	fmt.Printf("Provider:        %s\n", r.Provider)
-	fmt.Printf("Torrents:        %d\n", r.TorrentCount)
-	fmt.Printf("Successes:       %d\n", r.Successes)
-	fmt.Printf("Failures:        %d\n", r.Failures)
-	fmt.Printf("Total Duration:  %s\n", r.TotalDuration.Round(time.Millisecond))
-	fmt.Printf("Avg/Torrent:     %s\n", r.AvgPerTorrent.Round(time.Millisecond))
-	fmt.Printf("Throughput:      %.2f torrents/sec\n", r.Throughput)
-	fmt.Printf("\nClassification Distribution:\n")
+	fmt.Fprintf(os.Stdout, "\n=== Benchmark Results ===\n")
+	fmt.Fprintf(os.Stdout, "Provider:        %s\n", r.Provider)
+	fmt.Fprintf(os.Stdout, "Torrents:        %d\n", r.TorrentCount)
+	fmt.Fprintf(os.Stdout, "Successes:       %d\n", r.Successes)
+	fmt.Fprintf(os.Stdout, "Failures:        %d\n", r.Failures)
+	fmt.Fprintf(os.Stdout, "Total Duration:  %s\n", r.TotalDuration.Round(time.Millisecond))
+	fmt.Fprintf(os.Stdout, "Avg/Torrent:     %s\n", r.AvgPerTorrent.Round(time.Millisecond))
+	fmt.Fprintf(os.Stdout, "Throughput:      %.2f torrents/sec\n", r.Throughput)
+	fmt.Fprintf(os.Stdout, "\nClassification Distribution:\n")
 
 	distribution := make(map[string]int)
+
 	for _, c := range r.Classifications {
 		if c.ContentType != "" {
 			distribution[c.ContentType]++
 		}
 	}
+
 	for ct, count := range distribution {
-		fmt.Printf("  %s: %d\n", ct, count)
+		fmt.Fprintf(os.Stdout, "  %s: %d\n", ct, count)
 	}
 }
 
-func truncate(s string, max int) string {
-	if len(s) <= max {
+func truncate(s string, maxLen int) string {
+	if len(s) <= maxLen {
 		return s
 	}
-	return s[:max-3] + "..."
+
+	return s[:maxLen-3] + "..."
 }

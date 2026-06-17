@@ -79,3 +79,10 @@ type BatchProvider interface {
 	// partially-accepted batch handling.
 	BatchClassify(ctx context.Context, inputs []ClassifyInput) ([]*ClassifyResult, error)
 }
+
+// Drainer is an optional interface for providers that hold background resources
+// (timers, goroutines, connection pools) that must be flushed before shutdown.
+// Call Drain() during OnStop before the HTTP stack tears down.
+type Drainer interface {
+	Drain()
+}

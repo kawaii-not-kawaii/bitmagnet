@@ -13,17 +13,19 @@ type fxParams struct {
 	Dao        lazy.Lazy[*dao.Query]
 }
 
-type fxResult struct {
+// FxResult is the fx-provided output type for the LLM queue handler.
+type FxResult struct {
 	fx.Out
 	Handler lazy.Lazy[Handler] `group:"queue_handlers"`
 }
 
+// Handler is the interface for a named queue worker.
 type Handler interface {
 	Name() string
 }
 
-func NewFx(p fxParams) fxResult {
-	return fxResult{
+func NewFx(p fxParams) FxResult {
+	return FxResult{
 		Handler: lazy.New(func() (Handler, error) {
 			_, err := p.Classifier.Get()
 			if err != nil {

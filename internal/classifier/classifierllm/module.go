@@ -35,7 +35,12 @@ func New(p Params) Result {
 		name = "default"
 	}
 
-	p.Logger.Infof("llm provider config: name=%s base_url=%s model=%s", name, cfg.ProviderBaseURL, cfg.ProviderModel)
+	p.Logger.Infof(
+		"llm provider config: name=%s base_url=%s model=%s",
+		name,
+		cfg.ProviderBaseURL,
+		cfg.ProviderModel,
+	)
 
 	regCfg := llm.RegistryConfig{
 		Providers: map[string]llm.ProviderConfig{
@@ -55,16 +60,20 @@ func New(p Params) Result {
 
 	defaultTimeout := regCfg.Timeout
 	batchSize := regCfg.BatchSize
+
 	flushAfter := regCfg.Interval
 	if flushAfter <= 0 {
 		flushAfter = 5 * time.Second
 	}
+
 	factory := func(name string, cfg llm.ProviderConfig) llm.Provider {
 		timeout := cfg.Timeout
 		if timeout <= 0 {
 			timeout = defaultTimeout
 		}
+
 		p.Logger.Infof("llm provider '%s' ready: %s (batch=%d)", name, cfg.BaseURL, batchSize)
+
 		base := openai.New(openai.Config{
 			Name:    name,
 			BaseURL: cfg.BaseURL,
@@ -75,6 +84,7 @@ func New(p Params) Result {
 		if batchSize > 1 {
 			return openai.NewBatchClient(base, batchSize, flushAfter)
 		}
+
 		return base
 	}
 
@@ -84,7 +94,7 @@ func New(p Params) Result {
 	p.Lifecycle.Append(fx.Hook{
 		OnStop: func(_ context.Context) error {
 			for _, prov := range providers {
-				if d, ok := prov.(interface{ Drain() }); ok {
+				if d, ok := prov.(llm.Drainer); ok {
 					d.Drain()
 				}
 			}

@@ -6,10 +6,10 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/app/cli/hooks"
 	"github.com/bitmagnet-io/bitmagnet/internal/app/cmd/classifiercmd"
 	"github.com/bitmagnet-io/bitmagnet/internal/app/cmd/configcmd"
+	"github.com/bitmagnet-io/bitmagnet/internal/app/cmd/llmbenchcmd"
 	"github.com/bitmagnet-io/bitmagnet/internal/app/cmd/processcmd"
 	"github.com/bitmagnet-io/bitmagnet/internal/app/cmd/reprocesscmd"
 	"github.com/bitmagnet-io/bitmagnet/internal/app/cmd/workercmd"
-	"github.com/bitmagnet-io/bitmagnet/internal/app/cmd/llmbenchcmd"
 	"github.com/bitmagnet-io/bitmagnet/internal/blocking/blockingfx"
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier/classifierfx"
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier/classifierllm"
@@ -70,7 +70,7 @@ func New() fx.Option {
 			hooks.New,
 			// cli commands:
 			classifiercmd.New,
-		llmbenchcmd.New,
+			llmbenchcmd.New,
 			configcmd.New,
 			reprocesscmd.New,
 			processcmd.New,
