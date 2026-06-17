@@ -61,9 +61,9 @@ func RunBenchmark(ctx context.Context, p BenchmarkParams, count int) (*Benchmark
 		return nil, fmt.Errorf("dao: %w", err)
 	}
 
-	// Fetch unknown torrents
+	// Fetch unknown torrents using raw SQL
 	var torrents []model.Torrent
-	err = d.Torrent.WithContext(ctx).
+	err = d.DB().WithContext(ctx).
 		Where("info_hash IN (SELECT info_hash FROM torrent_contents WHERE content_type IS NULL LIMIT ?)", count).
 		Limit(count).
 		Find(&torrents).Error
