@@ -37,6 +37,7 @@ func New(p Params) Result {
 		Timeout:    p.Config.Llm.Timeout,
 	}
 	for name, pCfg := range p.Config.Llm.Providers {
+		p.Logger.Infof("llm provider config: name=%s base_url=%s model=%s", name, pCfg.BaseURL, pCfg.Model)
 		regCfg.Providers[name] = llm.ProviderConfig{
 			BaseURL:      pCfg.BaseURL,
 			Model:        pCfg.Model,
