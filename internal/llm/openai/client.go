@@ -177,7 +177,7 @@ func (c *client) BatchClassify(ctx context.Context, inputs []llm.ClassifyInput) 
 }
 
 func (c *client) buildRequest(input llm.ClassifyInput) ([]byte, error) {
-	userContent := c.buildUserMessage(input, false)
+	userContent := c.buildUserMessage(input)
 	messages := []chatMessage{
 		{Role: "system", Content: c.buildSystemMessage(input)},
 		{Role: "user", Content: userContent},
@@ -215,7 +215,7 @@ Rules:
 - Return ONLY valid JSON`, input.ContentTypes)
 }
 
-func (c *client) buildUserMessage(input llm.ClassifyInput, batchMode bool) string {
+func (c *client) buildUserMessage(input llm.ClassifyInput) string {
 	var b strings.Builder
 	b.WriteString("Name: ")
 	b.WriteString(input.Name)
@@ -307,8 +307,16 @@ func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, erro
 			continue
 		}
 
-		if chatResp.Error != nil && chatResp.Error.Message != "" {
-			lastErr = fmt.Errorf("openai: API error: %s (%s)", chatResp.Error.Message, chatResp.Error.Type)
+		if chatResp.Error != nil {
+			if chatResp.Error.Message != "" {
+				lastErr = fmt.Errorf("openai: API error: %s (%s)", chatResp.Error.Message, chatResp.Error.Type)
+				return "", lastErr // identifiable permanent error, no point retrying
+			}
+			errType := chatResp.Error.Type
+			if errType == "" {
+				errType = "unknown"
+			}
+			lastErr = fmt.Errorf("openai: API error: empty message (type=%s)", errType)
 			continue
 		}
 

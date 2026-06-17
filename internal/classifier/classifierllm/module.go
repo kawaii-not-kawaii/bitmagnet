@@ -1,6 +1,7 @@
 package classifierllm
 
 import (
+	"context"
 	"time"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
@@ -79,6 +80,17 @@ func New(p Params) Result {
 
 	registry := llm.NewRegistry(regCfg, factory, "")
 	providers := registry.All()
+
+	p.Lifecycle.Append(fx.Hook{
+		OnStop: func(_ context.Context) error {
+			for _, prov := range providers {
+				if d, ok := prov.(interface{ Drain() }); ok {
+					d.Drain()
+				}
+			}
+			return nil
+		},
+	})
 
 	return Result{
 		Registry:     registry,

@@ -18,9 +18,12 @@ type BatchClient struct {
 	batchSize  int
 	flushAfter time.Duration
 
-	mu     sync.Mutex
+	mu      sync.Mutex
 	pending []pendingRequest
-	timer  *time.Timer
+	timer   *time.Timer
+
+	lifecycleCtx    context.Context
+	lifecycleCancel context.CancelFunc
 }
 
 type pendingRequest struct {
@@ -39,10 +42,13 @@ func NewBatchClient(provider llm.Provider, batchSize int, flushAfter time.Durati
 	if batchSize <= 1 {
 		return provider // no batching needed
 	}
+	ctx, cancel := context.WithCancel(context.Background())
 	bc := &BatchClient{
-		provider:   provider,
-		batchSize:  batchSize,
-		flushAfter: flushAfter,
+		provider:        provider,
+		batchSize:       batchSize,
+		flushAfter:      flushAfter,
+		lifecycleCtx:    ctx,
+		lifecycleCancel: cancel,
 	}
 	return bc
 }
@@ -106,10 +112,18 @@ func (bc *BatchClient) flush() {
 	}
 
 	// Call batch classify
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	bp, ok := bc.provider.(llm.BatchProvider)
+	if !ok {
+		for _, r := range batch {
+			r.result <- batchResult{err: fmt.Errorf("llm: provider does not implement BatchProvider")}
+		}
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(bc.lifecycleCtx, 60*time.Second)
 	defer cancel()
 
-	results, err := bc.provider.(llm.BatchProvider).BatchClassify(ctx, inputs)
+	results, err := bp.BatchClassify(ctx, inputs)
 
 	// Distribute results
 	if err == nil && len(results) != len(batch) {
@@ -125,6 +139,26 @@ func (bc *BatchClient) flush() {
 		} else {
 			r.result <- batchResult{err: llm.ErrNoResult}
 		}
+	}
+}
+
+// Drain stops accepting new requests, routes any pending callers to error, and
+// cancels the lifecycle context so in-flight HTTP requests are aborted.
+// Call this during application shutdown.
+func (bc *BatchClient) Drain() {
+	bc.mu.Lock()
+	if bc.timer != nil {
+		bc.timer.Stop()
+		bc.timer = nil
+	}
+	batch := bc.pending
+	bc.pending = nil
+	bc.mu.Unlock()
+
+	bc.lifecycleCancel()
+
+	for _, r := range batch {
+		r.result <- batchResult{err: fmt.Errorf("llm batch: shutting down")}
 	}
 }
 

@@ -260,7 +260,7 @@ func TestUserMessage_IncludesFiles(t *testing.T) {
 		Name:  "Test.Name.2024",
 		Files: []string{"file1.mkv", "folder/file2.nfo"},
 	}
-	msg := c.buildUserMessage(input, false)
+	msg := c.buildUserMessage(input)
 	if !strings.Contains(msg, "file1.mkv") {
 		t.Errorf("expected file1.mkv in message")
 	}
@@ -277,9 +277,9 @@ func TestUserMessage_FileLimit(t *testing.T) {
 		files = append(files, fmt.Sprintf("file%d.mkv", i))
 	}
 	input := llm.ClassifyInput{Name: "Test", Files: files}
-	msg := c.buildUserMessage(input, false)
-	if strings.Count(msg, "File: ") > 25 {
-		t.Errorf("too many files in message (expected ~21)")
+	msg := c.buildUserMessage(input)
+	if strings.Count(msg, "File: ") > 20 {
+		t.Errorf("too many files in message: got %d, want ≤20", strings.Count(msg, "File: "))
 	}
 }
 
