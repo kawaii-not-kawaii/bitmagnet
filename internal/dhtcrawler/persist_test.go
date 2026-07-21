@@ -3,12 +3,11 @@ package dhtcrawler
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-
 	"github.com/bitmagnet-io/bitmagnet/internal/model"
 	"github.com/bitmagnet-io/bitmagnet/internal/protocol"
 	"github.com/bitmagnet-io/bitmagnet/internal/protocol/metainfo"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCreateTorrentModelSkipsPaddingFiles(t *testing.T) {
@@ -51,6 +50,7 @@ func TestCreateTorrentModelSkipsPaddingFiles(t *testing.T) {
 	if assert.True(t, torrent.FilesCount.Valid) {
 		assert.Equal(t, uint(2), torrent.FilesCount.Uint)
 	}
+
 	assert.Equal(t, model.FilesStatusMulti, torrent.FilesStatus)
 }
 
@@ -84,9 +84,11 @@ func TestCreateTorrentModelCountsNonPaddingFilesPastThreshold(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, model.FilesStatusOverThreshold, torrent.FilesStatus)
+
 	if assert.True(t, torrent.FilesCount.Valid) {
 		assert.Equal(t, uint(2), torrent.FilesCount.Uint)
 	}
+
 	require.Len(t, torrent.Files, 1)
 	assert.Equal(t, uint(1), torrent.Files[0].Index)
 }

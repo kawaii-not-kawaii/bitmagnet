@@ -235,7 +235,7 @@ func isPaddingFile(file metainfo.FileInfo) bool {
 		}
 	}
 
-	for i := 0; i < len(pathSegments)-1; i++ {
+	for i := range len(pathSegments) - 1 {
 		if pathSegments[i] != ".pad" {
 			continue
 		}

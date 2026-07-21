@@ -23,6 +23,7 @@ func rangeToken(runes string, requirePrefix bool, startName, dashEndName, commaE
 			rex.Chars.Whitespace().Repeat().ZeroOrOne(),
 		).Repeat().ZeroOrOne()
 	}
+
 	return rex.Group.Define(
 		rex.Group.Define(rex.Chars.Digits().Repeat().Between(1, 2)).WithName(startName),
 		rex.Group.Composite(
@@ -107,12 +108,14 @@ var episodesRegex = rex.New(
 
 func namedMatch(re *regexp.Regexp, match []string, name string) string {
 	result := ""
+
 	for i, n := range re.SubexpNames() {
 		if n == name && i < len(match) && match[i] != "" {
 			result = match[i]
 			break
 		}
 	}
+
 	return result
 }
 
@@ -145,6 +148,7 @@ func EpisodesMatchToEpisodes(re *regexp.Regexp, match []string) Episodes {
 			case nm("seasonCommaEnd") != "":
 				// a list of seasons - find the parent range group containing commas
 				var seasonRange string
+
 				for i, n := range re.SubexpNames() {
 					if n == "seasonStart" && i < len(match) {
 						for j := i - 1; j >= 0; j-- {
@@ -153,9 +157,11 @@ func EpisodesMatchToEpisodes(re *regexp.Regexp, match []string) Episodes {
 								break
 							}
 						}
+
 						break
 					}
 				}
+
 				includedSeasons := strings.Split(seasonRange, ",")
 				for _, season := range includedSeasons {
 					season = strings.TrimSpace(season)
@@ -181,6 +187,7 @@ func EpisodesMatchToEpisodes(re *regexp.Regexp, match []string) Episodes {
 			case nm("episodeCommaEnd") != "":
 				// a list of episodes - find the parent range group containing commas
 				var episodeRange string
+
 				for i, n := range re.SubexpNames() {
 					if n == "episodeStart" && i < len(match) {
 						for j := i - 1; j >= 0; j-- {
@@ -189,9 +196,11 @@ func EpisodesMatchToEpisodes(re *regexp.Regexp, match []string) Episodes {
 								break
 							}
 						}
+
 						break
 					}
 				}
+
 				includedEpisodes := strings.Split(episodeRange, ",")
 				for _, episode := range includedEpisodes {
 					episode = strings.TrimSpace(episode)

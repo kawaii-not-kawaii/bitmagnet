@@ -42,9 +42,11 @@ func New(params Params) Result {
 
 		logger := zap.NewNop().Sugar()
 		verbose := params.Config.Verbose
-		if verbose == true {
+
+		if verbose {
 			logger = params.Logger
 		}
+
 		return compiler{
 			options: []compilerOption{
 				compilerFeatures(defaultFeatures),

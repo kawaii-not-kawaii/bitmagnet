@@ -49,12 +49,14 @@ func IsSensitiveFieldName(name string) bool {
 	if name == "" {
 		return false
 	}
+
 	lower := strings.ToLower(name)
 	for _, s := range sensitiveFieldNames {
 		if strings.Contains(lower, s) {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -75,14 +77,17 @@ func Redact(v any) any {
 	if v == nil {
 		return nil
 	}
+
 	rv := reflect.ValueOf(v)
 	for rv.Kind() == reflect.Ptr && !rv.IsNil() {
 		rv = rv.Elem()
 	}
+
 	if rv.Kind() == reflect.Ptr {
 		// nil pointer of some type — emit null
 		return nil
 	}
+
 	return redactValue(rv)
 }
 
@@ -90,16 +95,19 @@ func redactValue(rv reflect.Value) any {
 	if !rv.IsValid() {
 		return nil
 	}
+
 	switch rv.Kind() {
 	case reflect.Ptr:
 		if rv.IsNil() {
 			return nil
 		}
+
 		return redactValue(rv.Elem())
 	case reflect.Interface:
 		if rv.IsNil() {
 			return nil
 		}
+
 		return redactValue(rv.Elem())
 	case reflect.Struct:
 		return redactStruct(rv)
@@ -124,19 +132,23 @@ func redactValue(rv reflect.Value) any {
 func redactStruct(rv reflect.Value) map[string]any {
 	t := rv.Type()
 	out := make(map[string]any, t.NumField())
+
 	for i := range t.NumField() {
 		sf := t.Field(i)
 		if sf.PkgPath != "" {
 			// unexported field — skip (would panic on Interface())
 			continue
 		}
+
 		name := jsonName(sf)
 		if IsSensitiveFieldName(name) {
 			out[name] = RedactedValuePlaceholder
 			continue
 		}
+
 		out[name] = redactValue(rv.Field(i))
 	}
+
 	return out
 }
 
@@ -149,20 +161,24 @@ func jsonName(sf reflect.StructField) string {
 		if comma := strings.Index(tag, ","); comma >= 0 {
 			tag = tag[:comma]
 		}
+
 		if tag == "-" {
 			// "-" means "do not serialize"; keep the Go name so the field is
 			// still visible (and redacted by name) rather than silently dropped.
 			return sf.Name
 		}
+
 		if tag != "" {
 			return tag
 		}
 	}
+
 	return sf.Name
 }
 
 func redactMap(rv reflect.Value) map[string]any {
 	out := make(map[string]any, rv.Len())
+
 	iter := rv.MapRange()
 	for iter.Next() {
 		k := iter.Key()
@@ -175,8 +191,10 @@ func redactMap(rv reflect.Value) map[string]any {
 			out[keyName] = RedactedValuePlaceholder
 			continue
 		}
+
 		out[keyName] = redactValue(iter.Value())
 	}
+
 	return out
 }
 
@@ -184,10 +202,12 @@ func redactSlice(rv reflect.Value) []any {
 	if rv.Len() == 0 {
 		return []any{}
 	}
+
 	out := make([]any, rv.Len())
 	for i := range rv.Len() {
 		out[i] = redactValue(rv.Index(i))
 	}
+
 	return out
 }
 
@@ -227,6 +247,7 @@ func redactStringValue(s string) any {
 	if s == "" {
 		return s
 	}
+
 	u, err := url.Parse(s)
 	if err != nil {
 		// Not a valid URL — no userinfo to redact.
@@ -237,6 +258,7 @@ func redactStringValue(s string) any {
 	if u.User == nil {
 		return s
 	}
+
 	pw, hasPw := u.User.Password()
 	if !hasPw || pw == "" {
 		return s
@@ -268,10 +290,12 @@ func redactStringValue(s string) any {
 	if schemeEnd < 0 {
 		return s
 	}
+
 	userinfoStart := schemeEnd + 2
 	if userinfoStart > atIdx {
 		return s
 	}
+
 	rawUserinfo := s[userinfoStart:atIdx]
 	// Sanity: the raw userinfo we isolated must round-trip through the
 	// encoded form url produced. If they disagree (e.g. due to edge-case
@@ -290,5 +314,6 @@ func redactStringValue(s string) any {
 	}
 	// Reconstruct: scheme:// + username + ":" + placeholder + "@" + rest.
 	rest := s[atIdx+1:]
+
 	return s[:userinfoStart] + rawUserinfo[:colonIdx] + ":" + RedactedValuePlaceholder + "@" + rest
 }

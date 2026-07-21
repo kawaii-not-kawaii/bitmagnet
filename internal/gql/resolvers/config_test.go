@@ -73,6 +73,7 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 	}
 	r := &Resolver{ResolvedConfig: resolved}
 	qr := &queryResolver{r}
+
 	out, err := qr.Config(context.Background())
 	if err != nil {
 		t.Fatalf("Config resolver returned error: %v", err)
@@ -82,6 +83,7 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 	for _, s := range out.Sections {
 		byKey[s.Key] = s
 	}
+
 	if len(byKey) != 3 {
 		t.Fatalf("expected 3 sections, got %d (%v)", len(byKey), sectionKeys(out.Sections))
 	}
@@ -90,6 +92,7 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 	for _, s := range out.Sections {
 		keys = append(keys, s.Key)
 	}
+
 	if keys[0] != sectionKeyClassifier || keys[1] != testSectionKeyPostgres || keys[2] != testSectionKeyTmdb {
 		t.Errorf("sections not sorted by key: got %v", keys)
 	}
@@ -98,16 +101,20 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 	if !ok {
 		t.Fatal("postgres section missing")
 	}
+
 	pgMap, ok := pg.Value.(map[string]any)
 	if !ok {
 		t.Fatalf("postgres value not a map: %T", pg.Value)
 	}
+
 	if pgMap["Password"] != gqlmodel.RedactedValuePlaceholder {
 		t.Errorf("postgres.Password not redacted: got %v", pgMap["Password"])
 	}
+
 	if pgMap["Host"] != "db.internal" {
 		t.Errorf("postgres.Host changed: got %v", pgMap["Host"])
 	}
+
 	if pg.RuntimeChangeable != gen.ConfigRuntimeChangeabilityRestartRequired {
 		t.Errorf("postgres runtimeChangeable = %v, want RESTART_REQUIRED", pg.RuntimeChangeable)
 	}
@@ -116,16 +123,20 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 	if !ok {
 		t.Fatal("tmdb section missing")
 	}
+
 	tmMap, ok := tm.Value.(map[string]any)
 	if !ok {
 		t.Fatalf("tmdb value not a map: %T", tm.Value)
 	}
+
 	if tmMap["APIKey"] != gqlmodel.RedactedValuePlaceholder {
 		t.Errorf("tmdb.APIKey not redacted: got %v", tmMap["APIKey"])
 	}
+
 	if tmMap["BaseURL"] != "https://api.themoviedb.org/3" {
 		t.Errorf("tmdb.BaseURL changed: got %v", tmMap["BaseURL"])
 	}
+
 	if tm.RuntimeChangeable != gen.ConfigRuntimeChangeabilityRestartRequired {
 		t.Errorf("tmdb runtimeChangeable = %v, want RESTART_REQUIRED", tm.RuntimeChangeable)
 	}
@@ -135,23 +146,29 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 	if !ok {
 		t.Fatal("classifier section missing")
 	}
+
 	clMap, ok := cl.Value.(map[string]any)
 	if !ok {
 		t.Fatalf("classifier value not a map: %T", cl.Value)
 	}
+
 	llm, ok := clMap["Llm"].(map[string]any)
 	if !ok {
 		t.Fatalf("classifier.Llm not a map: %T", clMap["Llm"])
 	}
+
 	if llm["ProviderAPIKey"] != gqlmodel.RedactedValuePlaceholder {
 		t.Errorf("classifier.Llm.ProviderAPIKey not redacted: got %v", llm["ProviderAPIKey"])
 	}
+
 	if llm["ProviderBaseURL"] != "https://api.openai.com/v1" {
 		t.Errorf("classifier.Llm.ProviderBaseURL changed: got %v", llm["ProviderBaseURL"])
 	}
+
 	if clMap["Workflow"] != "default" {
 		t.Errorf("classifier.Workflow changed: got %v", clMap["Workflow"])
 	}
+
 	if cl.RuntimeChangeable != gen.ConfigRuntimeChangeabilityLiveApplyAvailable {
 		t.Errorf("classifier runtimeChangeable = %v, want LIVE_APPLY_AVAILABLE", cl.RuntimeChangeable)
 	}
@@ -163,6 +180,7 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 // the resolver has never heard of.
 func TestConfig_Resolver_NewSectionAutoAppears(t *testing.T) {
 	t.Parallel()
+
 	resolved := config.ResolvedConfig{
 		NodeMap: map[string]config.ResolvedNode{
 			testSectionKeyMadeUp: {
@@ -173,27 +191,34 @@ func TestConfig_Resolver_NewSectionAutoAppears(t *testing.T) {
 	}
 	r := &Resolver{ResolvedConfig: resolved}
 	qr := &queryResolver{r}
+
 	out, err := qr.Config(context.Background())
 	if err != nil {
 		t.Fatalf("Config resolver returned error: %v", err)
 	}
+
 	if len(out.Sections) != 1 {
 		t.Fatalf("expected 1 section, got %d", len(out.Sections))
 	}
+
 	s := out.Sections[0]
 	if s.Key != testSectionKeyMadeUp {
 		t.Errorf("section key = %q, want made_up_section", s.Key)
 	}
+
 	if s.RuntimeChangeable != gen.ConfigRuntimeChangeabilityRestartRequired {
 		t.Errorf("unknown section runtimeChangeable = %v, want RESTART_REQUIRED", s.RuntimeChangeable)
 	}
+
 	m, ok := s.Value.(map[string]any)
 	if !ok {
 		t.Fatalf("value not a map: %T", s.Value)
 	}
+
 	if m["secret_token"] != gqlmodel.RedactedValuePlaceholder {
 		t.Errorf("secret_token not redacted in unknown section: got %v", m["secret_token"])
 	}
+
 	if m["host"] != "x" {
 		t.Errorf("host changed in unknown section: got %v", m["host"])
 	}
@@ -204,5 +229,6 @@ func sectionKeys(s []gen.ConfigSection) []string {
 	for i, v := range s {
 		out[i] = v.Key
 	}
+
 	return out
 }

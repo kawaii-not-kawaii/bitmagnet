@@ -10,14 +10,18 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-func newSocket(ip_type int) Socket {
+func newSocket(ipType int) Socket {
 	var fd int
+
 	var sockErr error
-	if ip_type == 4 {
+
+	switch ipType {
+	case 4:
 		fd, sockErr = unix.Socket(unix.AF_INET, unix.SOCK_DGRAM, 0)
-	} else if ip_type == 6 {
+	case 6:
 		fd, sockErr = unix.Socket(unix.AF_INET6, unix.SOCK_DGRAM, 0)
 	}
+
 	if sockErr != nil {
 		panic(fmt.Errorf("error creating socket: %w", sockErr))
 	}

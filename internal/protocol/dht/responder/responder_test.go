@@ -157,6 +157,7 @@ func TestResponder_find_node(t *testing.T) {
 }
 
 func TestResponder_find_node_ipv6(t *testing.T) {
+	t.Parallel()
 	mocks := newTestResponderMocks(t)
 	target := protocol.RandomNodeID()
 	msg := dht.RecvMsg{

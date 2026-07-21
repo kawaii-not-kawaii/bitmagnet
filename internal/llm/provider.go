@@ -101,13 +101,16 @@ func parseFlexNumber(s string) (flexInt, bool) {
 	if i, err := strconv.Atoi(s); err == nil {
 		return flexInt(i), true
 	}
+
 	f, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		return 0, false
 	}
+
 	if math.IsNaN(f) || math.IsInf(f, 0) || f > float64(math.MaxInt) || f < float64(math.MinInt) {
 		return 0, false
 	}
+
 	return flexInt(int(f)), true
 }
 
@@ -125,10 +128,12 @@ func (f *flexInt) UnmarshalJSON(data []byte) error {
 		if err := json.Unmarshal(data, &arr); err != nil {
 			return fmt.Errorf("flexInt: invalid array: %w", err)
 		}
+
 		if len(arr) == 0 {
 			*f = 0
 			return nil
 		}
+
 		return f.UnmarshalJSON(arr[0])
 	}
 
@@ -141,17 +146,21 @@ func (f *flexInt) UnmarshalJSON(data []byte) error {
 		if err := json.Unmarshal(data, &s); err != nil {
 			return fmt.Errorf("flexInt: invalid string: %w", err)
 		}
+
 		s = strings.TrimSpace(s)
 		if s == "" {
 			*f = 0
 			return nil
 		}
+
 		v, ok := parseFlexNumber(s)
 		if !ok {
 			*f = 0
 			return nil
 		}
+
 		*f = v
+
 		return nil
 	}
 
@@ -163,7 +172,9 @@ func (f *flexInt) UnmarshalJSON(data []byte) error {
 	if !ok {
 		return fmt.Errorf("flexInt: cannot unmarshal %s into int", data)
 	}
+
 	*f = v
+
 	return nil
 }
 
@@ -195,21 +206,27 @@ func (f *flexStrings) UnmarshalJSON(data []byte) error {
 		if err := json.Unmarshal(data, &arr); err != nil {
 			return fmt.Errorf("flexStrings: invalid array: %w", err)
 		}
+
 		out := make([]string, 0, len(arr))
+
 		for _, el := range arr {
 			var s string
 			if err := json.Unmarshal(el, &s); err != nil {
 				continue
 			}
+
 			if s != "" {
 				out = append(out, s)
 			}
 		}
+
 		if len(out) == 0 {
 			*f = nil
 			return nil
 		}
+
 		*f = out
+
 		return nil
 	}
 
@@ -219,11 +236,14 @@ func (f *flexStrings) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &s); err != nil {
 		return fmt.Errorf("flexStrings: cannot unmarshal %s into string: %w", data, err)
 	}
+
 	if s == "" {
 		*f = nil
 		return nil
 	}
+
 	*f = []string{s}
+
 	return nil
 }
 
@@ -240,6 +260,7 @@ func (f *flexStrings) UnmarshalJSON(data []byte) error {
 // them.
 func (r *ClassifyResult) UnmarshalJSON(data []byte) error {
 	type alias ClassifyResult
+
 	aux := struct {
 		alias
 		Year     flexInt     `json:"year"`
@@ -250,11 +271,13 @@ func (r *ClassifyResult) UnmarshalJSON(data []byte) error {
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
 	}
+
 	*r = ClassifyResult(aux.alias)
 	r.Year = int(aux.Year)
 	r.Season = int(aux.Season)
 	r.Episode = int(aux.Episode)
 	r.Language = []string(aux.Language)
+
 	return nil
 }
 

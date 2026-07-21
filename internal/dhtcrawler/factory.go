@@ -121,7 +121,11 @@ func New(params Params) Result {
 							bloom: boom.NewStableBloomFilter(10_000_000, 2, 0.001),
 						},
 						ignoreNodes: &ignoreFilter{
-							bloom: boom.NewStableBloomFilter(200_000*uint(scalingFactor), 2, 0.001),
+							bloom: boom.NewStableBloomFilter(
+								200_000*uint(scalingFactor),
+								2,
+								0.001,
+							),
 						},
 						blockingManager: blockingManager,
 						soughtNodeID:    &concurrency.AtomicValue[protocol.ID]{},

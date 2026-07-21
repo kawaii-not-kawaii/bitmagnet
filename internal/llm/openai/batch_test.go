@@ -25,7 +25,11 @@ func TestParseBatchResponse_SingleObject_RejectedForBatch(t *testing.T) {
 
 	results, err := ParseBatchResponse(singleObject)
 	if !errors.Is(err, llm.ErrInvalidJSON) {
-		t.Fatalf("expected ErrInvalidJSON for single-object batch response, got err=%v results=%v", err, results)
+		t.Fatalf(
+			"expected ErrInvalidJSON for single-object batch response, got err=%v results=%v",
+			err,
+			results,
+		)
 	}
 
 	if results != nil {

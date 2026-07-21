@@ -131,9 +131,11 @@ func (r requester) connect(ctx context.Context, addr netip.AddrPort) (conn *net.
 	if addr.Addr().Is4() {
 		tcp = "tcp4"
 	}
+
 	if addr.Addr().Is6() || addr.Addr().Is4In6() {
 		tcp = "tcp6"
 	}
+
 	c, dialErr := r.dialer.DialContext(ctx, tcp, addr.String())
 	if dialErr != nil {
 		err = dialErr

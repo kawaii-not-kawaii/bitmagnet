@@ -84,7 +84,9 @@ func TestClassify_Success(t *testing.T) {
 			t.Errorf("expected json_object response format")
 		}
 
-		resp := makeChoiceResp(fmt.Sprintf(`{"content_type": %q, "title": "Test Movie", "year": 2024}`, testContentTypeMovie))
+		resp := makeChoiceResp(
+			fmt.Sprintf(`{"content_type": %q, "title": "Test Movie", "year": 2024}`, testContentTypeMovie),
+		)
 		resp.Choices[0].FinishReason = "stop"
 
 		w.Header().Set("Content-Type", "application/json")
@@ -188,7 +190,9 @@ func TestClassify_ServerErrorRetry(t *testing.T) {
 			return
 		}
 
-		resp := makeChoiceResp(fmt.Sprintf(`{"content_type": %q, "title": "After Retry"}`, testContentTypeMovie))
+		resp := makeChoiceResp(
+			fmt.Sprintf(`{"content_type": %q, "title": "After Retry"}`, testContentTypeMovie),
+		)
 
 		w.Header().Set("Content-Type", "application/json")
 

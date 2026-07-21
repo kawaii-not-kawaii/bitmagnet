@@ -37,11 +37,18 @@ func (parseVideoContentAction) compileAction(ctx compilerContext) (action, error
 
 			nulldate := model.Date{Year: 0, Month: 0, Day: 0}
 			var mparsed map[string]any
-			jparsed, _ := json.Marshal(parsed)
-			json.Unmarshal(jparsed, &mparsed)
+			// Best-effort marshal/unmarshal round-trip to a generic map so we can
+			// strip zero-valued fields before logging. Tagging ContentAttributes
+			// with json tags would change the log key format without being part of
+			// any contractual API, so we suppress musttag here.
+			jparsed, _ := json.Marshal(parsed)    //nolint:musttag // log-only
+			_ = json.Unmarshal(jparsed, &mparsed) // cannot fail: input is fresh output of Marshal
 			for k, v := range mparsed {
 				arr, ok := v.([]any)
-				if (ok && len(arr) == 0) || v == nil || v == 0 || v == "" || v == "0001-01-01T00:00:00Z" || v == "0000000000000000000000000000000000000000" || v == nulldate {
+				if (ok && len(arr) == 0) || v == nil || v == 0 || v == "" ||
+					v == "0001-01-01T00:00:00Z" ||
+					v == "0000000000000000000000000000000000000000" ||
+					v == nulldate {
 					delete(mparsed, k)
 				}
 			}

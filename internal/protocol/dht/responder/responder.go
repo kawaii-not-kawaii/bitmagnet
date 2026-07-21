@@ -79,6 +79,7 @@ func (r responder) Respond(_ context.Context, msg dht.RecvMsg) (ret dht.Return, 
 
 			ret.Values = values
 		}
+
 		ret.Nodes, ret.Nodes6 = nodeInfosFromNodes(result.ClosestNodes...)
 		token := r.announceToken(args.InfoHash, args.ID, msg.From.Addr())
 		ret.Token = &token
@@ -136,40 +137,49 @@ func (r responder) announceToken(infoHash protocol.ID, nodeID protocol.ID, nodeA
 	return hex.EncodeToString(tokenHash[:])
 }
 
-func nodeInfosFromNodes(ns ...ktable.Node) ([]dht.NodeInfo, []dht.NodeInfo) {
+func nodeInfosFromNodes(ns ...ktable.Node) (nodes []dht.NodeInfo, nodes6 []dht.NodeInfo) {
 	if len(ns) == 0 {
 		return nil, nil
 	}
-	ns_count, ns6_count := 0, 0
+
+	nsCount, ns6Count := 0, 0
+
 	for _, n := range ns {
 		if n.Addr().Addr().Is4() {
-			ns_count += 1
+			nsCount++
 		}
 	}
+
 	for _, n := range ns {
 		if n.Addr().Addr().Is6() || n.Addr().Addr().Is4In6() {
-			ns6_count += 1
+			ns6Count++
 		}
 	}
-	nodes6 := make([]dht.NodeInfo, 0, ns_count)
 
-	nodes := make([]dht.NodeInfo, 0, ns6_count)
+	nodes6 = make([]dht.NodeInfo, 0, nsCount)
+
+	nodes = make([]dht.NodeInfo, 0, ns6Count)
+
 	for _, n := range ns {
 		if n.Addr().Addr().Is4() {
 			nodes = append(nodes, nodeInfoFromNode(n))
 		}
 	}
+
 	for _, n := range ns {
 		if n.Addr().Addr().Is6() || n.Addr().Addr().Is4In6() {
 			nodes6 = append(nodes6, nodeInfoFromNode(n))
 		}
 	}
+
 	if len(nodes) == 0 {
 		nodes = nil
 	}
+
 	if len(nodes6) == 0 {
 		nodes6 = nil
 	}
+
 	return nodes, nodes6
 }
 

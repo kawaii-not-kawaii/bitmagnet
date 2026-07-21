@@ -319,41 +319,109 @@ func TestClassifyResult_FlexInt_Coercion(t *testing.T) {
 	}{
 		// --- Year (representative of all three numeric fields) ---
 		{name: "year/number", body: `{"content_type":"movie","year":2024}`, want: expectation{year: 2024}},
-		{name: "year/numeric_string", body: `{"content_type":"movie","year":"2024"}`, want: expectation{year: 2024}},
+		{
+			name: "year/numeric_string",
+			body: `{"content_type":"movie","year":"2024"}`,
+			want: expectation{year: 2024},
+		},
 		{name: "year/empty_string", body: `{"content_type":"movie","year":""}`, want: expectation{}},
-		{name: "year/non_numeric_string", body: `{"content_type":"movie","year":"unknown"}`, want: expectation{}},
-		{name: "year/array_first_element", body: `{"content_type":"movie","year":[2024,2025]}`, want: expectation{year: 2024}},
+		{
+			name: "year/non_numeric_string",
+			body: `{"content_type":"movie","year":"unknown"}`,
+			want: expectation{},
+		},
+		{
+			name: "year/array_first_element",
+			body: `{"content_type":"movie","year":[2024,2025]}`,
+			want: expectation{year: 2024},
+		},
 		{name: "year/empty_array", body: `{"content_type":"movie","year":[]}`, want: expectation{}},
 		{name: "year/null", body: `{"content_type":"movie","year":null}`, want: expectation{}},
 		{name: "year/missing", body: `{"content_type":"movie"}`, want: expectation{}},
 
 		// --- Year: floats (LLMs often emit 2024.0 for integer fields) ---
 		// All truncate toward zero, matching Go's int(float64) conversion.
-		{name: "year/float_integral_zero_fraction", body: `{"content_type":"movie","year":2024.0}`, want: expectation{year: 2024}},
-		{name: "year/float_small_integral", body: `{"content_type":"movie","year":3.0}`, want: expectation{year: 3}},
-		{name: "year/float_non_integral_truncates", body: `{"content_type":"movie","year":2024.7}`, want: expectation{year: 2024}},
-		{name: "year/float_negative_truncates_toward_zero", body: `{"content_type":"movie","year":-1.5}`, want: expectation{year: -1}},
-		{name: "year/float_large", body: `{"content_type":"movie","year":10000000000.0}`, want: expectation{year: 10000000000}},
-		{name: "year/float_in_string", body: `{"content_type":"movie","year":"2024.0"}`, want: expectation{year: 2024}},
+		{
+			name: "year/float_integral_zero_fraction",
+			body: `{"content_type":"movie","year":2024.0}`,
+			want: expectation{year: 2024},
+		},
+		{
+			name: "year/float_small_integral",
+			body: `{"content_type":"movie","year":3.0}`,
+			want: expectation{year: 3},
+		},
+		{
+			name: "year/float_non_integral_truncates",
+			body: `{"content_type":"movie","year":2024.7}`,
+			want: expectation{year: 2024},
+		},
+		{
+			name: "year/float_negative_truncates_toward_zero",
+			body: `{"content_type":"movie","year":-1.5}`,
+			want: expectation{year: -1},
+		},
+		{
+			name: "year/float_large",
+			body: `{"content_type":"movie","year":10000000000.0}`,
+			want: expectation{year: 10000000000},
+		},
+		{
+			name: "year/float_in_string",
+			body: `{"content_type":"movie","year":"2024.0"}`,
+			want: expectation{year: 2024},
+		},
 
 		// --- Episode (the field most often emitted with the wrong type) ---
 		{name: "episode/number", body: `{"content_type":"tv_show","episode":5}`, want: expectation{episode: 5}},
-		{name: "episode/numeric_string_quoted", body: `{"content_type":"tv_show","episode":"5"}`, want: expectation{episode: 5}},
+		{
+			name: "episode/numeric_string_quoted",
+			body: `{"content_type":"tv_show","episode":"5"}`,
+			want: expectation{episode: 5},
+		},
 		{name: "episode/empty_string", body: `{"content_type":"tv_show","episode":""}`, want: expectation{}},
-		{name: "episode/non_numeric_string", body: `{"content_type":"tv_show","episode":"pilot"}`, want: expectation{}},
-		{name: "episode/multi_ep_array_takes_first", body: `{"content_type":"tv_show","episode":[1,2,3]}`, want: expectation{episode: 1}},
-		{name: "episode/single_element_array", body: `{"content_type":"tv_show","episode":[7]}`, want: expectation{episode: 7}},
-		{name: "episode/array_of_strings", body: `{"content_type":"tv_show","episode":["7","8"]}`, want: expectation{episode: 7}},
+		{
+			name: "episode/non_numeric_string",
+			body: `{"content_type":"tv_show","episode":"pilot"}`,
+			want: expectation{},
+		},
+		{
+			name: "episode/multi_ep_array_takes_first",
+			body: `{"content_type":"tv_show","episode":[1,2,3]}`,
+			want: expectation{episode: 1},
+		},
+		{
+			name: "episode/single_element_array",
+			body: `{"content_type":"tv_show","episode":[7]}`,
+			want: expectation{episode: 7},
+		},
+		{
+			name: "episode/array_of_strings",
+			body: `{"content_type":"tv_show","episode":["7","8"]}`,
+			want: expectation{episode: 7},
+		},
 		{name: "episode/null", body: `{"content_type":"tv_show","episode":null}`, want: expectation{}},
 		{name: "episode/missing", body: `{"content_type":"tv_show"}`, want: expectation{}},
 
 		// --- Season (same shape; one coercion case is enough since the path is shared) ---
-		{name: "season/numeric_string", body: `{"content_type":"tv_show","season":"2"}`, want: expectation{season: 2}},
+		{
+			name: "season/numeric_string",
+			body: `{"content_type":"tv_show","season":"2"}`,
+			want: expectation{season: 2},
+		},
 		{name: "season/array", body: `{"content_type":"tv_show","season":[2,3]}`, want: expectation{season: 2}},
 
 		// --- Combined real-world failure cases from the live benchmark ---
-		{name: "real_world/anime_episode_string", body: `{"content_type":"tv_show","title":"BGC Tokyo 2040","season":1,"episode":"26"}`, want: expectation{season: 1, episode: 26}},
-		{name: "real_world/culpa_array_case", body: `{"content_type":"movie","title":"Culpa","year":[2022]}`, want: expectation{year: 2022}},
+		{
+			name: "real_world/anime_episode_string",
+			body: `{"content_type":"tv_show","title":"BGC Tokyo 2040","season":1,"episode":"26"}`,
+			want: expectation{season: 1, episode: 26},
+		},
+		{
+			name: "real_world/culpa_array_case",
+			body: `{"content_type":"movie","title":"Culpa","year":[2022]}`,
+			want: expectation{year: 2022},
+		},
 	}
 
 	for _, tc := range cases {
@@ -364,12 +432,15 @@ func TestClassifyResult_FlexInt_Coercion(t *testing.T) {
 			if err := json.Unmarshal([]byte(tc.body), &r); err != nil {
 				t.Fatalf("unexpected error for %s: %v\nbody: %s", tc.name, err, tc.body)
 			}
+
 			if r.Year != tc.want.year {
 				t.Errorf("Year: got %d, want %d", r.Year, tc.want.year)
 			}
+
 			if r.Season != tc.want.season {
 				t.Errorf("Season: got %d, want %d", r.Season, tc.want.season)
 			}
+
 			if r.Episode != tc.want.episode {
 				t.Errorf("Episode: got %d, want %d", r.Episode, tc.want.episode)
 			}
@@ -390,11 +461,26 @@ func TestClassifyResult_MalformedStillErrors(t *testing.T) {
 		body string
 	}{
 		{name: "broken_json_syntax", body: `{"content_type":"movie", broken`},
-		{name: "string_field_as_array", body: `{"content_type":["movie"]}`},               // non-numeric field not made lenient
-		{name: "tags_field_as_object", body: `{"content_type":"movie","tags":{"a":1}}`},   // slice field given wrong shape
-		{name: "year_as_object", body: `{"content_type":"movie","year":{"value":2024}}`},  // object for numeric field
-		{name: "episode_as_object", body: `{"content_type":"tv_show","episode":{"n":5}}`}, // object for numeric field
-		{name: "root_array_not_object", body: `[{"content_type":"movie"}]`},               // expected an object, got array
+		{
+			name: "string_field_as_array",
+			body: `{"content_type":["movie"]}`,
+		}, // non-numeric field not made lenient
+		{
+			name: "tags_field_as_object",
+			body: `{"content_type":"movie","tags":{"a":1}}`,
+		}, // slice field given wrong shape
+		{
+			name: "year_as_object",
+			body: `{"content_type":"movie","year":{"value":2024}}`,
+		}, // object for numeric field
+		{
+			name: "episode_as_object",
+			body: `{"content_type":"tv_show","episode":{"n":5}}`,
+		}, // object for numeric field
+		{
+			name: "root_array_not_object",
+			body: `[{"content_type":"movie"}]`,
+		}, // expected an object, got array
 	}
 
 	for _, tc := range cases {
@@ -425,18 +511,50 @@ func TestClassifyResult_LanguageShape(t *testing.T) {
 		body string
 		want []string // nil means "expected to be nil/empty after unmarshal"
 	}{
-		{name: "array_of_codes", body: `{"content_type":"movie","language":["rus","spa"]}`, want: []string{"rus", "spa"}},
-		{name: "single_string_becomes_one_element_slice", body: `{"content_type":"movie","language":"eng"}`, want: []string{"eng"}},
+		{
+			name: "array_of_codes",
+			body: `{"content_type":"movie","language":["rus","spa"]}`,
+			want: []string{"rus", "spa"},
+		},
+		{
+			name: "single_string_becomes_one_element_slice",
+			body: `{"content_type":"movie","language":"eng"}`,
+			want: []string{"eng"},
+		},
 		{name: "null", body: `{"content_type":"movie","language":null}`, want: nil},
 		{name: "empty_array", body: `{"content_type":"movie","language":[]}`, want: nil},
 		{name: "empty_string", body: `{"content_type":"movie","language":""}`, want: nil},
 		{name: "missing_field", body: `{"content_type":"movie"}`, want: nil},
-		{name: "non_string_element_skipped", body: `{"content_type":"movie","language":["rus", 5, "spa"]}`, want: []string{"rus", "spa"}},
-		{name: "null_element_skipped", body: `{"content_type":"movie","language":["rus", null, "spa"]}`, want: []string{"rus", "spa"}},
-		{name: "empty_string_element_skipped", body: `{"content_type":"movie","language":["rus", "", "spa"]}`, want: []string{"rus", "spa"}},
-		{name: "unknown_code_preserved_at_unmarshal_layer", body: `{"content_type":"movie","language":["xx","rus"]}`, want: []string{"xx", "rus"}}, // validation deferred to applyLLMResult
-		{name: "real_world_police_polic_multi_language", body: `{"content_type":"movie","language":["tam","hin","eng"]}`, want: []string{"tam", "hin", "eng"}},
-		{name: "real_world_culpa_rus_spa", body: `{"content_type":"movie","language":["rus","spa"]}`, want: []string{"rus", "spa"}},
+		{
+			name: "non_string_element_skipped",
+			body: `{"content_type":"movie","language":["rus", 5, "spa"]}`,
+			want: []string{"rus", "spa"},
+		},
+		{
+			name: "null_element_skipped",
+			body: `{"content_type":"movie","language":["rus", null, "spa"]}`,
+			want: []string{"rus", "spa"},
+		},
+		{
+			name: "empty_string_element_skipped",
+			body: `{"content_type":"movie","language":["rus", "", "spa"]}`,
+			want: []string{"rus", "spa"},
+		},
+		{
+			name: "unknown_code_preserved_at_unmarshal_layer",
+			body: `{"content_type":"movie","language":["xx","rus"]}`,
+			want: []string{"xx", "rus"},
+		}, // validation deferred to applyLLMResult
+		{
+			name: "real_world_police_polic_multi_language",
+			body: `{"content_type":"movie","language":["tam","hin","eng"]}`,
+			want: []string{"tam", "hin", "eng"},
+		},
+		{
+			name: "real_world_culpa_rus_spa",
+			body: `{"content_type":"movie","language":["rus","spa"]}`,
+			want: []string{"rus", "spa"},
+		},
 	}
 
 	for _, tc := range cases {
@@ -450,8 +568,15 @@ func TestClassifyResult_LanguageShape(t *testing.T) {
 			// Compare via stringification because nil and []string{} are
 			// semantically equal here but not deeply equal under reflect.
 			if len(r.Language) != len(tc.want) {
-				t.Fatalf("Language length: got %d (%v), want %d (%v)", len(r.Language), r.Language, len(tc.want), tc.want)
+				t.Fatalf(
+					"Language length: got %d (%v), want %d (%v)",
+					len(r.Language),
+					r.Language,
+					len(tc.want),
+					tc.want,
+				)
 			}
+
 			for i, got := range r.Language {
 				if got != tc.want[i] {
 					t.Errorf("Language[%d]: got %q, want %q", i, got, tc.want[i])

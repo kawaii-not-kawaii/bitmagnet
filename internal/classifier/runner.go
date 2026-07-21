@@ -84,9 +84,9 @@ func (r runner) Run(ctx context.Context, workflow string, flags Flags, t model.T
 		"updatedAt", t.UpdatedAt,
 		"hint", r.CleanObj(t.Hint))
 
-	result, error := w.run(exCtx)
+	result, err := w.run(exCtx)
 
 	logger.Infow("done", "workflow", workflow, "result", r.CleanObj(result))
 
-	return result, error
+	return result, err
 }

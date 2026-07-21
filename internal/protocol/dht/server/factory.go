@@ -44,17 +44,20 @@ func New(p Params) Result {
 	lastResponses := &concurrency.AtomicValue[LastResponses]{}
 	collector := newPrometheusCollector()
 	addr, err := netip.ParseAddr(p.Config.Addr)
-	socket_ip_type := 4
+	socketIPType := 4
 
 	if err != nil {
 		addr = netip.IPv4Unspecified()
 	}
+
 	if addr.Is4() {
-		socket_ip_type = 4
+		socketIPType = 4
 	}
+
 	if addr.Is6() || addr.Is4In6() {
-		socket_ip_type = 6
+		socketIPType = 6
 	}
+
 	ls := lazy.New(func() (Server, error) {
 		s := queryLimiter{
 			server: prometheusServerWrapper{
@@ -63,7 +66,7 @@ func New(p Params) Result {
 					baseServer: &server{
 						stopped:          make(chan struct{}),
 						localAddr:        netip.AddrPortFrom(addr, p.Config.Port),
-						socket:           NewSocket(socket_ip_type),
+						socket:           NewSocket(socketIPType),
 						queries:          make(map[string]chan dht.RecvMsg),
 						queryTimeout:     p.Config.QueryTimeout,
 						responder:        p.Responder,

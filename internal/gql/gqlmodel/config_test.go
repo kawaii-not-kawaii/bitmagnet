@@ -31,6 +31,7 @@ const (
 // the settings API must never leak.
 func TestRedact_PostgresPassword_Redacted(t *testing.T) {
 	t.Parallel()
+
 	cfg := postgres.Config{
 		Host:     testHost,
 		User:     "postgres",
@@ -41,21 +42,27 @@ func TestRedact_PostgresPassword_Redacted(t *testing.T) {
 	}
 	out := Redact(cfg)
 	m, ok := out.(map[string]any)
+
 	if !ok {
 		t.Fatalf("expected map[string]any, got %T", out)
 	}
+
 	if m["Password"] != RedactedValuePlaceholder {
 		t.Errorf("Password not redacted: got %v", m["Password"])
 	}
+
 	if m["Host"] != testHost {
 		t.Errorf("Host changed unexpectedly: got %v", m["Host"])
 	}
+
 	if m["Name"] != testDbName {
 		t.Errorf("Name changed unexpectedly: got %v", m["Name"])
 	}
+
 	if m["User"] != "postgres" {
 		t.Errorf("User changed unexpectedly: got %v", m["User"])
 	}
+
 	if m["Port"] != uint(5432) {
 		t.Errorf("Port changed unexpectedly: got %v", m["Port"])
 	}
@@ -66,6 +73,7 @@ func TestRedact_PostgresPassword_Redacted(t *testing.T) {
 // API key constant; this must never reach the operator's GraphQL response.
 func TestRedact_TmdbAPIKey_Redacted(t *testing.T) {
 	t.Parallel()
+
 	cfg := tmdb.Config{
 		Enabled:        true,
 		BaseURL:        testTmdbBaseURL,
@@ -75,16 +83,20 @@ func TestRedact_TmdbAPIKey_Redacted(t *testing.T) {
 	}
 	out := Redact(cfg)
 	m, ok := out.(map[string]any)
+
 	if !ok {
 		t.Fatalf("expected map[string]any, got %T", out)
 	}
+
 	if m["APIKey"] != RedactedValuePlaceholder {
 		t.Errorf("APIKey not redacted: got %v", m["APIKey"])
 	}
+
 	if m["BaseURL"] != testTmdbBaseURL {
 		t.Errorf("BaseURL changed unexpectedly: got %v", m["BaseURL"])
 	}
-	if m["Enabled"] != true {
+
+	if v, _ := m["Enabled"].(bool); !v {
 		t.Errorf("Enabled changed unexpectedly: got %v", m["Enabled"])
 	}
 }
@@ -95,6 +107,7 @@ func TestRedact_TmdbAPIKey_Redacted(t *testing.T) {
 // background.
 func TestRedact_ClassifierProviderAPIKey_Redacted(t *testing.T) {
 	t.Parallel()
+
 	cfg := classifier.Config{
 		Workflow:    testWorkflow,
 		Concurrency: 10,
@@ -108,22 +121,28 @@ func TestRedact_ClassifierProviderAPIKey_Redacted(t *testing.T) {
 	}
 	out := Redact(cfg)
 	m, ok := out.(map[string]any)
+
 	if !ok {
 		t.Fatalf("expected map[string]any, got %T", out)
 	}
+
 	llm, ok := m["Llm"].(map[string]any)
 	if !ok {
 		t.Fatalf("Llm not a map: got %T", m["Llm"])
 	}
+
 	if llm["ProviderAPIKey"] != RedactedValuePlaceholder {
 		t.Errorf("Llm.ProviderAPIKey not redacted: got %v", llm["ProviderAPIKey"])
 	}
+
 	if llm["ProviderBaseURL"] != "https://api.openai.com/v1" {
 		t.Errorf("ProviderBaseURL changed unexpectedly: got %v", llm["ProviderBaseURL"])
 	}
+
 	if llm["ProviderModel"] != "gpt-4o-mini" {
 		t.Errorf("ProviderModel changed unexpectedly: got %v", llm["ProviderModel"])
 	}
+
 	if m["Workflow"] != testWorkflow {
 		t.Errorf("Workflow changed unexpectedly: got %v", m["Workflow"])
 	}
@@ -134,6 +153,7 @@ func TestRedact_ClassifierProviderAPIKey_Redacted(t *testing.T) {
 // will be picked up by the generic redactor. This test pins the current shape.
 func TestRedact_TorznabProfiles_NoSecretsByDefault(t *testing.T) {
 	t.Parallel()
+
 	cfg := torznab.Config{
 		BaseURL: "https://example.com",
 		Profiles: []torznab.Profile{
@@ -148,26 +168,33 @@ func TestRedact_TorznabProfiles_NoSecretsByDefault(t *testing.T) {
 	}
 	out := Redact(cfg)
 	m, ok := out.(map[string]any)
+
 	if !ok {
 		t.Fatalf("expected map[string]any, got %T", out)
 	}
+
 	if m["BaseURL"] != "https://example.com" {
 		t.Errorf("BaseURL changed unexpectedly: got %v", m["BaseURL"])
 	}
+
 	profiles, ok := m["Profiles"].([]any)
 	if !ok {
 		t.Fatalf("Profiles not a slice: got %T", m["Profiles"])
 	}
+
 	if len(profiles) != 1 {
 		t.Fatalf("expected 1 profile, got %d", len(profiles))
 	}
+
 	pm, ok := profiles[0].(map[string]any)
 	if !ok {
 		t.Fatalf("profile[0] not a map: got %T", profiles[0])
 	}
+
 	if pm["ID"] != testWorkflow {
 		t.Errorf("profile ID changed: got %v", pm["ID"])
 	}
+
 	if pm["Title"] != testDbName {
 		t.Errorf("profile Title changed: got %v", pm["Title"])
 	}
@@ -179,6 +206,7 @@ func TestRedact_TorznabProfiles_NoSecretsByDefault(t *testing.T) {
 // those carry secrets today, but the redactor must handle map keys correctly.
 func TestRedact_MapWithSecretKey(t *testing.T) {
 	t.Parallel()
+
 	in := map[string]any{
 		"host":             testHost,
 		testMapKeyPassword: "leak-me",
@@ -190,25 +218,32 @@ func TestRedact_MapWithSecretKey(t *testing.T) {
 	}
 	out := Redact(in)
 	m, ok := out.(map[string]any)
+
 	if !ok {
 		t.Fatalf("expected map[string]any, got %T", out)
 	}
+
 	if m[testMapKeyPassword] != RedactedValuePlaceholder {
 		t.Errorf("password not redacted: got %v", m[testMapKeyPassword])
 	}
+
 	if m[testMapKeyAPIKey] != RedactedValuePlaceholder {
 		t.Errorf("api_key not redacted: got %v", m[testMapKeyAPIKey])
 	}
+
 	if m["host"] != testHost {
 		t.Errorf("host changed: got %v", m["host"])
 	}
+
 	nested, ok := m["nested"].(map[string]any)
 	if !ok {
 		t.Fatalf("nested not a map: got %T", m["nested"])
 	}
+
 	if nested[testMapKeyToken] != RedactedValuePlaceholder {
 		t.Errorf("nested.token not redacted: got %v", nested[testMapKeyToken])
 	}
+
 	if nested[testMapKeyName] != "keep-me" {
 		t.Errorf("nested.name changed: got %v", nested[testMapKeyName])
 	}
@@ -219,21 +254,26 @@ func TestRedact_MapWithSecretKey(t *testing.T) {
 // calls) untouched.
 func TestRedact_PointerNotMutated(t *testing.T) {
 	t.Parallel()
+
 	cfg := &postgres.Config{
 		Host:     testHost,
 		Password: "original-secret",
 	}
 	out := Redact(cfg)
 	m, ok := out.(map[string]any)
+
 	if !ok {
 		t.Fatalf("expected map[string]any, got %T", out)
 	}
+
 	if m["Password"] != RedactedValuePlaceholder {
 		t.Errorf("Password not redacted: got %v", m["Password"])
 	}
+
 	if cfg.Password != "original-secret" {
 		t.Errorf("input was mutated: Password is now %q", cfg.Password)
 	}
+
 	if cfg.Host != testHost {
 		t.Errorf("input Host was mutated: %q", cfg.Host)
 	}
@@ -244,6 +284,7 @@ func TestRedact_PointerNotMutated(t *testing.T) {
 // fails; if it's tightened, add the new pattern here.
 func TestIsSensitiveFieldName(t *testing.T) {
 	t.Parallel()
+
 	cases := []struct {
 		name string
 		want bool
@@ -283,9 +324,11 @@ func TestIsSensitiveFieldName(t *testing.T) {
 // sections with no resolved value.
 func TestRedact_Nil(t *testing.T) {
 	t.Parallel()
+
 	if out := Redact(nil); out != nil {
 		t.Errorf("Redact(nil) = %v, want nil", out)
 	}
+
 	if out := Redact((*postgres.Config)(nil)); out != nil {
 		t.Errorf("Redact((*postgres.Config)(nil)) = %v, want nil", out)
 	}
@@ -295,19 +338,24 @@ func TestRedact_Nil(t *testing.T) {
 // sensitive fields round-trips as a plain map with no placeholders.
 func TestRedact_NoSensitiveFields_Passthrough(t *testing.T) {
 	t.Parallel()
+
 	type innocent struct {
 		Host string
 		Port int
 		On   bool
 	}
+
 	out := Redact(innocent{Host: "h", Port: 7, On: true})
 	m, ok := out.(map[string]any)
+
 	if !ok {
 		t.Fatalf("expected map[string]any, got %T", out)
 	}
-	if m["Host"] != "h" || m["Port"] != 7 || m["On"] != true {
+
+	if on, _ := m["On"].(bool); m["Host"] != "h" || m["Port"] != 7 || !on {
 		t.Errorf("passthrough corrupted: %v", m)
 	}
+
 	for k, v := range m {
 		if s, ok := v.(string); ok && s == RedactedValuePlaceholder {
 			t.Errorf("unexpected redaction of non-sensitive field %q", k)
@@ -327,6 +375,7 @@ var _ = reflect.TypeOf
 // portion, keeping host/port/dbname visible for diagnosis.
 func TestRedact_PostgresDSN_PasswordInUserinfo_Redacted(t *testing.T) {
 	t.Parallel()
+
 	cfg := postgres.Config{
 		Host: "db.internal",
 		User: "admin",
@@ -336,6 +385,7 @@ func TestRedact_PostgresDSN_PasswordInUserinfo_Redacted(t *testing.T) {
 	}
 	out := Redact(cfg)
 	m, ok := out.(map[string]any)
+
 	if !ok {
 		t.Fatalf("expected map[string]any, got %T", out)
 	}
@@ -349,9 +399,11 @@ func TestRedact_PostgresDSN_PasswordInUserinfo_Redacted(t *testing.T) {
 	if !ok {
 		t.Fatalf("DSN not a string: got %T", m["DSN"])
 	}
+
 	if strings.Contains(dsn, "HUNTER2_LEAKED") {
 		t.Errorf("DSN leaks embedded password: %q", dsn)
 	}
+
 	if !strings.Contains(dsn, "***REDACTED***") {
 		t.Errorf("DSN password not redacted: %q", dsn)
 	}
@@ -368,35 +420,44 @@ func TestRedact_PostgresDSN_PasswordInUserinfo_Redacted(t *testing.T) {
 // leaving scheme, username, host, port, path, and query intact.
 func TestRedact_URLWithUserinfo_RedactsOnlyPassword(t *testing.T) {
 	t.Parallel()
+
 	in := map[string]any{
 		"proxy":    "http://svc:secret-token@proxy.internal:8080/upstream?timeout=30s",
 		"endpoint": "amqp://guest:guest@rabbitmq:5672/vhost",
 	}
 	out := Redact(in)
 	m, ok := out.(map[string]any)
+
 	if !ok {
 		t.Fatalf("expected map[string]any, got %T", out)
 	}
+
 	proxy, ok := m["proxy"].(string)
 	if !ok {
 		t.Fatalf("proxy not a string: got %T", m["proxy"])
 	}
+
 	if strings.Contains(proxy, "secret-token") {
 		t.Errorf("proxy password leaked: %q", proxy)
 	}
+
 	for _, want := range []string{"http://", "svc", "proxy.internal", "8080", "upstream", "timeout=30s"} {
 		if !strings.Contains(proxy, want) {
 			t.Errorf("proxy lost diagnostic part %q: %q", want, proxy)
 		}
 	}
+
 	endpoint, ok := m["endpoint"].(string)
 	if !ok {
 		t.Fatalf("endpoint not a string: got %T", m["endpoint"])
 	}
+
 	if strings.Contains(endpoint, "guest:guest") {
 		t.Errorf("endpoint password leaked: %q", endpoint)
 	}
-	if !strings.Contains(endpoint, "rabbitmq") || !strings.Contains(endpoint, "5672") || !strings.Contains(endpoint, "vhost") {
+
+	if !strings.Contains(endpoint, "rabbitmq") || !strings.Contains(endpoint, "5672") ||
+		!strings.Contains(endpoint, "vhost") {
 		t.Errorf("endpoint lost diagnostic parts: %q", endpoint)
 	}
 }
@@ -407,21 +468,26 @@ func TestRedact_URLWithUserinfo_RedactsOnlyPassword(t *testing.T) {
 // secret to redact.
 func TestRedact_URLWithNoUserinfo_Unchanged(t *testing.T) {
 	t.Parallel()
+
 	in := map[string]any{
 		"base_url": testTmdbBaseURL,
 		"web_url":  "https://bitmagnet.io/docs?ref=abc#section",
 	}
 	out := Redact(in)
 	m, ok := out.(map[string]any)
+
 	if !ok {
 		t.Fatalf("expected map[string]any, got %T", out)
 	}
+
 	if m["base_url"] != testTmdbBaseURL {
 		t.Errorf("base_url changed unexpectedly: got %v", m["base_url"])
 	}
+
 	if m["web_url"] != "https://bitmagnet.io/docs?ref=abc#section" {
 		t.Errorf("web_url changed unexpectedly: got %v", m["web_url"])
 	}
+
 	for k, v := range m {
 		if s, ok := v.(string); ok && strings.Contains(s, RedactedValuePlaceholder) {
 			t.Errorf("non-userinfo URL %q unexpectedly redacted (field %q)", s, k)
@@ -434,12 +500,15 @@ func TestRedact_URLWithNoUserinfo_Unchanged(t *testing.T) {
 // unchanged — there is no secret to redact.
 func TestRedact_URLWithUserinfoNoPassword_Unchanged(t *testing.T) {
 	t.Parallel()
+
 	in := map[string]any{"dsn": "postgres://admin@db.internal:5432/bitmagnet"}
 	out := Redact(in)
 	m, ok := out.(map[string]any)
+
 	if !ok {
 		t.Fatalf("expected map[string]any, got %T", out)
 	}
+
 	if m["dsn"] != "postgres://admin@db.internal:5432/bitmagnet" {
 		t.Errorf("DSN without password changed unexpectedly: got %v", m["dsn"])
 	}
@@ -451,6 +520,7 @@ func TestRedact_URLWithUserinfoNoPassword_Unchanged(t *testing.T) {
 // arbitrary strings for token-like content.
 func TestRedact_NonURLString_Unchanged(t *testing.T) {
 	t.Parallel()
+
 	in := map[string]any{
 		testMapKeyName: "Some Torrent Release",
 		"workflow":     testWorkflow,
@@ -459,18 +529,23 @@ func TestRedact_NonURLString_Unchanged(t *testing.T) {
 	}
 	out := Redact(in)
 	m, ok := out.(map[string]any)
+
 	if !ok {
 		t.Fatalf("expected map[string]any, got %T", out)
 	}
+
 	if m[testMapKeyName] != "Some Torrent Release" {
 		t.Errorf("name changed: got %v", m[testMapKeyName])
 	}
+
 	if m["workflow"] != testWorkflow {
 		t.Errorf("workflow changed: got %v", m["workflow"])
 	}
+
 	if m["random"] != "not-a-url-but-contains-colon://weird" {
 		t.Errorf("random string changed: got %v", m["random"])
 	}
+
 	if m["empty"] != "" {
 		t.Errorf("empty string changed: got %v", m["empty"])
 	}

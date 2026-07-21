@@ -105,33 +105,43 @@ func applyLLMResult(cl classification.Result, r *llm.ClassifyResult) classificat
 	if r.ContentType != "" {
 		cl.ContentType = model.NewNullContentType(r.ContentType)
 	}
+
 	if r.Title != "" {
 		cl.BaseTitle = model.NewNullString(r.Title)
 	}
+
 	if r.Year > 0 {
 		cl.Date = model.Date{Year: model.Year(r.Year)}
 	}
+
 	if r.Season > 0 && r.Episode > 0 {
 		if cl.Episodes == nil {
 			cl.Episodes = make(model.Episodes)
 		}
+
 		if cl.Episodes[r.Season] == nil {
 			cl.Episodes[r.Season] = make(map[int]struct{})
 		}
+
 		cl.Episodes[r.Season][r.Episode] = struct{}{}
 	}
+
 	if r.VideoResolution != "" {
 		cl.VideoResolution = model.NewNullVideoResolution(r.VideoResolution)
 	}
+
 	if r.VideoSource != "" {
 		cl.VideoSource = model.NewNullVideoSource(r.VideoSource)
 	}
+
 	if r.VideoCodec != "" {
 		cl.VideoCodec = model.NewNullVideoCodec(r.VideoCodec)
 	}
+
 	if r.ReleaseGroup != "" {
 		cl.ReleaseGroup = model.NewNullString(r.ReleaseGroup)
 	}
+
 	if len(r.Language) > 0 {
 		if cl.Languages == nil {
 			cl.Languages = make(model.Languages)
@@ -142,6 +152,7 @@ func applyLLMResult(cl classification.Result, r *llm.ClassifyResult) classificat
 		// inventing values, and we already have 'invalid tag name' failures
 		// downstream from unvalidated LLM output. Same posture here.
 		newFromLLM := make(map[model.Language]struct{})
+
 		for _, code := range r.Language {
 			lang := model.ParseLanguage(code)
 			if lang.Valid {
@@ -158,13 +169,16 @@ func applyLLMResult(cl classification.Result, r *llm.ClassifyResult) classificat
 			cl.LanguageMulti = true
 		}
 	}
+
 	if len(r.Tags) > 0 {
 		if cl.Tags == nil {
 			cl.Tags = classification.NewTagAction()
 		}
+
 		if cl.Tags.Add == nil {
 			cl.Tags.Add = make(map[string]struct{})
 		}
+
 		for _, tag := range r.Tags {
 			sanitized := sanitizeTag(tag)
 			if sanitized != "" {
@@ -172,6 +186,7 @@ func applyLLMResult(cl classification.Result, r *llm.ClassifyResult) classificat
 			}
 		}
 	}
+
 	return cl
 }
 
@@ -188,11 +203,13 @@ func sanitizeTag(tag string) string {
 	tag = strings.ReplaceAll(tag, "_", "-")
 	// remove invalid characters
 	var b strings.Builder
+
 	for _, r := range tag {
 		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
 			b.WriteRune(r)
 		}
 	}
+
 	result := b.String()
 	// collapse multiple hyphens
 	for strings.Contains(result, "--") {
@@ -200,5 +217,6 @@ func sanitizeTag(tag string) string {
 	}
 	// trim leading/trailing hyphens
 	result = strings.Trim(result, "-")
+
 	return result
 }
