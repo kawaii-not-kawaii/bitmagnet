@@ -2,6 +2,7 @@ package classifierllm
 
 import (
 	"context"
+	"sort"
 	"time"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
@@ -93,8 +94,13 @@ func New(p Params) Result {
 
 	p.Lifecycle.Append(fx.Hook{
 		OnStop: func(_ context.Context) error {
-			for _, prov := range providers {
-				if d, ok := prov.(llm.Drainer); ok {
+			names := make([]string, 0, len(providers))
+			for name := range providers {
+				names = append(names, name)
+			}
+			sort.Strings(names)
+			for _, name := range names {
+				if d, ok := providers[name].(llm.Drainer); ok {
 					d.Drain()
 				}
 			}

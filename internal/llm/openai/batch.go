@@ -230,6 +230,16 @@ func BatchClassifyJSONString(inputs []llm.ClassifyInput) string {
 }
 
 // ParseBatchResponse parses a batch response containing multiple results.
+// It accepts either a JSON object with a "results" array or a bare JSON array.
+//
+// It deliberately does NOT accept a single bare JSON object as a one-element
+// batch. The only production caller, BatchClassify, short-circuits len(inputs)==1
+// through Classify (client.go), so this function is only reached when len(inputs)>=2.
+// In that case a single returned object cannot be positionally attributed to any
+// specific input — assigning it to index 0 would silently mis-classify whichever
+// torrent happened to be first in the batch. Rejecting the single-object form
+// returns ErrInvalidJSON, which flush() routes to every pending caller so they
+// fall back to the upstream ErrUnmatched path instead of receiving wrong data.
 func ParseBatchResponse(content string) ([]*llm.ClassifyResult, error) {
 	// Try to parse as JSON object with "results" array
 	var wrapper struct {
@@ -246,11 +256,6 @@ func ParseBatchResponse(content string) ([]*llm.ClassifyResult, error) {
 		return arr, nil
 	}
 
-	// Try as single result (model didn't batch)
-	var single llm.ClassifyResult
-	if err := json.Unmarshal([]byte(content), &single); err == nil {
-		return []*llm.ClassifyResult{&single}, nil
-	}
-
+	// Do NOT accept a single bare object: see function doc comment.
 	return nil, llm.ErrInvalidJSON
 }
