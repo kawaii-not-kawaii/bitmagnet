@@ -35,6 +35,15 @@ func New(p Params) Result {
 					Value: 20,
 					Usage: "Number of unknown torrents to classify",
 				},
+				&cli.IntFlag{
+					Name:  "concurrency",
+					Value: 1,
+					Usage: "Number of torrents to classify in parallel",
+				},
+				&cli.BoolFlag{
+					Name:  "random",
+					Usage: "Sample from a random offset instead of always the same first N torrents",
+				},
 				&cli.BoolFlag{
 					Name:  "json",
 					Usage: "Output results as JSON",
@@ -48,7 +57,10 @@ func New(p Params) Result {
 					Providers:  p.Providers,
 					Logger:     p.Logger,
 					Config:     p.Config,
-				}, count)
+				}, count, BenchmarkOptions{
+					Concurrency: ctx.Int("concurrency"),
+					Random:      ctx.Bool("random"),
+				})
 				if err != nil {
 					return err
 				}
