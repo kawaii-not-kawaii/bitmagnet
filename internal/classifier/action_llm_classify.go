@@ -202,4 +202,3 @@ func sanitizeTag(tag string) string {
 	result = strings.Trim(result, "-")
 	return result
 }
-

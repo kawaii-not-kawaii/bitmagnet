@@ -35,13 +35,13 @@ func (parseVideoContentAction) compileAction(ctx compilerContext) (action, error
 				return cl, err
 			}
 
-			nulldate := model.Date{ Year: 0, Month: 0, Day: 0 }
+			nulldate := model.Date{Year: 0, Month: 0, Day: 0}
 			var mparsed map[string]any
 			jparsed, _ := json.Marshal(parsed)
 			json.Unmarshal(jparsed, &mparsed)
 			for k, v := range mparsed {
 				arr, ok := v.([]any)
-				if (ok && len(arr) == 0) || v == nil || v == 0 || v == "" || v == "0001-01-01T00:00:00Z" || v == "0000000000000000000000000000000000000000" || v  == nulldate {
+				if (ok && len(arr) == 0) || v == nil || v == 0 || v == "" || v == "0001-01-01T00:00:00Z" || v == "0000000000000000000000000000000000000000" || v == nulldate {
 					delete(mparsed, k)
 				}
 			}

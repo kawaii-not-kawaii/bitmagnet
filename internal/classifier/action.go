@@ -66,7 +66,7 @@ outer:
 
 	return action{func(ctx executionContext) (classification.Result, error) {
 		for i, a := range actions {
-			ctx.logger = ctx._logger.Named(strings.Join(path, ".")+".["+fmt.Sprint(i)+"]")
+			ctx.logger = ctx._logger.Named(strings.Join(path, ".") + ".[" + fmt.Sprint(i) + "]")
 			result, err := a.run(ctx)
 			if err != nil {
 				return classification.Result{}, err

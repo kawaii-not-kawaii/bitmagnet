@@ -84,7 +84,7 @@ func TestApplyLLMResult_Language(t *testing.T) {
 		},
 		{
 			name:              "alpha3_alias_normalized_to_alpha2",
-			languages:         []string{"rus", "spa"}, // alpha-3 inputs
+			languages:         []string{"rus", "spa"},       // alpha-3 inputs
 			wantLanguages:     []model.Language{"ru", "es"}, // normalized to alpha-2
 			wantLanguageMulti: true,
 		},

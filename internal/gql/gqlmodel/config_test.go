@@ -16,10 +16,10 @@ import (
 // These are test-fixture values, not domain constants — they exist only to
 // keep the linter quiet without obscuring what each test asserts.
 const (
-	testHost          = "localhost"
-	testDbName        = "bitmagnet"
-	testWorkflow      = "default"
-	testTmdbBaseURL   = "https://api.themoviedb.org/3"
+	testHost           = "localhost"
+	testDbName         = "bitmagnet"
+	testWorkflow       = "default"
+	testTmdbBaseURL    = "https://api.themoviedb.org/3"
 	testMapKeyPassword = "password"
 	testMapKeyAPIKey   = "api_key"
 	testMapKeyToken    = "token"
@@ -138,11 +138,11 @@ func TestRedact_TorznabProfiles_NoSecretsByDefault(t *testing.T) {
 		BaseURL: "https://example.com",
 		Profiles: []torznab.Profile{
 			{
-				ID:          testWorkflow,
-				Title:       testDbName,
+				ID:           testWorkflow,
+				Title:        testDbName,
 				DefaultLimit: 100,
-				MaxLimit:    100,
-				BaseURL:     model.NewNullString("https://example.com"),
+				MaxLimit:     100,
+				BaseURL:      model.NewNullString("https://example.com"),
 			},
 		},
 	}
@@ -180,9 +180,9 @@ func TestRedact_TorznabProfiles_NoSecretsByDefault(t *testing.T) {
 func TestRedact_MapWithSecretKey(t *testing.T) {
 	t.Parallel()
 	in := map[string]any{
-		"host": testHost,
+		"host":             testHost,
 		testMapKeyPassword: "leak-me",
-		testMapKeyAPIKey:  "leak-me-too",
+		testMapKeyAPIKey:   "leak-me-too",
 		"nested": map[string]any{
 			testMapKeyToken: "leak-nested",
 			testMapKeyName:  "keep-me",
@@ -369,7 +369,7 @@ func TestRedact_PostgresDSN_PasswordInUserinfo_Redacted(t *testing.T) {
 func TestRedact_URLWithUserinfo_RedactsOnlyPassword(t *testing.T) {
 	t.Parallel()
 	in := map[string]any{
-		"proxy": "http://svc:secret-token@proxy.internal:8080/upstream?timeout=30s",
+		"proxy":    "http://svc:secret-token@proxy.internal:8080/upstream?timeout=30s",
 		"endpoint": "amqp://guest:guest@rabbitmq:5672/vhost",
 	}
 	out := Redact(in)
@@ -452,10 +452,10 @@ func TestRedact_URLWithUserinfoNoPassword_Unchanged(t *testing.T) {
 func TestRedact_NonURLString_Unchanged(t *testing.T) {
 	t.Parallel()
 	in := map[string]any{
-		testMapKeyName:      "Some Torrent Release",
-		"workflow":  testWorkflow,
-		"random":    "not-a-url-but-contains-colon://weird",
-		"empty":     "",
+		testMapKeyName: "Some Torrent Release",
+		"workflow":     testWorkflow,
+		"random":       "not-a-url-but-contains-colon://weird",
+		"empty":        "",
 	}
 	out := Redact(in)
 	m, ok := out.(map[string]any)

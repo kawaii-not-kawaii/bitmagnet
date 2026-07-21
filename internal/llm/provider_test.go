@@ -318,42 +318,42 @@ func TestClassifyResult_FlexInt_Coercion(t *testing.T) {
 		want expectation
 	}{
 		// --- Year (representative of all three numeric fields) ---
-		{ name: "year/number", body: `{"content_type":"movie","year":2024}`, want: expectation{year: 2024} },
-		{ name: "year/numeric_string", body: `{"content_type":"movie","year":"2024"}`, want: expectation{year: 2024} },
-		{ name: "year/empty_string", body: `{"content_type":"movie","year":""}`, want: expectation{} },
-		{ name: "year/non_numeric_string", body: `{"content_type":"movie","year":"unknown"}`, want: expectation{} },
-		{ name: "year/array_first_element", body: `{"content_type":"movie","year":[2024,2025]}`, want: expectation{year: 2024} },
-		{ name: "year/empty_array", body: `{"content_type":"movie","year":[]}`, want: expectation{} },
-		{ name: "year/null", body: `{"content_type":"movie","year":null}`, want: expectation{} },
-		{ name: "year/missing", body: `{"content_type":"movie"}`, want: expectation{} },
+		{name: "year/number", body: `{"content_type":"movie","year":2024}`, want: expectation{year: 2024}},
+		{name: "year/numeric_string", body: `{"content_type":"movie","year":"2024"}`, want: expectation{year: 2024}},
+		{name: "year/empty_string", body: `{"content_type":"movie","year":""}`, want: expectation{}},
+		{name: "year/non_numeric_string", body: `{"content_type":"movie","year":"unknown"}`, want: expectation{}},
+		{name: "year/array_first_element", body: `{"content_type":"movie","year":[2024,2025]}`, want: expectation{year: 2024}},
+		{name: "year/empty_array", body: `{"content_type":"movie","year":[]}`, want: expectation{}},
+		{name: "year/null", body: `{"content_type":"movie","year":null}`, want: expectation{}},
+		{name: "year/missing", body: `{"content_type":"movie"}`, want: expectation{}},
 
 		// --- Year: floats (LLMs often emit 2024.0 for integer fields) ---
 		// All truncate toward zero, matching Go's int(float64) conversion.
-		{ name: "year/float_integral_zero_fraction", body: `{"content_type":"movie","year":2024.0}`, want: expectation{year: 2024} },
-		{ name: "year/float_small_integral", body: `{"content_type":"movie","year":3.0}`, want: expectation{year: 3} },
-		{ name: "year/float_non_integral_truncates", body: `{"content_type":"movie","year":2024.7}`, want: expectation{year: 2024} },
-		{ name: "year/float_negative_truncates_toward_zero", body: `{"content_type":"movie","year":-1.5}`, want: expectation{year: -1} },
-		{ name: "year/float_large", body: `{"content_type":"movie","year":10000000000.0}`, want: expectation{year: 10000000000} },
-		{ name: "year/float_in_string", body: `{"content_type":"movie","year":"2024.0"}`, want: expectation{year: 2024} },
+		{name: "year/float_integral_zero_fraction", body: `{"content_type":"movie","year":2024.0}`, want: expectation{year: 2024}},
+		{name: "year/float_small_integral", body: `{"content_type":"movie","year":3.0}`, want: expectation{year: 3}},
+		{name: "year/float_non_integral_truncates", body: `{"content_type":"movie","year":2024.7}`, want: expectation{year: 2024}},
+		{name: "year/float_negative_truncates_toward_zero", body: `{"content_type":"movie","year":-1.5}`, want: expectation{year: -1}},
+		{name: "year/float_large", body: `{"content_type":"movie","year":10000000000.0}`, want: expectation{year: 10000000000}},
+		{name: "year/float_in_string", body: `{"content_type":"movie","year":"2024.0"}`, want: expectation{year: 2024}},
 
 		// --- Episode (the field most often emitted with the wrong type) ---
-		{ name: "episode/number", body: `{"content_type":"tv_show","episode":5}`, want: expectation{episode: 5} },
-		{ name: "episode/numeric_string_quoted", body: `{"content_type":"tv_show","episode":"5"}`, want: expectation{episode: 5} },
-		{ name: "episode/empty_string", body: `{"content_type":"tv_show","episode":""}`, want: expectation{} },
-		{ name: "episode/non_numeric_string", body: `{"content_type":"tv_show","episode":"pilot"}`, want: expectation{} },
-		{ name: "episode/multi_ep_array_takes_first", body: `{"content_type":"tv_show","episode":[1,2,3]}`, want: expectation{episode: 1} },
-		{ name: "episode/single_element_array", body: `{"content_type":"tv_show","episode":[7]}`, want: expectation{episode: 7} },
-		{ name: "episode/array_of_strings", body: `{"content_type":"tv_show","episode":["7","8"]}`, want: expectation{episode: 7} },
-		{ name: "episode/null", body: `{"content_type":"tv_show","episode":null}`, want: expectation{} },
-		{ name: "episode/missing", body: `{"content_type":"tv_show"}`, want: expectation{} },
+		{name: "episode/number", body: `{"content_type":"tv_show","episode":5}`, want: expectation{episode: 5}},
+		{name: "episode/numeric_string_quoted", body: `{"content_type":"tv_show","episode":"5"}`, want: expectation{episode: 5}},
+		{name: "episode/empty_string", body: `{"content_type":"tv_show","episode":""}`, want: expectation{}},
+		{name: "episode/non_numeric_string", body: `{"content_type":"tv_show","episode":"pilot"}`, want: expectation{}},
+		{name: "episode/multi_ep_array_takes_first", body: `{"content_type":"tv_show","episode":[1,2,3]}`, want: expectation{episode: 1}},
+		{name: "episode/single_element_array", body: `{"content_type":"tv_show","episode":[7]}`, want: expectation{episode: 7}},
+		{name: "episode/array_of_strings", body: `{"content_type":"tv_show","episode":["7","8"]}`, want: expectation{episode: 7}},
+		{name: "episode/null", body: `{"content_type":"tv_show","episode":null}`, want: expectation{}},
+		{name: "episode/missing", body: `{"content_type":"tv_show"}`, want: expectation{}},
 
 		// --- Season (same shape; one coercion case is enough since the path is shared) ---
-		{ name: "season/numeric_string", body: `{"content_type":"tv_show","season":"2"}`, want: expectation{season: 2} },
-		{ name: "season/array", body: `{"content_type":"tv_show","season":[2,3]}`, want: expectation{season: 2} },
+		{name: "season/numeric_string", body: `{"content_type":"tv_show","season":"2"}`, want: expectation{season: 2}},
+		{name: "season/array", body: `{"content_type":"tv_show","season":[2,3]}`, want: expectation{season: 2}},
 
 		// --- Combined real-world failure cases from the live benchmark ---
-		{ name: "real_world/anime_episode_string", body: `{"content_type":"tv_show","title":"BGC Tokyo 2040","season":1,"episode":"26"}`, want: expectation{season: 1, episode: 26} },
-		{ name: "real_world/culpa_array_case", body: `{"content_type":"movie","title":"Culpa","year":[2022]}`, want: expectation{year: 2022} },
+		{name: "real_world/anime_episode_string", body: `{"content_type":"tv_show","title":"BGC Tokyo 2040","season":1,"episode":"26"}`, want: expectation{season: 1, episode: 26}},
+		{name: "real_world/culpa_array_case", body: `{"content_type":"movie","title":"Culpa","year":[2022]}`, want: expectation{year: 2022}},
 	}
 
 	for _, tc := range cases {
@@ -389,17 +389,17 @@ func TestClassifyResult_MalformedStillErrors(t *testing.T) {
 		name string
 		body string
 	}{
-		{ name: "broken_json_syntax", body: `{"content_type":"movie", broken` },
-		{ name: "string_field_as_array", body: `{"content_type":["movie"]}` },                 // non-numeric field not made lenient
-		{ name: "tags_field_as_object", body: `{"content_type":"movie","tags":{"a":1}}` },     // slice field given wrong shape
-		{ name: "year_as_object", body: `{"content_type":"movie","year":{"value":2024}}` },    // object for numeric field
-		{ name: "episode_as_object", body: `{"content_type":"tv_show","episode":{"n":5}}` },   // object for numeric field
-		{ name: "root_array_not_object", body: `[{"content_type":"movie"}]` },                 // expected an object, got array
+		{name: "broken_json_syntax", body: `{"content_type":"movie", broken`},
+		{name: "string_field_as_array", body: `{"content_type":["movie"]}`},               // non-numeric field not made lenient
+		{name: "tags_field_as_object", body: `{"content_type":"movie","tags":{"a":1}}`},   // slice field given wrong shape
+		{name: "year_as_object", body: `{"content_type":"movie","year":{"value":2024}}`},  // object for numeric field
+		{name: "episode_as_object", body: `{"content_type":"tv_show","episode":{"n":5}}`}, // object for numeric field
+		{name: "root_array_not_object", body: `[{"content_type":"movie"}]`},               // expected an object, got array
 	}
 
 	for _, tc := range cases {
-	t.Run(tc.name, func(t *testing.T) {
-		t.Parallel()
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 
 			var r ClassifyResult
 			if err := json.Unmarshal([]byte(tc.body), &r); err == nil {

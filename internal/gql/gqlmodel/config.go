@@ -209,7 +209,7 @@ func redactSlice(rv reflect.Value) []any {
 //   - A string that parses as a URL with a non-empty password in userinfo
 //     gets ONLY the password portion redacted:
 //     postgres://admin:hunter2@host:5432/db
-//       -> postgres://admin:***REDACTED***@host:5432/db
+//     -> postgres://admin:***REDACTED***@host:5432/db
 //     This keeps the field diagnostically useful (host/port/dbname visible)
 //     which is the whole point of the settings viewer.
 //   - A URL with userinfo but empty password (postgres://admin@host/db)

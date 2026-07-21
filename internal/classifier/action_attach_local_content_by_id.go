@@ -38,18 +38,18 @@ func (attachLocalContentByIDAction) compileAction(ctx compilerContext) (action, 
 			if err != nil {
 				ctx.logger.Infow(
 					"local search failed",
-					"source",ctx.torrent.Hint.ContentSource.String,
-					"type",ctx.torrent.Hint.ContentType.String(),
-					"id",ctx.torrent.Hint.ContentID.String)
+					"source", ctx.torrent.Hint.ContentSource.String,
+					"type", ctx.torrent.Hint.ContentType.String(),
+					"id", ctx.torrent.Hint.ContentID.String)
 				return cl, err
 			}
 			ctx.logger.Infow(
 				"local search succeeded",
-				"source",ctx.torrent.Hint.ContentSource.String,
+				"source", ctx.torrent.Hint.ContentSource.String,
 				"type", content.Type.String(),
-				"id",content.ID,
-				"title",content.Title,
-				"year",content.ReleaseYear.String())
+				"id", content.ID,
+				"title", content.Title,
+				"year", content.ReleaseYear.String())
 			cl.AttachContent(&content)
 			return cl, nil
 		},

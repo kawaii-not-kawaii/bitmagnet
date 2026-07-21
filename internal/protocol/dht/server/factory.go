@@ -6,7 +6,7 @@ import (
 	"net/netip"
 	"time"
 
-// boilerplate/lazy removed in refactor
+	// boilerplate/lazy removed in refactor
 	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
 	"github.com/bitmagnet-io/bitmagnet/internal/lazy"
 	"github.com/bitmagnet-io/bitmagnet/internal/protocol/dht"

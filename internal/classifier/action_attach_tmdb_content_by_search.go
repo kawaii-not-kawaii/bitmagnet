@@ -37,7 +37,7 @@ func (attachTmdbContentBySearchAction) compileAction(ctx compilerContext) (actio
 				if searchErr != nil {
 					ctx.logger.Infow(
 						"tv show not found",
-					  "base_title", cl.BaseTitle.String,
+						"base_title", cl.BaseTitle.String,
 						"date", cl.Date.IsoDateString())
 					return cl, searchErr
 				}
@@ -58,7 +58,7 @@ func (attachTmdbContentBySearchAction) compileAction(ctx compilerContext) (actio
 				if searchErr != nil {
 					ctx.logger.Infow(
 						"movie not found",
-					  "base_title", cl.BaseTitle.String,
+						"base_title", cl.BaseTitle.String,
 						"date", cl.Date.IsoDateString())
 					return cl, searchErr
 				}

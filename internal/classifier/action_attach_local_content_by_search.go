@@ -38,19 +38,19 @@ func (attachLocalContentBySearchAction) compileAction(ctx compilerContext) (acti
 			if err != nil {
 				ctx.logger.Infow(
 					"local search failed",
-					"type",cl.ContentType.ContentType.String(),
-					"base_title",cl.BaseTitle.String,
-					"date",cl.Date.IsoDateString())
+					"type", cl.ContentType.ContentType.String(),
+					"base_title", cl.BaseTitle.String,
+					"date", cl.Date.IsoDateString())
 				return cl, err
 			}
 			ctx.logger.Infow(
 				"local search succeeded",
-				"base_title",cl.BaseTitle.String,
-				"date",cl.Date.IsoDateString(),
-				"id",content.ID,
-				"type",content.Type.String(),
-				"title",content.Title,
-				"year",content.ReleaseYear.String())
+				"base_title", cl.BaseTitle.String,
+				"date", cl.Date.IsoDateString(),
+				"id", content.ID,
+				"type", content.Type.String(),
+				"title", content.Title,
+				"year", content.ReleaseYear.String())
 			cl.AttachContent(&content)
 			return cl, nil
 		},

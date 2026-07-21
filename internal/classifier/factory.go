@@ -11,8 +11,6 @@ import (
 	"go.uber.org/zap"
 )
 
-
-
 type Params struct {
 	fx.In
 	Config       Config
@@ -42,7 +40,7 @@ func New(params Params) Result {
 			return nil, err
 		}
 
-		logger := zap.NewNop().Sugar();
+		logger := zap.NewNop().Sugar()
 		verbose := params.Config.Verbose
 		if verbose == true {
 			logger = params.Logger

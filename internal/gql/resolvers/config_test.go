@@ -15,7 +15,7 @@ import (
 // Test section keys extracted to satisfy goconst (3+ repeated literals).
 const (
 	testSectionKeyPostgres = "postgres"
-	testSectionKeyTmdb      = "tmdb"
+	testSectionKeyTmdb     = "tmdb"
 	testSectionKeyMadeUp   = "made_up_section"
 )
 
