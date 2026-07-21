@@ -22,4 +22,7 @@ RUN apk --update add \
 
 COPY --from=build /build/bitmagnet /usr/bin/bitmagnet
 
+RUN mkdir /config
+WORKDIR /config
+
 ENTRYPOINT ["bitmagnet"]
