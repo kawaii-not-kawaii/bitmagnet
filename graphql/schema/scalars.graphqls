@@ -4,3 +4,7 @@ scalar DateTime
 scalar Duration
 scalar Void
 scalar Year
+# JSON is an arbitrary JSON value (object, array, string, number, boolean,
+# null). Used by the settings API to return redacted config trees without
+# per-section schema types. Bound to interface{} / map[string]interface{}.
+scalar JSON

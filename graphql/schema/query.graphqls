@@ -6,6 +6,7 @@ type Query {
   torrent: TorrentQuery!
   torrentContent: TorrentContentQuery!
   sendToConfig: ClientSendToConfigQuery!
+  config: ConfigQuery!
 }
 
 type TorrentQuery {
