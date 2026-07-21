@@ -195,7 +195,11 @@ func TestSanitizeTag(t *testing.T) {
 			assert.LessOrEqual(t, len(got), model.TagNameMaxLength)
 
 			if got != "" {
-				assert.NoError(t, model.ValidateTagName(got), "sanitizeTag output must always satisfy ValidateTagName")
+				assert.NoError(
+					t,
+					model.ValidateTagName(got),
+					"sanitizeTag output must always satisfy ValidateTagName",
+				)
 			}
 		})
 	}
