@@ -113,6 +113,29 @@ func (r *queryResolver) SendToConfig(ctx context.Context) (gen.ClientSendToConfi
 	}, nil
 }
 
+// Config is the resolver for the config field. It returns the effective
+// resolved configuration for every registered section, with sensitive
+// fields redacted. Sections are enumerated generically from
+// r.ResolvedConfig.NodeMap — any section registered via
+// configfx.NewConfigModule appears automatically with no per-section code.
+func (r *queryResolver) Config(ctx context.Context) (gen.ConfigQuery, error) {
+	sections := make([]gen.ConfigSection, 0, len(r.ResolvedConfig.NodeMap))
+	for key, node := range r.ResolvedConfig.NodeMap {
+		sections = append(sections, gen.ConfigSection{
+			Key:               key,
+			RuntimeChangeable: configRuntimeChangeability(key),
+			Value:             gqlmodel.Redact(node.Value),
+		})
+	}
+	// Deterministic ordering: the GraphQL spec does not guarantee field
+	// ordering for list selections, but operators read this in a shell and
+	// expect stable output.
+	sort.Slice(sections, func(i, j int) bool {
+		return sections[i].Key < sections[j].Key
+	})
+	return gen.ConfigQuery{Sections: sections}, nil
+}
+
 // Files is the resolver for the files field.
 func (r *torrentQueryResolver) Files(ctx context.Context, obj *gqlmodel.TorrentQuery, input gqlmodel.TorrentFilesQueryInput) (query.GenericResult[model.TorrentFile], error) {
 	return gqlmodel.TorrentQuery{

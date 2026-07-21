@@ -73,6 +73,16 @@ type ComplexityRoot struct {
 		SendTo  func(childComplexity int) int
 	}
 
+	ConfigQuery struct {
+		Sections func(childComplexity int) int
+	}
+
+	ConfigSection struct {
+		Key               func(childComplexity int) int
+		RuntimeChangeable func(childComplexity int) int
+		Value             func(childComplexity int) int
+	}
+
 	Content struct {
 		Adult            func(childComplexity int) int
 		Attributes       func(childComplexity int) int
@@ -175,6 +185,7 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
+		Config         func(childComplexity int) int
 		Health         func(childComplexity int) int
 		Queue          func(childComplexity int) int
 		SendToConfig   func(childComplexity int) int
@@ -463,6 +474,7 @@ type QueryResolver interface {
 	Torrent(ctx context.Context) (gqlmodel.TorrentQuery, error)
 	TorrentContent(ctx context.Context) (gqlmodel.TorrentContentQuery, error)
 	SendToConfig(ctx context.Context) (gen.ClientSendToConfigQuery, error)
+	Config(ctx context.Context) (gen.ConfigQuery, error)
 }
 type QueueJobResolver interface {
 	RanAt(ctx context.Context, obj *model1.QueueJob) (*time.Time, error)
@@ -532,6 +544,34 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ClientSendToConfigQuery.SendTo(childComplexity), true
+
+	case "ConfigQuery.sections":
+		if e.complexity.ConfigQuery.Sections == nil {
+			break
+		}
+
+		return e.complexity.ConfigQuery.Sections(childComplexity), true
+
+	case "ConfigSection.key":
+		if e.complexity.ConfigSection.Key == nil {
+			break
+		}
+
+		return e.complexity.ConfigSection.Key(childComplexity), true
+
+	case "ConfigSection.runtimeChangeable":
+		if e.complexity.ConfigSection.RuntimeChangeable == nil {
+			break
+		}
+
+		return e.complexity.ConfigSection.RuntimeChangeable(childComplexity), true
+
+	case "ConfigSection.value":
+		if e.complexity.ConfigSection.Value == nil {
+			break
+		}
+
+		return e.complexity.ConfigSection.Value(childComplexity), true
 
 	case "Content.adult":
 		if e.complexity.Content.Adult == nil {
@@ -966,6 +1006,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.Torrent(childComplexity), true
+
+	case "Query.config":
+		if e.complexity.Query.Config == nil {
+			break
+		}
+
+		return e.complexity.Query.Config(childComplexity), true
 
 	case "Query.health":
 		if e.complexity.Query.Health == nil {
@@ -2289,6 +2336,51 @@ func (ec *executionContext) introspectType(name string) (*introspection.Type, er
 }
 
 var sources = []*ast.Source{
+	{Name: "../../graphql/schema/config.graphqls", Input: `# Settings API — read-only view of the effective resolved configuration for
+# every registered section. New sections registered via
+# configfx.NewConfigModule appear automatically; this schema intentionally
+# has no per-section types.
+#
+# Secret redaction is enforced in the resolver
+# (internal/gql/gqlmodel/config.go): fields whose name matches the
+# sensitive-name list are replaced with the placeholder "***REDACTED***"
+# before serialization. Redaction fails closed — if in doubt about a field,
+# it is redacted.
+
+type ConfigQuery {
+  # All registered config sections, sorted by key. Each section's value is
+  # the effective resolved configuration (defaults -> ./config.yml -> XDG ->
+  # env), with secrets redacted.
+  sections: [ConfigSection!]!
+}
+
+type ConfigSection {
+  # The section key, matching configfx.NewConfigModule(key, ...) (e.g.
+  # "postgres", "tmdb", "classifier").
+  key: String!
+
+  # Whether the section can be changed at runtime without a restart.
+  # RESTART_REQUIRED   — no live-apply path; restart the process to pick up
+  #                      changes. True for every section today except the LLM
+  #                      sub-config of classifier.
+  # LIVE_APPLY_AVAILABLE — a live Update() path exists in code. Note: for
+  #                      classifier (LLM), llm.Registry.Update() exists but has
+  #                      no production caller today, so live-apply is reachable
+  #                      only via future API wiring. The label is honest about
+  #                      the capability, not a claim that it is exercised.
+  runtimeChangeable: ConfigRuntimeChangeability!
+
+  # The resolved config as a JSON object (redacted). Scalars, nested objects,
+  # arrays, and maps are preserved; sensitive string fields are replaced with
+  # the placeholder string "***REDACTED***".
+  value: JSON!
+}
+
+enum ConfigRuntimeChangeability {
+  RESTART_REQUIRED
+  LIVE_APPLY_AVAILABLE
+}
+`, BuiltIn: false},
 	{Name: "../../graphql/schema/enums.graphqls", Input: `enum ContentType {
   movie
   tv_show
@@ -2683,6 +2775,7 @@ type ClientMutation {
   torrent: TorrentQuery!
   torrentContent: TorrentContentQuery!
   sendToConfig: ClientSendToConfigQuery!
+  config: ConfigQuery!
 }
 
 type TorrentQuery {
@@ -2863,6 +2956,10 @@ scalar DateTime
 scalar Duration
 scalar Void
 scalar Year
+# JSON is an arbitrary JSON value (object, array, string, number, boolean,
+# null). Used by the settings API to return redacted config trees without
+# per-section schema types. Bound to interface{} / map[string]interface{}.
+scalar JSON
 `, BuiltIn: false},
 	{Name: "../../graphql/schema/torrent_content.graphqls", Input: `input TorrentContentSearchQueryInput {
   queryString: String
@@ -3829,6 +3926,190 @@ func (ec *executionContext) fieldContext_ClientSendToConfigQuery_sendTo(_ contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ClientID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ConfigQuery_sections(ctx context.Context, field graphql.CollectedField, obj *gen.ConfigQuery) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ConfigQuery_sections(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Sections, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]gen.ConfigSection)
+	fc.Result = res
+	return ec.marshalNConfigSection2ᚕgithubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐConfigSectionᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ConfigQuery_sections(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ConfigQuery",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "key":
+				return ec.fieldContext_ConfigSection_key(ctx, field)
+			case "runtimeChangeable":
+				return ec.fieldContext_ConfigSection_runtimeChangeable(ctx, field)
+			case "value":
+				return ec.fieldContext_ConfigSection_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ConfigSection", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ConfigSection_key(ctx context.Context, field graphql.CollectedField, obj *gen.ConfigSection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ConfigSection_key(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Key, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ConfigSection_key(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ConfigSection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ConfigSection_runtimeChangeable(ctx context.Context, field graphql.CollectedField, obj *gen.ConfigSection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ConfigSection_runtimeChangeable(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RuntimeChangeable, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(gen.ConfigRuntimeChangeability)
+	fc.Result = res
+	return ec.marshalNConfigRuntimeChangeability2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐConfigRuntimeChangeability(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ConfigSection_runtimeChangeable(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ConfigSection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ConfigRuntimeChangeability does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ConfigSection_value(ctx context.Context, field graphql.CollectedField, obj *gen.ConfigSection) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ConfigSection_value(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Value, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(any)
+	fc.Result = res
+	return ec.marshalNJSON2interface(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ConfigSection_value(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ConfigSection",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type JSON does not have child fields")
 		},
 	}
 	return fc, nil
@@ -6969,6 +7250,54 @@ func (ec *executionContext) fieldContext_Query_sendToConfig(_ context.Context, f
 				return ec.fieldContext_ClientSendToConfigQuery_sendTo(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type ClientSendToConfigQuery", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_config(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_config(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().Config(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(gen.ConfigQuery)
+	fc.Result = res
+	return ec.marshalNConfigQuery2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐConfigQuery(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_config(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "sections":
+				return ec.fieldContext_ConfigQuery_sections(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ConfigQuery", field.Name)
 		},
 	}
 	return fc, nil
@@ -17546,6 +17875,94 @@ func (ec *executionContext) _ClientSendToConfigQuery(ctx context.Context, sel as
 	return out
 }
 
+var configQueryImplementors = []string{"ConfigQuery"}
+
+func (ec *executionContext) _ConfigQuery(ctx context.Context, sel ast.SelectionSet, obj *gen.ConfigQuery) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, configQueryImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ConfigQuery")
+		case "sections":
+			out.Values[i] = ec._ConfigQuery_sections(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var configSectionImplementors = []string{"ConfigSection"}
+
+func (ec *executionContext) _ConfigSection(ctx context.Context, sel ast.SelectionSet, obj *gen.ConfigSection) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, configSectionImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ConfigSection")
+		case "key":
+			out.Values[i] = ec._ConfigSection_key(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "runtimeChangeable":
+			out.Values[i] = ec._ConfigSection_runtimeChangeable(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "value":
+			out.Values[i] = ec._ConfigSection_value(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var contentImplementors = []string{"Content"}
 
 func (ec *executionContext) _Content(ctx context.Context, sel ast.SelectionSet, obj *model1.Content) graphql.Marshaler {
@@ -18468,6 +18885,28 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 					}
 				}()
 				res = ec._Query_sendToConfig(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "config":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_config(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -21234,6 +21673,68 @@ func (ec *executionContext) marshalNClientSendToConfigQuery2githubᚗcomᚋbitma
 	return ec._ClientSendToConfigQuery(ctx, sel, &v)
 }
 
+func (ec *executionContext) marshalNConfigQuery2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐConfigQuery(ctx context.Context, sel ast.SelectionSet, v gen.ConfigQuery) graphql.Marshaler {
+	return ec._ConfigQuery(ctx, sel, &v)
+}
+
+func (ec *executionContext) unmarshalNConfigRuntimeChangeability2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐConfigRuntimeChangeability(ctx context.Context, v any) (gen.ConfigRuntimeChangeability, error) {
+	var res gen.ConfigRuntimeChangeability
+	err := res.UnmarshalGQL(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNConfigRuntimeChangeability2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐConfigRuntimeChangeability(ctx context.Context, sel ast.SelectionSet, v gen.ConfigRuntimeChangeability) graphql.Marshaler {
+	return v
+}
+
+func (ec *executionContext) marshalNConfigSection2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐConfigSection(ctx context.Context, sel ast.SelectionSet, v gen.ConfigSection) graphql.Marshaler {
+	return ec._ConfigSection(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNConfigSection2ᚕgithubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐConfigSectionᚄ(ctx context.Context, sel ast.SelectionSet, v []gen.ConfigSection) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNConfigSection2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐConfigSection(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNContentAttribute2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋmodelᚐContentAttribute(ctx context.Context, sel ast.SelectionSet, v model1.ContentAttribute) graphql.Marshaler {
 	return ec._ContentAttribute(ctx, sel, &v)
 }
@@ -21590,6 +22091,27 @@ func (ec *executionContext) unmarshalNInt2uint(ctx context.Context, v any) (uint
 
 func (ec *executionContext) marshalNInt2uint(ctx context.Context, sel ast.SelectionSet, v uint) graphql.Marshaler {
 	res := graphql.MarshalUint(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) unmarshalNJSON2interface(ctx context.Context, v any) (any, error) {
+	res, err := graphql.UnmarshalAny(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNJSON2interface(ctx context.Context, sel ast.SelectionSet, v any) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	res := graphql.MarshalAny(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")

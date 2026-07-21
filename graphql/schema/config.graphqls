@@ -1,0 +1,44 @@
+# Settings API — read-only view of the effective resolved configuration for
+# every registered section. New sections registered via
+# configfx.NewConfigModule appear automatically; this schema intentionally
+# has no per-section types.
+#
+# Secret redaction is enforced in the resolver
+# (internal/gql/gqlmodel/config.go): fields whose name matches the
+# sensitive-name list are replaced with the placeholder "***REDACTED***"
+# before serialization. Redaction fails closed — if in doubt about a field,
+# it is redacted.
+
+type ConfigQuery {
+  # All registered config sections, sorted by key. Each section's value is
+  # the effective resolved configuration (defaults -> ./config.yml -> XDG ->
+  # env), with secrets redacted.
+  sections: [ConfigSection!]!
+}
+
+type ConfigSection {
+  # The section key, matching configfx.NewConfigModule(key, ...) (e.g.
+  # "postgres", "tmdb", "classifier").
+  key: String!
+
+  # Whether the section can be changed at runtime without a restart.
+  # RESTART_REQUIRED   — no live-apply path; restart the process to pick up
+  #                      changes. True for every section today except the LLM
+  #                      sub-config of classifier.
+  # LIVE_APPLY_AVAILABLE — a live Update() path exists in code. Note: for
+  #                      classifier (LLM), llm.Registry.Update() exists but has
+  #                      no production caller today, so live-apply is reachable
+  #                      only via future API wiring. The label is honest about
+  #                      the capability, not a claim that it is exercised.
+  runtimeChangeable: ConfigRuntimeChangeability!
+
+  # The resolved config as a JSON object (redacted). Scalars, nested objects,
+  # arrays, and maps are preserved; sensitive string fields are replaced with
+  # the placeholder string "***REDACTED***".
+  value: JSON!
+}
+
+enum ConfigRuntimeChangeability {
+  RESTART_REQUIRED
+  LIVE_APPLY_AVAILABLE
+}

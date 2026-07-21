@@ -4,6 +4,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/bitmagnet-io/bitmagnet/internal/blocking"
 	"github.com/bitmagnet-io/bitmagnet/internal/client"
+	rootconfig "github.com/bitmagnet-io/bitmagnet/internal/config"
 	"github.com/bitmagnet-io/bitmagnet/internal/database/dao"
 	"github.com/bitmagnet-io/bitmagnet/internal/database/search"
 	"github.com/bitmagnet-io/bitmagnet/internal/gql"
@@ -85,6 +86,7 @@ func New() fx.Option {
 							Processor:            pr,
 							BlockingManager:      bm,
 							ClientConfig:         p.ClientConfig,
+							ResolvedConfig:       p.ResolvedConfig,
 						}, nil
 					}),
 				}
@@ -114,6 +116,7 @@ type Params struct {
 	Processor            lazy.Lazy[processor.Processor]
 	BlockingManager      lazy.Lazy[blocking.Manager]
 	ClientConfig         client.Config
+	ResolvedConfig       rootconfig.ResolvedConfig
 }
 
 type Result struct {

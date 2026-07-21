@@ -21,6 +21,16 @@ type ClientSendToConfigQuery struct {
 	SendTo  []model.ID `json:"sendTo"`
 }
 
+type ConfigQuery struct {
+	Sections []ConfigSection `json:"sections"`
+}
+
+type ConfigSection struct {
+	Key               string                     `json:"key"`
+	RuntimeChangeable ConfigRuntimeChangeability `json:"runtimeChangeable"`
+	Value             any                        `json:"value"`
+}
+
 type ContentTypeAgg struct {
 	Value      *model1.ContentType `json:"value,omitempty"`
 	Label      string              `json:"label"`
@@ -273,6 +283,47 @@ type WorkersListAllQueryResult struct {
 
 type WorkersQuery struct {
 	ListAll WorkersListAllQueryResult `json:"listAll"`
+}
+
+type ConfigRuntimeChangeability string
+
+const (
+	ConfigRuntimeChangeabilityRestartRequired    ConfigRuntimeChangeability = "RESTART_REQUIRED"
+	ConfigRuntimeChangeabilityLiveApplyAvailable ConfigRuntimeChangeability = "LIVE_APPLY_AVAILABLE"
+)
+
+var AllConfigRuntimeChangeability = []ConfigRuntimeChangeability{
+	ConfigRuntimeChangeabilityRestartRequired,
+	ConfigRuntimeChangeabilityLiveApplyAvailable,
+}
+
+func (e ConfigRuntimeChangeability) IsValid() bool {
+	switch e {
+	case ConfigRuntimeChangeabilityRestartRequired, ConfigRuntimeChangeabilityLiveApplyAvailable:
+		return true
+	}
+	return false
+}
+
+func (e ConfigRuntimeChangeability) String() string {
+	return string(e)
+}
+
+func (e *ConfigRuntimeChangeability) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = ConfigRuntimeChangeability(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid ConfigRuntimeChangeability", str)
+	}
+	return nil
+}
+
+func (e ConfigRuntimeChangeability) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 
 type HealthStatus string
