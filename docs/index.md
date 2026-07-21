@@ -9,11 +9,13 @@
 ### Quick Reference
 
 #### Backend (root)
+
 - **Type:** Backend Service
 - **Tech Stack:** Go 1.23, Gin, GraphQL (gqlgen), PostgreSQL (GORM), Prometheus
 - **Entry Point:** main.go -> internal/app/app.go (fx DI)
 
 #### Web UI (webui/)
+
 - **Type:** Web Frontend
 - **Tech Stack:** Angular 18, Angular Material, Apollo GraphQL, Transloco i18n, Chart.js
 - **Root:** webui/
@@ -40,11 +42,13 @@
 ## Getting Started
 
 ### Prerequisites
+
 - Go 1.23.6+
 - Node.js 22+
 - PostgreSQL 16
 
 ### Quick Start
+
 ```bash
 # Set up database
 createdb bitmagnet
@@ -58,6 +62,7 @@ go run . worker run --all
 ```
 
 ### Access
+
 - **Web UI:** http://localhost:3334 (dev mode)
 - **GraphQL API:** POST http://localhost:3333/graphql
 - **GraphQL Playground:** GET http://localhost:3333/graphql

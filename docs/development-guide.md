@@ -13,12 +13,14 @@
 ## Quick Start
 
 ### 1. Clone and enter the repository
+
 ```bash
 git clone https://github.com/bitmagnet-io/bitmagnet.git
 cd bitmagnet
 ```
 
 ### 2. Set up PostgreSQL
+
 ```bash
 # Create database
 createdb bitmagnet
@@ -28,6 +30,7 @@ docker run -d --name bitmagnet-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=b
 ```
 
 ### 3. Set up environment
+
 ```bash
 # Copy example env file
 cp .env.example .env  # if exists, or set:
@@ -35,18 +38,21 @@ export POSTGRES_PASSWORD=postgres
 ```
 
 ### 4. Install dependencies and run migrations
+
 ```bash
 task install-webui   # npm ci in webui/
 task migrate         # goose up
 ```
 
 ### 5. Run the backend
+
 ```bash
 # Run all workers (HTTP server, DHT crawler, queue server)
 go run . worker run --all
 ```
 
 ### 6. Run the frontend (separate terminal)
+
 ```bash
 cd webui
 npm start  # Angular dev server on :3334, proxied to backend :3333
@@ -54,43 +60,43 @@ npm start  # Angular dev server on :3334, proxied to backend :3333
 
 ## Build Commands
 
-| Command | Description |
-|---------|-------------|
-| `task build` | Build Go binary with git tag |
-| `task build-webui` | Build Angular app for production |
-| `task build-docsite` | Build Jekyll documentation site |
-| `task install-webui` | Install npm dependencies |
-| `go run . worker run --all` | Run all workers |
+| Command                     | Description                      |
+| --------------------------- | -------------------------------- |
+| `task build`                | Build Go binary with git tag     |
+| `task build-webui`          | Build Angular app for production |
+| `task build-docsite`        | Build Jekyll documentation site  |
+| `task install-webui`        | Install npm dependencies         |
+| `go run . worker run --all` | Run all workers                  |
 
 ## Code Generation
 
-| Command | Description |
-|---------|-------------|
-| `task gen-go` | go generate ./... |
-| `task gen-gorm` | Generate GORM DAOs |
-| `task gen-gql-enums` | Generate GraphQL enum stringers |
-| `task gen-gql` | Generate gqlgen code from schema |
-| `task gen-protoc` | Compile protobuf definitions |
-| `task gen-mockery` | Generate mock implementations |
-| `task gen-classifier-schema` | Generate classifier JSON schema |
-| `task gen-webui-graphql` | Generate Angular GraphQL types |
+| Command                      | Description                      |
+| ---------------------------- | -------------------------------- |
+| `task gen-go`                | go generate ./...                |
+| `task gen-gorm`              | Generate GORM DAOs               |
+| `task gen-gql-enums`         | Generate GraphQL enum stringers  |
+| `task gen-gql`               | Generate gqlgen code from schema |
+| `task gen-protoc`            | Compile protobuf definitions     |
+| `task gen-mockery`           | Generate mock implementations    |
+| `task gen-classifier-schema` | Generate classifier JSON schema  |
+| `task gen-webui-graphql`     | Generate Angular GraphQL types   |
 
 ## Testing
 
-| Command | Description |
-|---------|-------------|
-| `task test` | Run all tests |
-| `task test-go` | go test ./... |
+| Command           | Description               |
+| ----------------- | ------------------------- |
+| `task test`       | Run all tests             |
+| `task test-go`    | go test ./...             |
 | `task test-webui` | ng test (Karma + Jasmine) |
 
 ## Linting
 
-| Command | Description |
-|---------|-------------|
-| `task lint` | Run all linters |
-| `task lint-webui` | ESLint for Angular |
-| `task lint-prettier` | Prettier formatting check |
-| `golangci-lint run --timeout=10m` | Go linting |
+| Command                           | Description               |
+| --------------------------------- | ------------------------- |
+| `task lint`                       | Run all linters           |
+| `task lint-webui`                 | ESLint for Angular        |
+| `task lint-prettier`              | Prettier formatting check |
+| `golangci-lint run --timeout=10m` | Go linting                |
 
 ## Project Structure
 
@@ -103,6 +109,7 @@ npm start  # Angular dev server on :3334, proxied to backend :3333
 ## CLI Commands
 
 Available CLI commands:
+
 ```bash
 # Classifier operations
 go run . classifier show        # Show classification rules
@@ -125,6 +132,7 @@ go run . worker list            # List available workers
 ## Development Utilities
 
 Located in `internal/dev/`:
+
 - Database migration management
 - GORM code generation
 - Development-specific commands
@@ -139,7 +147,8 @@ Located in `internal/dev/`:
 
 ## Environment Variables
 
-Key configuration via environment variables (prefixed with subsystem_):
+Key configuration via environment variables (prefixed with subsystem\_):
+
 - `POSTGRES_PASSWORD` - Database password
 - `HTTP_SERVER_LOCAL_ADDRESS` - HTTP listen address (default :3333)
 - `TMDB_API_KEY` - TMDB API key for content enrichment

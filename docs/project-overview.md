@@ -14,15 +14,16 @@ Multi-part monorepo: Go backend server + Angular SPA frontend
 
 ## Repository Structure
 
-| Part | Path | Type | Tech Stack |
-|------|------|------|------------|
-| Backend | `/` (root) | Backend API/Service | Go 1.23, Gin, GraphQL (gqlgen), PostgreSQL (GORM), Prometheus |
-| Web UI | `webui/` | Web Frontend | Angular 18, Angular Material, Apollo GraphQL, Transloco i18n, Chart.js |
-| Documentation Site | `bitmagnet.io/` | Static Site | Jekyll (Ruby), hosted on GitHub Pages |
+| Part               | Path            | Type                | Tech Stack                                                             |
+| ------------------ | --------------- | ------------------- | ---------------------------------------------------------------------- |
+| Backend            | `/` (root)      | Backend API/Service | Go 1.23, Gin, GraphQL (gqlgen), PostgreSQL (GORM), Prometheus          |
+| Web UI             | `webui/`        | Web Frontend        | Angular 18, Angular Material, Apollo GraphQL, Transloco i18n, Chart.js |
+| Documentation Site | `bitmagnet.io/` | Static Site         | Jekyll (Ruby), hosted on GitHub Pages                                  |
 
 ## Tech Stack Summary
 
 ### Backend
+
 - **Language:** Go 1.23.6
 - **HTTP Framework:** Gin (gin-gonic/gin)
 - **GraphQL:** gqlgen v0.17.64 with code generation
@@ -40,6 +41,7 @@ Multi-part monorepo: Go backend server + Angular SPA frontend
 - **Profiling:** grafana/pyroscope
 
 ### Frontend
+
 - **Framework:** Angular 18 (Standalone components, lazy loading)
 - **UI Library:** Angular Material (v18) with M3 theming
 - **GraphQL Client:** Apollo Angular with codegen
@@ -48,6 +50,7 @@ Multi-part monorepo: Go backend server + Angular SPA frontend
 - **Testing:** Jasmine + Karma
 
 ### Infrastructure
+
 - **Container:** Docker (Alpine-based), multi-arch image to GHCR
 - **CI/CD:** GitHub Actions (lint, test, generated code check, multi-arch Docker build)
 - **Release:** GoReleaser with nfpm packaging (apk, deb, rpm, archlinux)

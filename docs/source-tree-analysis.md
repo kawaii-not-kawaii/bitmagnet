@@ -182,24 +182,24 @@ bitmagnet/
 
 ## Critical Directories
 
-| Directory | Purpose |
-|-----------|---------|
-| `internal/` | All Go code organized by subsystem |
-| `internal/app/` | Application composition, CLI commands |
+| Directory              | Purpose                                         |
+| ---------------------- | ----------------------------------------------- |
+| `internal/`            | All Go code organized by subsystem              |
+| `internal/app/`        | Application composition, CLI commands           |
 | `internal/dhtcrawler/` | Core DHT crawling pipeline (the killer feature) |
-| `internal/classifier/` | YAML+CEL content classification engine |
-| `internal/processor/` | Processing pipeline bridge |
-| `internal/gql/` | GraphQL API layer |
-| `internal/database/` | Database ORM, queries, search, full-text search |
-| `internal/model/` | Data models with custom types |
-| `internal/protocol/` | BitTorrent/DHT protocol implementations |
-| `internal/queue/` | PostgreSQL-backed job queue |
-| `internal/worker/` | Worker lifecycle management |
-| `webui/src/app/` | Angular frontend application |
-| `graphql/schema/` | GraphQL schema definitions (source of truth) |
-| `migrations/` | Database schema migrations |
-| `observability/` | Grafana dashboards, agent configs |
-| `.github/workflows/` | CI/CD pipeline definitions |
+| `internal/classifier/` | YAML+CEL content classification engine          |
+| `internal/processor/`  | Processing pipeline bridge                      |
+| `internal/gql/`        | GraphQL API layer                               |
+| `internal/database/`   | Database ORM, queries, search, full-text search |
+| `internal/model/`      | Data models with custom types                   |
+| `internal/protocol/`   | BitTorrent/DHT protocol implementations         |
+| `internal/queue/`      | PostgreSQL-backed job queue                     |
+| `internal/worker/`     | Worker lifecycle management                     |
+| `webui/src/app/`       | Angular frontend application                    |
+| `graphql/schema/`      | GraphQL schema definitions (source of truth)    |
+| `migrations/`          | Database schema migrations                      |
+| `observability/`       | Grafana dashboards, agent configs               |
+| `.github/workflows/`   | CI/CD pipeline definitions                      |
 
 ## Entry Points
 

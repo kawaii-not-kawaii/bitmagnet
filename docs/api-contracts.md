@@ -9,12 +9,15 @@ Cache: InMemory LRU 1000 + APQ LRU 100
 ## Queries
 
 ### version
+
 ```graphql
 version: String!
 ```
+
 Returns the compiled git tag version.
 
 ### workers
+
 ```graphql
 workers: WorkersQuery!
 workers {
@@ -25,6 +28,7 @@ workers {
 ```
 
 ### health
+
 ```graphql
 health: HealthQuery!
 health {
@@ -34,6 +38,7 @@ health {
 ```
 
 ### torrent
+
 ```graphql
 torrent {
   files(input: TorrentFilesQueryInput!): TorrentFilesQueryResult!
@@ -44,6 +49,7 @@ torrent {
 ```
 
 ### torrentContent
+
 ```graphql
 torrentContent {
   search(input: TorrentContentSearchQueryInput!): TorrentContentSearchResult!
@@ -51,6 +57,7 @@ torrentContent {
 ```
 
 ### queue
+
 ```graphql
 queue {
   jobs(input: QueueJobsQueryInput!): QueueJobsQueryResult!
@@ -95,6 +102,7 @@ type TorrentContentSearchResult {
 ## Mutations
 
 ### torrent
+
 ```graphql
 torrent {
   delete(infoHashes: [Hash20!]!): Void
@@ -114,6 +122,7 @@ input TorrentReprocessInput {
 ```
 
 ### queue
+
 ```graphql
 queue {
   purgeJobs(input: QueuePurgeJobsInput!): Void
@@ -136,6 +145,7 @@ input QueueEnqueueReprocessTorrentsBatchInput {
 ## Key Types
 
 ### TorrentContent
+
 ```graphql
 type TorrentContent {
   id: ID!
@@ -163,6 +173,7 @@ type TorrentContent {
 ```
 
 ### Content
+
 ```graphql
 type Content {
   type: ContentType!
@@ -187,6 +198,7 @@ type Content {
 ```
 
 ### Torrent
+
 ```graphql
 type Torrent {
   infoHash: Hash20!
@@ -211,6 +223,7 @@ type Torrent {
 ## Torznab API
 
 Embedded torznab adapter for Servarr stack integration (Sonarr, Radarr, etc.):
+
 - Newznab/Torznab API subset
 - XML responses
 - Capability reporting (categories, search modes)
@@ -219,6 +232,7 @@ Embedded torznab adapter for Servarr stack integration (Sonarr, Radarr, etc.):
 ## Import API
 
 Endpoint: /import for ingesting torrent files from external sources (e.g., RARBG backup)
+
 - HTTP endpoint
 - Accepts torrent files or metadata
 

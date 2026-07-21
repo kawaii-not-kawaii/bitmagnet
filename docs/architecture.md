@@ -53,6 +53,7 @@ Circular dependencies are resolved using lazy.Lazy[T] - a generic lazy evaluatio
 ### Worker Registry
 
 All background processes register as workers via a central Registry:
+
 - `http_server` - Gin HTTP server
 - `dht_crawler` - DHT crawling pipeline
 - `queue_server` - Job queue polling server
@@ -78,6 +79,7 @@ The Registry enables/disables workers via CLI flags (--keys=http_server --keys=d
 ### Configuration
 
 Layered resolver chain with priority:
+
 1. Extra YAML config files (EXTRA_CONFIG_FILES env)
 2. Environment variables (e.g., HTTP_SERVER_LOCAL_ADDRESS)
 3. ./config.yml (optional)
@@ -114,6 +116,7 @@ persistTorrents --> also enqueues classify job (delayed 1min)
 ```
 
 Stage details:
+
 1. **Bootstrap**: DNS bootstrap node resolution, feeds into ping queue
 2. **Node Discovery**: Deduplicates nodes by IP, routes to downstream channels
 3. **Ping**: Verifies liveness, drops stale nodes
@@ -141,14 +144,16 @@ YAML-based classification engine:
 ### Queue System
 
 PostgreSQL-based job queue using SELECT FOR UPDATE SKIP LOCKED:
+
 - Polling interval: 30s default (drops to 1ms when jobs available)
-- Retry backoff: Sidekiq-inspired (retry^4 + 15 + random(30)*retry + 1s)
+- Retry backoff: Sidekiq-inspired (retry^4 + 15 + random(30)\*retry + 1s)
 - Panic-safe job execution with goroutine recovery
 - Garbage collection: deletes processed/failed jobs every 10min
 
 ### Processor
 
 Bridges the queue and the classifier:
+
 1. Loads torrents from DB (with existing content matches)
 2. For each torrent in parallel: runs classifier workflow
 3. Re-queues failed hashes as new job
@@ -157,12 +162,14 @@ Bridges the queue and the classifier:
 ## Frontend Architecture
 
 ### Application Structure
+
 - Standalone Angular 18 components with lazy loading
 - No NgRx - simple BehaviorSubject + URL-driven state management
 - Controller pattern: plain TypeScript classes own state and emit GraphQL variables
 - DataSource pattern: CDK DataSource implementations for table-backed lists
 
 ### Key Design Decisions
+
 - All GraphQL operations use fetchPolicy: "no-cache"
 - Theme switching via CSS attribute on <html> element, persisted to localStorage
 - 14 languages with static JSON imports (not lazy HTTP)
@@ -170,21 +177,23 @@ Bridges the queue and the classifier:
 
 ## Integration Points
 
-| Source | Target | Type | Details |
-|--------|--------|------|---------|
-| Web UI | Backend | GraphQL (HTTP) | All queries/mutations over HTTP POST |
-| Backend | TMDB | HTTP REST | Content enrichment via TMDB API |
-| Backend | Postgres | SQL (pgx) | All data persistence |
-| Backend | Torznab | Embedded | Servarr stack integration |
+| Source  | Target   | Type           | Details                              |
+| ------- | -------- | -------------- | ------------------------------------ |
+| Web UI  | Backend  | GraphQL (HTTP) | All queries/mutations over HTTP POST |
+| Backend | TMDB     | HTTP REST      | Content enrichment via TMDB API      |
+| Backend | Postgres | SQL (pgx)      | All data persistence                 |
+| Backend | Torznab  | Embedded       | Servarr stack integration            |
 
 ## Data Flow
 
 ### Torrent Ingestion Flow
+
 ```text
 DHT -> Crawler -> PostgreSQL -> Queue -> Processor -> Classifier -> TMDB -> PostgreSQL -> GraphQL -> Web UI
 ```
 
 ### Search Flow
+
 ```text
 User -> Angular -> GraphQL Query -> gqlgen -> Search Service -> PostgreSQL (GIN-indexed FTS) -> Response -> Web UI
 ```

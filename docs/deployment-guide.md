@@ -55,6 +55,7 @@ Published to: `ghcr.io/bitmagnet-io/bitmagnet`
 ## Configuration
 
 Configuration is loaded from (in priority order):
+
 1. Extra YAML files (EXTRA_CONFIG_FILES env)
 2. Environment variables
 3. ./config.yml (optional)
@@ -63,34 +64,38 @@ Configuration is loaded from (in priority order):
 
 ### Key Environment Variables
 
-| Variable | Description | Default |
-|----------|-------------|---------|
-| POSTGRES_HOST | PostgreSQL host | localhost |
-| POSTGRES_PASSWORD | Database password | postgres |
-| HTTP_SERVER_LOCAL_ADDRESS | Listen address | :3333 |
-| TMDB_API_KEY | TMDB API key | (required for TMDB features) |
-| LOG_FILE_ROTATOR_ENABLED | Enable file logging | false |
+| Variable                  | Description         | Default                      |
+| ------------------------- | ------------------- | ---------------------------- |
+| POSTGRES_HOST             | PostgreSQL host     | localhost                    |
+| POSTGRES_PASSWORD         | Database password   | postgres                     |
+| HTTP_SERVER_LOCAL_ADDRESS | Listen address      | :3333                        |
+| TMDB_API_KEY              | TMDB API key        | (required for TMDB features) |
+| LOG_FILE_ROTATOR_ENABLED  | Enable file logging | false                        |
 
 ## CI/CD Pipeline
 
 GitHub Actions workflows:
 
 ### Checks (`checks.yml`)
+
 - **lint** - ESLint, Prettier, golangci-lint
 - **test** - Go tests + Angular tests
 - **generated** - Verifies all generated code is up-to-date, runs migrations, builds web UI
 
 ### Container Registry (`ghcr.yml`)
-- Triggers on v*.*.* tags
+
+- Triggers on v*.*.\* tags
 - Multi-platform Docker build and push
 - GoReleaser binary builds for all platforms
 - Package formats: apk, deb, rpm, archlinux, tar.gz, zip
 
 ### Security (`codeql.yml`)
+
 - CodeQL analysis for Go, JavaScript/TypeScript, Ruby
 - Scheduled weekly and on PR to main
 
 ### Documentation (`jekyll-gh-pages.yml`)
+
 - Builds and deploys Jekyll documentation site to GitHub Pages
 
 ## Release Process
@@ -113,12 +118,14 @@ GitHub Actions workflows:
 ## Monitoring
 
 The observability stack includes pre-configured:
+
 - Grafana dashboards for system metrics
 - Loki for log aggregation
 - Prometheus for metric collection
 - Pyroscope for continuous profiling
 
 Configuration files are in `observability/`:
+
 - `grafana-agent.config.river` - Agent pipeline
 - `prometheus.config.yaml` - Metric collection
 - `loki.config.yaml` - Log storage
