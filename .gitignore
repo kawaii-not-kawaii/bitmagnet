@@ -51,3 +51,4 @@ _bmad-output/
 # Vendor API reference docs saved locally for agent context.
 # Third-party documentation, not project source.
 *Lemonade Server Documentation*.md
+HANDOFF.md
