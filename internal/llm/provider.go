@@ -4,8 +4,14 @@
 package llm
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
+	"math"
+	"strconv"
+	"strings"
 )
 
 // Common errors returned by providers.
@@ -54,6 +60,135 @@ type ClassifyResult struct {
 	ReleaseGroup string `json:"release_group,omitempty"`
 	// Tags are freeform labels derived from the torrent, e.g. ["multilingual", "remux"].
 	Tags []string `json:"tags,omitempty"`
+}
+
+// flexInt is an int that tolerates the real-world type variations LLMs emit
+// for numeric ClassifyResult fields (Year, Season, Episode). It accepts:
+//   - a JSON number (int or float):       26 / 2024.0 / 1.5 -> 26 / 2024 / 1
+//   - a JSON string of a number:          "26" / "1.5"     -> 26 / 1
+//   - a JSON array of the above:          [1,2,3]          -> 1 (first element)
+//   - JSON null, "", non-numeric:                          -> 0 (treated as unset)
+//
+// Float handling: LLMs frequently emit "year": 2024.0 for integer fields —
+// it is the same class of type sloppiness this type exists to absorb, so
+// floats are accepted and truncated toward zero, matching Go's int(float64)
+// conversion. Integral floats (2024.0 -> 2024) and non-integral floats
+// (2024.7 -> 2024, -1.5 -> -1) are treated identically: drawing a semantic
+// line between "trailing .0" and "trailing .5" would be arbitrary and is
+// not visible to the model. The downstream classifier's `> 0` guards
+// (action_llm_classify.go:111-121) filter implausible results (zeros and
+// negatives), so silent truncation cannot corrupt stored data — at worst
+// it yields a value the caller already knows how to reject. NaN, ±Inf, and
+// values outside int range collapse to 0 to avoid wraparound.
+//
+// Array rationale: a multi-episode pack returns "episode": [1,2,3]. The
+// downstream classifier can only store a single (season, episode) tuple
+// (model.Episodes is map[int]map[int]struct{}), so multi-episode info is
+// lost regardless. Taking the first element preserves a useful value — the
+// starting episode of the pack — rather than dropping the field. The same
+// rule applies uniformly to Year and Season for consistency; an array for
+// Year is nonsensical but taking the first is harmless.
+type flexInt int
+
+// parseFlexNumber parses a numeric string into flexInt, accepting both
+// integer and float representations. Floats truncate toward zero. Returns
+// ok=false if s is not a valid number, or if it is NaN/±Inf/out of int range.
+func parseFlexNumber(s string) (flexInt, bool) {
+	if i, err := strconv.Atoi(s); err == nil {
+		return flexInt(i), true
+	}
+	f, err := strconv.ParseFloat(s, 64)
+	if err != nil {
+		return 0, false
+	}
+	if math.IsNaN(f) || math.IsInf(f, 0) || f > float64(math.MaxInt) || f < float64(math.MinInt) {
+		return 0, false
+	}
+	return flexInt(int(f)), true
+}
+
+func (f *flexInt) UnmarshalJSON(data []byte) error {
+	data = bytes.TrimSpace(data)
+
+	if bytes.Equal(data, []byte("null")) {
+		*f = 0
+		return nil
+	}
+
+	// Array — recurse on the first element. Empty array -> unset.
+	if len(data) > 0 && data[0] == '[' {
+		var arr []json.RawMessage
+		if err := json.Unmarshal(data, &arr); err != nil {
+			return fmt.Errorf("flexInt: invalid array: %w", err)
+		}
+		if len(arr) == 0 {
+			*f = 0
+			return nil
+		}
+		return f.UnmarshalJSON(arr[0])
+	}
+
+	// String — trim and parse. Empty or non-numeric -> unset (not an error):
+	// the model often emits "" when it cannot determine a value, and a
+	// descriptive string like "pilot" for an episode is wrong but not
+	// malformed JSON. The downstream `> 0` guards filter the resulting zero.
+	if len(data) > 0 && data[0] == '"' {
+		var s string
+		if err := json.Unmarshal(data, &s); err != nil {
+			return fmt.Errorf("flexInt: invalid string: %w", err)
+		}
+		s = strings.TrimSpace(s)
+		if s == "" {
+			*f = 0
+			return nil
+		}
+		v, ok := parseFlexNumber(s)
+		if !ok {
+			*f = 0
+			return nil
+		}
+		*f = v
+		return nil
+	}
+
+	// Bare number — int or float. Anything else is genuinely malformed and
+	// must error (the JSON decoder normally guarantees this branch only sees
+	// number syntax, so reaching it with a non-number means the caller poked
+	// raw bytes into flexInt.UnmarshalJSON directly).
+	v, ok := parseFlexNumber(string(data))
+	if !ok {
+		return fmt.Errorf("flexInt: cannot unmarshal %s into int", data)
+	}
+	*f = v
+	return nil
+}
+
+// UnmarshalJSON decodes a ClassifyResult from an LLM response, tolerating the
+// type variations documented on flexInt for Year/Season/Episode only. All
+// other fields use the standard JSON decoder: a genuinely malformed response
+// (broken JSON syntax, wrong type for a non-numeric field, an object where a
+// scalar is expected) still returns an error.
+//
+// The alias type strips this method so we can defer to the default decoder
+// for the non-numeric fields, while the outer struct shadows Year/Season/Episode
+// with flexInt-typed fields at a shallower depth — Go's JSON decoder selects
+// the shallower field, so only the flexInt unmarshaler is invoked for them.
+func (r *ClassifyResult) UnmarshalJSON(data []byte) error {
+	type alias ClassifyResult
+	aux := struct {
+		alias
+		Year    flexInt `json:"year"`
+		Season  flexInt `json:"season"`
+		Episode flexInt `json:"episode"`
+	}{}
+	if err := json.Unmarshal(data, &aux); err != nil {
+		return err
+	}
+	*r = ClassifyResult(aux.alias)
+	r.Year = int(aux.Year)
+	r.Season = int(aux.Season)
+	r.Episode = int(aux.Episode)
+	return nil
 }
 
 // Provider classifies a single torrent by name and optional file list.
