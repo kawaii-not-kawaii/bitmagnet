@@ -550,3 +550,124 @@ func TestRedact_NonURLString_Unchanged(t *testing.T) {
 		t.Errorf("empty string changed: got %v", m["empty"])
 	}
 }
+
+// TestRedact_NonCanonicalEscaping_DoesNotLeak is the regression test for a
+// fail-open bug in redactStringValue. The previous implementation compared
+// the raw userinfo span against url.Userinfo.String()'s canonical
+// re-encoding and, when they differed, returned the ORIGINAL STRING —
+// password and all.
+//
+// Raw and canonical differ for any source that is not canonically escaped,
+// which is common in tool-generated DSNs: over-escaped characters
+// ("pass%77ord" re-encodes to "password") and lowercase hex escapes
+// ("%2f" re-encodes to "%2F"). Each case below leaked the full credential.
+func TestRedact_NonCanonicalEscaping_DoesNotLeak(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name   string
+		in     string
+		secret string
+	}{
+		{
+			name:   "over-escaped character in password",
+			in:     "postgres://admin:pass%77ord@db.internal:5432/bitmagnet",
+			secret: "pass%77ord",
+		},
+		{
+			name:   "lowercase hex escape in password",
+			in:     "postgres://admin:pa%2fss@db.internal:5432/bitmagnet",
+			secret: "pa%2fss",
+		},
+		{
+			name:   "escaped at-sign in password",
+			in:     "postgres://admin:p%40ssword@db.internal:5432/bitmagnet",
+			secret: "p%40ssword",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			out, ok := Redact(map[string]any{"dsn": tc.in}).(map[string]any)
+			if !ok {
+				t.Fatalf("expected map[string]any")
+			}
+
+			got, ok := out["dsn"].(string)
+			if !ok {
+				t.Fatalf("dsn not a string: got %T", out["dsn"])
+			}
+
+			if strings.Contains(got, tc.secret) {
+				t.Errorf("password leaked: %q", got)
+			}
+
+			if !strings.Contains(got, RedactedValuePlaceholder) {
+				t.Errorf("no redaction placeholder present: %q", got)
+			}
+		})
+	}
+}
+
+// TestRedact_AtSignInPath_RedactsCorrectly guards the authority-bounding
+// logic. Searching the whole string for the last '@' would pick the one in
+// the path and splice the placeholder over the host instead of the password.
+func TestRedact_AtSignInPath_RedactsCorrectly(t *testing.T) {
+	t.Parallel()
+
+	out, ok := Redact(map[string]any{
+		"dsn": "postgres://admin:hunter2@db.internal:5432/bitmagnet@v2",
+	}).(map[string]any)
+	if !ok {
+		t.Fatalf("expected map[string]any")
+	}
+
+	got, ok := out["dsn"].(string)
+	if !ok {
+		t.Fatalf("dsn not a string: got %T", out["dsn"])
+	}
+
+	if strings.Contains(got, "hunter2") {
+		t.Errorf("password leaked: %q", got)
+	}
+
+	// The host and the path's '@' must both survive intact.
+	for _, want := range []string{"db.internal", "5432", "bitmagnet@v2"} {
+		if !strings.Contains(got, want) {
+			t.Errorf("lost diagnostic part %q: %q", want, got)
+		}
+	}
+}
+
+// TestRedact_PasswordPresent_NeverReturnsInputVerbatim pins the invariant
+// the fix establishes: once a non-empty userinfo password is confirmed, the
+// function must never return its input unchanged. If a future edit adds an
+// early `return s` below that point, this fails.
+func TestRedact_PasswordPresent_NeverReturnsInputVerbatim(t *testing.T) {
+	t.Parallel()
+
+	inputs := []string{
+		"postgres://admin:hunter2@db.internal:5432/bitmagnet",
+		"postgres://admin:pass%77ord@db.internal:5432/bitmagnet",
+		"http://svc:tok@proxy.internal:8080/up?t=30s",
+		"amqp://guest:guest@rabbitmq:5672/vhost",
+		"redis://:justapassword@cache.internal:6379/0",
+	}
+
+	for _, in := range inputs {
+		t.Run(in, func(t *testing.T) {
+			t.Parallel()
+
+			out, ok := Redact(map[string]any{"dsn": in}).(map[string]any)
+			if !ok {
+				t.Fatalf("expected map[string]any")
+			}
+
+			if got := out["dsn"]; got == in {
+				t.Errorf("returned input verbatim with a live password: %q", got)
+			}
+		})
+	}
+}

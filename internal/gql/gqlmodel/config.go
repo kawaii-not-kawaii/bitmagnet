@@ -240,9 +240,13 @@ func redactSlice(rv reflect.Value) []any {
 //     NOT inspect non-URI strings for token-like content; the only
 //     value-level threat we handle is URI-embedded credentials.
 //
-// Fails-closed note: if url.Parse returns an error we return the string
-// verbatim. A parse error means it's not a URL, so there is no userinfo to
-// redact. Name-based redaction still applies upstream.
+// Fails-closed note: the checks above establish whether a password EXISTS.
+// Returning the string verbatim is safe only while the answer is "no" — a
+// parse error, absent userinfo, or empty password all mean there is nothing
+// to leak. Once a non-empty password is confirmed, the function is committed:
+// it either splices the placeholder over the password span or redacts the
+// whole value, and never returns the original string. Do not add an early
+// return of s below that point.
 func redactStringValue(s string) any {
 	if s == "" {
 		return s
@@ -263,57 +267,79 @@ func redactStringValue(s string) any {
 	if !hasPw || pw == "" {
 		return s
 	}
-	// Redact ONLY the password portion, keeping scheme, username, host,
-	// port, path, and query visible for diagnosis.
-	//
-	// We cannot use u.String() to reassemble: it percent-encodes the
-	// placeholder (which contains '*' and would become %2A%2A%2A...), making
-	// the redaction unreadable and breaking the "greppable placeholder"
-	// property. Instead we splice the placeholder into the original string
-	// by locating the encoded password in the source.
-	//
-	// The password in the raw string may be percent-escaped (e.g. a literal
-	// '@' in the password becomes %40). We use url.User.String() (which
-	// gives the encoded userinfo "admin:hunter2") to find the userinfo span
-	// in the original string, then split at the ':' to isolate the password.
-	encodedUserinfo := u.User.String() // "username:encodedpassword" or "username"
-	// Locate the userinfo in the original string. It appears after the
-	// scheme "://" prefix. url.Parse guarantees u.User corresponds to the
-	// userinfo segment between "//" and the next "@".
-	atIdx := strings.LastIndex(s, "@")
-	if atIdx < 0 {
-		// Should not happen: u.User != nil implies an "@" in the source.
-		return s
+
+	// From here on we KNOW this string embeds a live password. Every
+	// remaining exit path MUST redact: returning s verbatim would emit the
+	// credential, and with no authentication on the GraphQL API this
+	// function is the only control standing between the config viewer and
+	// the secret.
+	if redacted, ok := spliceUserinfoPassword(s); ok {
+		return redacted
 	}
-	// Find the userinfo start: the "//" before the userinfo.
+
+	// The password span could not be located. Redact the entire value
+	// rather than emit it — losing the host/port diagnostics is a much
+	// better outcome than leaking the credential.
+	return RedactedValuePlaceholder
+}
+
+// spliceUserinfoPassword replaces the password span of a URI's userinfo with
+// the placeholder, operating on the RAW string so percent-escapes are
+// preserved verbatim and the placeholder is not itself encoded (u.String()
+// would turn "***REDACTED***" into "%2A%2A%2A...", breaking the greppable
+// placeholder property).
+//
+// It deliberately does NOT compare the raw userinfo against url's canonical
+// re-encoding. Those legitimately differ whenever the source is not
+// canonically escaped — over-escaping such as "pass%77ord" (which re-encodes
+// to "password"), or lowercase hex such as "%2f" — and an earlier version
+// bailed out to the UNREDACTED string in exactly those cases, leaking the
+// password for any tool-generated DSN that percent-encodes aggressively.
+// url.Parse already guarantees the userinfo is the span between "//" and the
+// authority's final "@", so the raw span is trustworthy on its own.
+//
+// Returns ok=false when the span cannot be located, so the caller fails closed.
+func spliceUserinfoPassword(s string) (string, bool) {
 	schemeEnd := strings.Index(s, "//")
 	if schemeEnd < 0 {
-		return s
+		return "", false
 	}
 
-	userinfoStart := schemeEnd + 2
-	if userinfoStart > atIdx {
-		return s
+	authorityStart := schemeEnd + 2
+
+	// The authority ends at the first '/', '?' or '#' after it. Bounding the
+	// search matters: an '@' in the PATH (postgres://u:p@host/db@tag) would
+	// otherwise be mistaken for the userinfo delimiter.
+	authorityEnd := len(s)
+
+	for i := authorityStart; i < len(s); i++ {
+		if s[i] == '/' || s[i] == '?' || s[i] == '#' {
+			authorityEnd = i
+			break
+		}
 	}
 
-	rawUserinfo := s[userinfoStart:atIdx]
-	// Sanity: the raw userinfo we isolated must round-trip through the
-	// encoded form url produced. If they disagree (e.g. due to edge-case
-	// encoding differences), bail out and return the original string
-	// verbatim — name-based redaction still applies upstream, and we'd
-	// rather under-redact a malformed URL than corrupt it.
-	if rawUserinfo != encodedUserinfo {
-		return s
+	if authorityStart > authorityEnd {
+		return "", false
 	}
-	// Split userinfo at the FIRST ':' to separate username from password.
+
+	authority := s[authorityStart:authorityEnd]
+
+	// Userinfo runs to the LAST '@' in the authority: url.Parse tolerates a
+	// raw '@' inside the password, and a host cannot contain one.
+	atIdx := strings.LastIndex(authority, "@")
+	if atIdx < 0 {
+		return "", false
+	}
+
+	rawUserinfo := authority[:atIdx]
+
+	// Split at the FIRST ':' — a username cannot contain one, a password can.
 	colonIdx := strings.Index(rawUserinfo, ":")
 	if colonIdx < 0 {
-		// No password in raw form despite Password() being non-empty —
-		// encoding mismatch; bail out.
-		return s
+		return "", false
 	}
-	// Reconstruct: scheme:// + username + ":" + placeholder + "@" + rest.
-	rest := s[atIdx+1:]
 
-	return s[:userinfoStart] + rawUserinfo[:colonIdx] + ":" + RedactedValuePlaceholder + "@" + rest
+	return s[:authorityStart] + rawUserinfo[:colonIdx] + ":" +
+		RedactedValuePlaceholder + s[authorityStart+atIdx:], true
 }
