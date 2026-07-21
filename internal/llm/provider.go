@@ -48,8 +48,12 @@ type ClassifyResult struct {
 	Season int `json:"season,omitempty"`
 	// Episode number, applicable for tv_show classifications.
 	Episode int `json:"episode,omitempty"`
-	// Language code (ISO 639-1) if determinable from the torrent.
-	Language string `json:"language,omitempty"`
+	// Language codes (ISO 639-1) if determinable from the torrent. Single code
+	// for a mono-language release, multiple for multi-language packs (e.g.
+	// ["rus","spa"]). Populated from the LLM response; the custom UnmarshalJSON
+	// accepts either a single JSON string or a JSON array of strings. Validation
+	// against the canonical language list happens downstream in applyLLMResult.
+	Language []string `json:"language,omitempty"`
 	// VideoResolution: V360p, V480p, V720p, V1080p, etc.
 	VideoResolution string `json:"video_resolution,omitempty"`
 	// VideoSource: CAM, TELESYNC, WEB, BluRay, etc.
@@ -163,23 +167,85 @@ func (f *flexInt) UnmarshalJSON(data []byte) error {
 	return nil
 }
 
+// flexStrings is a []string that tolerates the real-world shape variations LLMs
+// emit for the Language field: a single JSON string ("eng"), a JSON array of
+// strings (["rus","spa"]), JSON null, or an empty array. The model legitimately
+// returns either shape — a single string for mono-language releases and an
+// array for multi-language packs — so both are first-class.
+//
+// A non-string element inside an array is skipped rather than erroring: the
+// model occasionally emits ["rus", 5, "spa"] and discarding the 5 preserves the
+// valid entries. A top-level non-string scalar (e.g. a JSON number or object
+// where Language is expected) IS an error — that is genuinely malformed output,
+// not the shape-flex this type exists to tolerate. Validation against the
+// canonical language list is deferred to the caller (applyLLMResult).
+type flexStrings []string
+
+func (f *flexStrings) UnmarshalJSON(data []byte) error {
+	data = bytes.TrimSpace(data)
+
+	if bytes.Equal(data, []byte("null")) {
+		*f = nil
+		return nil
+	}
+
+	// Array — keep string elements, skip non-strings and empty strings.
+	if len(data) > 0 && data[0] == '[' {
+		var arr []json.RawMessage
+		if err := json.Unmarshal(data, &arr); err != nil {
+			return fmt.Errorf("flexStrings: invalid array: %w", err)
+		}
+		out := make([]string, 0, len(arr))
+		for _, el := range arr {
+			var s string
+			if err := json.Unmarshal(el, &s); err != nil {
+				continue
+			}
+			if s != "" {
+				out = append(out, s)
+			}
+		}
+		if len(out) == 0 {
+			*f = nil
+			return nil
+		}
+		*f = out
+		return nil
+	}
+
+	// Single string -> one-element slice. A non-string scalar here is
+	// genuinely malformed and must error.
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return fmt.Errorf("flexStrings: cannot unmarshal %s into string: %w", data, err)
+	}
+	if s == "" {
+		*f = nil
+		return nil
+	}
+	*f = []string{s}
+	return nil
+}
+
 // UnmarshalJSON decodes a ClassifyResult from an LLM response, tolerating the
-// type variations documented on flexInt for Year/Season/Episode only. All
-// other fields use the standard JSON decoder: a genuinely malformed response
-// (broken JSON syntax, wrong type for a non-numeric field, an object where a
-// scalar is expected) still returns an error.
+// type variations documented on flexInt (Year/Season/Episode) and flexStrings
+// (Language). All other fields use the standard JSON decoder: a genuinely
+// malformed response (broken JSON syntax, wrong type for a non-numeric field,
+// an object where a scalar is expected) still returns an error.
 //
 // The alias type strips this method so we can defer to the default decoder
-// for the non-numeric fields, while the outer struct shadows Year/Season/Episode
-// with flexInt-typed fields at a shallower depth — Go's JSON decoder selects
-// the shallower field, so only the flexInt unmarshaler is invoked for them.
+// for the non-overridden fields, while the outer struct shadows Year/Season/
+// Episode/Language with flex-typed fields at a shallower depth — Go's JSON
+// decoder selects the shallower field, so only the flex unmarshalers run for
+// them.
 func (r *ClassifyResult) UnmarshalJSON(data []byte) error {
 	type alias ClassifyResult
 	aux := struct {
 		alias
-		Year    flexInt `json:"year"`
-		Season  flexInt `json:"season"`
-		Episode flexInt `json:"episode"`
+		Year     flexInt     `json:"year"`
+		Season   flexInt     `json:"season"`
+		Episode  flexInt     `json:"episode"`
+		Language flexStrings `json:"language"`
 	}{}
 	if err := json.Unmarshal(data, &aux); err != nil {
 		return err
@@ -188,6 +254,7 @@ func (r *ClassifyResult) UnmarshalJSON(data []byte) error {
 	r.Year = int(aux.Year)
 	r.Season = int(aux.Season)
 	r.Episode = int(aux.Episode)
+	r.Language = []string(aux.Language)
 	return nil
 }
 

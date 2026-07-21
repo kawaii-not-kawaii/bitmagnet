@@ -132,6 +132,32 @@ func applyLLMResult(cl classification.Result, r *llm.ClassifyResult) classificat
 	if r.ReleaseGroup != "" {
 		cl.ReleaseGroup = model.NewNullString(r.ReleaseGroup)
 	}
+	if len(r.Language) > 0 {
+		if cl.Languages == nil {
+			cl.Languages = make(model.Languages)
+		}
+		// Defer validation to model.ParseLanguage, the canonical helper used
+		// everywhere else in the codebase (gql facets, search criteria, etc.).
+		// Unrecognized codes are dropped silently — the LLM has a history of
+		// inventing values, and we already have 'invalid tag name' failures
+		// downstream from unvalidated LLM output. Same posture here.
+		newFromLLM := make(map[model.Language]struct{})
+		for _, code := range r.Language {
+			lang := model.ParseLanguage(code)
+			if lang.Valid {
+				cl.Languages[lang.Language] = struct{}{}
+				newFromLLM[lang.Language] = struct{}{}
+			}
+		}
+		// Flip LanguageMulti only when the LLM provided 2+ DISTINCT valid
+		// languages — direct evidence of a multi-language release. Mirrors
+		// the torrent-name parser's multiRegex rule at parsers/video.go:215,
+		// and makes AttachContent (result.go:32-40) MERGE rather than REPLACE
+		// the language set when content.OriginalLanguage is later attached.
+		if len(newFromLLM) > 1 {
+			cl.LanguageMulti = true
+		}
+	}
 	if len(r.Tags) > 0 {
 		if cl.Tags == nil {
 			cl.Tags = classification.NewTagAction()

@@ -410,3 +410,85 @@ func TestClassifyResult_MalformedStillErrors(t *testing.T) {
 		})
 	}
 }
+
+// TestClassifyResult_LanguageShape locks in flexStrings tolerance for the
+// Language field. The model legitimately returns either a single string
+// ("eng") for mono-language releases or an array (["rus","spa"]) for
+// multi-language packs; both must unmarshal cleanly. Non-string elements
+// inside an array are skipped (not errored) so a single bad element cannot
+// sink an otherwise-valid multi-language response. Domain validation of the
+// code values happens downstream in applyLLMResult — at this layer we only
+// coerce shape.
+func TestClassifyResult_LanguageShape(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name string
+		body string
+		want []string // nil means "expected to be nil/empty after unmarshal"
+	}{
+		{name: "array_of_codes", body: `{"content_type":"movie","language":["rus","spa"]}`, want: []string{"rus", "spa"}},
+		{name: "single_string_becomes_one_element_slice", body: `{"content_type":"movie","language":"eng"}`, want: []string{"eng"}},
+		{name: "null", body: `{"content_type":"movie","language":null}`, want: nil},
+		{name: "empty_array", body: `{"content_type":"movie","language":[]}`, want: nil},
+		{name: "empty_string", body: `{"content_type":"movie","language":""}`, want: nil},
+		{name: "missing_field", body: `{"content_type":"movie"}`, want: nil},
+		{name: "non_string_element_skipped", body: `{"content_type":"movie","language":["rus", 5, "spa"]}`, want: []string{"rus", "spa"}},
+		{name: "null_element_skipped", body: `{"content_type":"movie","language":["rus", null, "spa"]}`, want: []string{"rus", "spa"}},
+		{name: "empty_string_element_skipped", body: `{"content_type":"movie","language":["rus", "", "spa"]}`, want: []string{"rus", "spa"}},
+		{name: "unknown_code_preserved_at_unmarshal_layer", body: `{"content_type":"movie","language":["xx","rus"]}`, want: []string{"xx", "rus"}}, // validation deferred to applyLLMResult
+		{name: "real_world_police_polic_multi_language", body: `{"content_type":"movie","language":["tam","hin","eng"]}`, want: []string{"tam", "hin", "eng"}},
+		{name: "real_world_culpa_rus_spa", body: `{"content_type":"movie","language":["rus","spa"]}`, want: []string{"rus", "spa"}},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			var r ClassifyResult
+			if err := json.Unmarshal([]byte(tc.body), &r); err != nil {
+				t.Fatalf("unexpected error: %v\nbody: %s", err, tc.body)
+			}
+			// Compare via stringification because nil and []string{} are
+			// semantically equal here but not deeply equal under reflect.
+			if len(r.Language) != len(tc.want) {
+				t.Fatalf("Language length: got %d (%v), want %d (%v)", len(r.Language), r.Language, len(tc.want), tc.want)
+			}
+			for i, got := range r.Language {
+				if got != tc.want[i] {
+					t.Errorf("Language[%d]: got %q, want %q", i, got, tc.want[i])
+				}
+			}
+		})
+	}
+}
+
+// TestClassifyResult_LanguageMalformedStillErrors guards the negative side
+// for Language: a top-level non-string scalar (number, object, boolean) is
+// genuinely malformed output and must error, since it is not the shape-flex
+// flexStrings exists to tolerate (single-string vs array).
+func TestClassifyResult_LanguageMalformedStillErrors(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name string
+		body string
+	}{
+		{name: "language_as_number", body: `{"content_type":"movie","language":5}`},
+		{name: "language_as_object", body: `{"content_type":"movie","language":{"code":"eng"}}`},
+		{name: "language_as_boolean", body: `{"content_type":"movie","language":true}`},
+	}
+
+	for _, tc := range cases {
+		tc := tc
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			var r ClassifyResult
+			if err := json.Unmarshal([]byte(tc.body), &r); err == nil {
+				t.Errorf("expected error for %s, got nil; result=%+v", tc.name, r)
+			}
+		})
+	}
+}
