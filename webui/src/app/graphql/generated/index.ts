@@ -21,6 +21,7 @@ export type Scalars = {
   DateTime: { input: string; output: string; }
   Duration: { input: string; output: string; }
   Hash20: { input: string; output: string; }
+  JSON: { input: Record<string, unknown>; output: Record<string, unknown>; }
   Void: { input: void; output: void; }
   Year: { input: number; output: number; }
 };
@@ -45,6 +46,22 @@ export type ClientSendToConfigQuery = {
   __typename?: 'ClientSendToConfigQuery';
   enabled: Scalars['Boolean']['output'];
   sendTo: Array<ClientId>;
+};
+
+export type ConfigQuery = {
+  __typename?: 'ConfigQuery';
+  sections: Array<ConfigSection>;
+};
+
+export type ConfigRuntimeChangeability =
+  | 'LIVE_APPLY_AVAILABLE'
+  | 'RESTART_REQUIRED';
+
+export type ConfigSection = {
+  __typename?: 'ConfigSection';
+  key: Scalars['String']['output'];
+  runtimeChangeable: ConfigRuntimeChangeability;
+  value: Scalars['JSON']['output'];
 };
 
 export type Content = {
@@ -285,6 +302,7 @@ export type Mutation = {
 
 export type Query = {
   __typename?: 'Query';
+  config: ConfigQuery;
   health: HealthQuery;
   queue: QueueQuery;
   sendToConfig: ClientSendToConfigQuery;
