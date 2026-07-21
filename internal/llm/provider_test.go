@@ -357,7 +357,6 @@ func TestClassifyResult_FlexInt_Coercion(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -399,9 +398,8 @@ func TestClassifyResult_MalformedStillErrors(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			t.Parallel()
+	t.Run(tc.name, func(t *testing.T) {
+		t.Parallel()
 
 			var r ClassifyResult
 			if err := json.Unmarshal([]byte(tc.body), &r); err == nil {
@@ -442,7 +440,6 @@ func TestClassifyResult_LanguageShape(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -481,7 +478,6 @@ func TestClassifyResult_LanguageMalformedStillErrors(t *testing.T) {
 	}
 
 	for _, tc := range cases {
-		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 

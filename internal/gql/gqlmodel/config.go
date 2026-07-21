@@ -124,7 +124,7 @@ func redactValue(rv reflect.Value) any {
 func redactStruct(rv reflect.Value) map[string]any {
 	t := rv.Type()
 	out := make(map[string]any, t.NumField())
-	for i := 0; i < t.NumField(); i++ {
+	for i := range t.NumField() {
 		sf := t.Field(i)
 		if sf.PkgPath != "" {
 			// unexported field — skip (would panic on Interface())
@@ -185,7 +185,7 @@ func redactSlice(rv reflect.Value) []any {
 		return []any{}
 	}
 	out := make([]any, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
+	for i := range rv.Len() {
 		out[i] = redactValue(rv.Index(i))
 	}
 	return out

@@ -13,6 +13,10 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 )
 
+// testContentTypeMovie is the content_type value used across LLM response
+// fixtures; extracted to satisfy goconst.
+const testContentTypeMovie = "movie"
+
 // makeChoiceResp returns a chatResponse with one choice whose content is set to the given string.
 // It builds the value via JSON round-trip to avoid nested anonymous struct literals.
 func makeChoiceResp(content string) chatResponse {
@@ -80,7 +84,7 @@ func TestClassify_Success(t *testing.T) {
 			t.Errorf("expected json_object response format")
 		}
 
-		resp := makeChoiceResp(`{"content_type": "movie", "title": "Test Movie", "year": 2024}`)
+		resp := makeChoiceResp(fmt.Sprintf(`{"content_type": %q, "title": "Test Movie", "year": 2024}`, testContentTypeMovie))
 		resp.Choices[0].FinishReason = "stop"
 
 		w.Header().Set("Content-Type", "application/json")
@@ -101,7 +105,7 @@ func TestClassify_Success(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
-	if result.ContentType != "movie" {
+	if result.ContentType != testContentTypeMovie {
 		t.Errorf("expected movie, got %q", result.ContentType)
 	}
 
@@ -184,7 +188,7 @@ func TestClassify_ServerErrorRetry(t *testing.T) {
 			return
 		}
 
-		resp := makeChoiceResp(`{"content_type": "movie", "title": "After Retry"}`)
+		resp := makeChoiceResp(fmt.Sprintf(`{"content_type": %q, "title": "After Retry"}`, testContentTypeMovie))
 
 		w.Header().Set("Content-Type", "application/json")
 
@@ -338,7 +342,7 @@ func TestSystemPrompt_Custom(t *testing.T) {
 	})
 	c := p.(*client)
 
-	msg := c.buildSystemMessage(llm.ClassifyInput{ContentTypes: "movie"})
+	msg := c.buildSystemMessage(llm.ClassifyInput{ContentTypes: testContentTypeMovie})
 	if msg != "Custom system movie" {
 		t.Errorf("expected 'Custom system movie', got %q", msg)
 	}

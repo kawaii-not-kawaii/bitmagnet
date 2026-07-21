@@ -12,16 +12,30 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/torznab"
 )
 
+// Test string constants extracted to satisfy goconst (3+ repeated literals).
+// These are test-fixture values, not domain constants — they exist only to
+// keep the linter quiet without obscuring what each test asserts.
+const (
+	testHost          = "localhost"
+	testDbName        = "bitmagnet"
+	testWorkflow      = "default"
+	testTmdbBaseURL   = "https://api.themoviedb.org/3"
+	testMapKeyPassword = "password"
+	testMapKeyAPIKey   = "api_key"
+	testMapKeyToken    = "token"
+	testMapKeyName     = "name"
+)
+
 // TestRedact_PostgresPassword_Redacted verifies that postgres.Config.Password
 // is replaced with the redaction placeholder. This is the canonical secret
 // the settings API must never leak.
 func TestRedact_PostgresPassword_Redacted(t *testing.T) {
 	t.Parallel()
 	cfg := postgres.Config{
-		Host:     "localhost",
+		Host:     testHost,
 		User:     "postgres",
 		Port:     5432,
-		Name:     "bitmagnet",
+		Name:     testDbName,
 		Password: "super-secret-db-password-123",
 		SSLMode:  "disable",
 	}
@@ -33,10 +47,10 @@ func TestRedact_PostgresPassword_Redacted(t *testing.T) {
 	if m["Password"] != RedactedValuePlaceholder {
 		t.Errorf("Password not redacted: got %v", m["Password"])
 	}
-	if m["Host"] != "localhost" {
+	if m["Host"] != testHost {
 		t.Errorf("Host changed unexpectedly: got %v", m["Host"])
 	}
-	if m["Name"] != "bitmagnet" {
+	if m["Name"] != testDbName {
 		t.Errorf("Name changed unexpectedly: got %v", m["Name"])
 	}
 	if m["User"] != "postgres" {
@@ -54,7 +68,7 @@ func TestRedact_TmdbAPIKey_Redacted(t *testing.T) {
 	t.Parallel()
 	cfg := tmdb.Config{
 		Enabled:        true,
-		BaseURL:        "https://api.themoviedb.org/3",
+		BaseURL:        testTmdbBaseURL,
 		APIKey:         "9c6689fa83ae6814fbfb200d70bba3a8",
 		RateLimit:      0,
 		RateLimitBurst: 5,
@@ -67,7 +81,7 @@ func TestRedact_TmdbAPIKey_Redacted(t *testing.T) {
 	if m["APIKey"] != RedactedValuePlaceholder {
 		t.Errorf("APIKey not redacted: got %v", m["APIKey"])
 	}
-	if m["BaseURL"] != "https://api.themoviedb.org/3" {
+	if m["BaseURL"] != testTmdbBaseURL {
 		t.Errorf("BaseURL changed unexpectedly: got %v", m["BaseURL"])
 	}
 	if m["Enabled"] != true {
@@ -82,7 +96,7 @@ func TestRedact_TmdbAPIKey_Redacted(t *testing.T) {
 func TestRedact_ClassifierProviderAPIKey_Redacted(t *testing.T) {
 	t.Parallel()
 	cfg := classifier.Config{
-		Workflow:    "default",
+		Workflow:    testWorkflow,
 		Concurrency: 10,
 		Llm: classifier.LlmConfig{
 			ProviderName:    "openai",
@@ -110,7 +124,7 @@ func TestRedact_ClassifierProviderAPIKey_Redacted(t *testing.T) {
 	if llm["ProviderModel"] != "gpt-4o-mini" {
 		t.Errorf("ProviderModel changed unexpectedly: got %v", llm["ProviderModel"])
 	}
-	if m["Workflow"] != "default" {
+	if m["Workflow"] != testWorkflow {
 		t.Errorf("Workflow changed unexpectedly: got %v", m["Workflow"])
 	}
 }
@@ -124,8 +138,8 @@ func TestRedact_TorznabProfiles_NoSecretsByDefault(t *testing.T) {
 		BaseURL: "https://example.com",
 		Profiles: []torznab.Profile{
 			{
-				ID:          "default",
-				Title:       "bitmagnet",
+				ID:          testWorkflow,
+				Title:       testDbName,
 				DefaultLimit: 100,
 				MaxLimit:    100,
 				BaseURL:     model.NewNullString("https://example.com"),
@@ -151,10 +165,10 @@ func TestRedact_TorznabProfiles_NoSecretsByDefault(t *testing.T) {
 	if !ok {
 		t.Fatalf("profile[0] not a map: got %T", profiles[0])
 	}
-	if pm["ID"] != "default" {
+	if pm["ID"] != testWorkflow {
 		t.Errorf("profile ID changed: got %v", pm["ID"])
 	}
-	if pm["Title"] != "bitmagnet" {
+	if pm["Title"] != testDbName {
 		t.Errorf("profile Title changed: got %v", pm["Title"])
 	}
 }
@@ -166,12 +180,12 @@ func TestRedact_TorznabProfiles_NoSecretsByDefault(t *testing.T) {
 func TestRedact_MapWithSecretKey(t *testing.T) {
 	t.Parallel()
 	in := map[string]any{
-		"host": "localhost",
-		"password": "leak-me",
-		"api_key":  "leak-me-too",
+		"host": testHost,
+		testMapKeyPassword: "leak-me",
+		testMapKeyAPIKey:  "leak-me-too",
 		"nested": map[string]any{
-			"token": "leak-nested",
-			"name":  "keep-me",
+			testMapKeyToken: "leak-nested",
+			testMapKeyName:  "keep-me",
 		},
 	}
 	out := Redact(in)
@@ -179,24 +193,24 @@ func TestRedact_MapWithSecretKey(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected map[string]any, got %T", out)
 	}
-	if m["password"] != RedactedValuePlaceholder {
-		t.Errorf("password not redacted: got %v", m["password"])
+	if m[testMapKeyPassword] != RedactedValuePlaceholder {
+		t.Errorf("password not redacted: got %v", m[testMapKeyPassword])
 	}
-	if m["api_key"] != RedactedValuePlaceholder {
-		t.Errorf("api_key not redacted: got %v", m["api_key"])
+	if m[testMapKeyAPIKey] != RedactedValuePlaceholder {
+		t.Errorf("api_key not redacted: got %v", m[testMapKeyAPIKey])
 	}
-	if m["host"] != "localhost" {
+	if m["host"] != testHost {
 		t.Errorf("host changed: got %v", m["host"])
 	}
 	nested, ok := m["nested"].(map[string]any)
 	if !ok {
 		t.Fatalf("nested not a map: got %T", m["nested"])
 	}
-	if nested["token"] != RedactedValuePlaceholder {
-		t.Errorf("nested.token not redacted: got %v", nested["token"])
+	if nested[testMapKeyToken] != RedactedValuePlaceholder {
+		t.Errorf("nested.token not redacted: got %v", nested[testMapKeyToken])
 	}
-	if nested["name"] != "keep-me" {
-		t.Errorf("nested.name changed: got %v", nested["name"])
+	if nested[testMapKeyName] != "keep-me" {
+		t.Errorf("nested.name changed: got %v", nested[testMapKeyName])
 	}
 }
 
@@ -206,7 +220,7 @@ func TestRedact_MapWithSecretKey(t *testing.T) {
 func TestRedact_PointerNotMutated(t *testing.T) {
 	t.Parallel()
 	cfg := &postgres.Config{
-		Host:     "localhost",
+		Host:     testHost,
 		Password: "original-secret",
 	}
 	out := Redact(cfg)
@@ -220,7 +234,7 @@ func TestRedact_PointerNotMutated(t *testing.T) {
 	if cfg.Password != "original-secret" {
 		t.Errorf("input was mutated: Password is now %q", cfg.Password)
 	}
-	if cfg.Host != "localhost" {
+	if cfg.Host != testHost {
 		t.Errorf("input Host was mutated: %q", cfg.Host)
 	}
 }
@@ -234,16 +248,16 @@ func TestIsSensitiveFieldName(t *testing.T) {
 		name string
 		want bool
 	}{
-		{"password", true},
+		{testMapKeyPassword, true},
 		{"Password", true},
 		{"DbPassword", true},
-		{"api_key", true},
+		{testMapKeyAPIKey, true},
 		{"APIKey", true},
 		{"apiKey", true},
 		{"ProviderAPIKey", true},
 		{"secret", true},
 		{"clientSecret", true},
-		{"token", true},
+		{testMapKeyToken, true},
 		{"authToken", true},
 		{"auth", true},
 		{"Authorization", true},
@@ -254,7 +268,7 @@ func TestIsSensitiveFieldName(t *testing.T) {
 		// non-sensitive names
 		{"host", false},
 		{"port", false},
-		{"name", false},
+		{testMapKeyName, false},
 		{"baseURL", false},
 		{"", false},
 	}
@@ -317,7 +331,7 @@ func TestRedact_PostgresDSN_PasswordInUserinfo_Redacted(t *testing.T) {
 		Host: "db.internal",
 		User: "admin",
 		Port: 5432,
-		Name: "bitmagnet",
+		Name: testDbName,
 		DSN:  "postgres://admin:HUNTER2_LEAKED@db.internal:5432/bitmagnet?sslmode=require",
 	}
 	out := Redact(cfg)
@@ -342,7 +356,7 @@ func TestRedact_PostgresDSN_PasswordInUserinfo_Redacted(t *testing.T) {
 		t.Errorf("DSN password not redacted: %q", dsn)
 	}
 	// Diagnostically-useful parts must remain visible.
-	for _, want := range []string{"postgres://", "admin", "db.internal", "5432", "bitmagnet", "sslmode=require"} {
+	for _, want := range []string{"postgres://", "admin", "db.internal", "5432", testDbName, "sslmode=require"} {
 		if !strings.Contains(dsn, want) {
 			t.Errorf("DSN lost diagnostic part %q: %q", want, dsn)
 		}
@@ -394,7 +408,7 @@ func TestRedact_URLWithUserinfo_RedactsOnlyPassword(t *testing.T) {
 func TestRedact_URLWithNoUserinfo_Unchanged(t *testing.T) {
 	t.Parallel()
 	in := map[string]any{
-		"base_url": "https://api.themoviedb.org/3",
+		"base_url": testTmdbBaseURL,
 		"web_url":  "https://bitmagnet.io/docs?ref=abc#section",
 	}
 	out := Redact(in)
@@ -402,7 +416,7 @@ func TestRedact_URLWithNoUserinfo_Unchanged(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected map[string]any, got %T", out)
 	}
-	if m["base_url"] != "https://api.themoviedb.org/3" {
+	if m["base_url"] != testTmdbBaseURL {
 		t.Errorf("base_url changed unexpectedly: got %v", m["base_url"])
 	}
 	if m["web_url"] != "https://bitmagnet.io/docs?ref=abc#section" {
@@ -438,8 +452,8 @@ func TestRedact_URLWithUserinfoNoPassword_Unchanged(t *testing.T) {
 func TestRedact_NonURLString_Unchanged(t *testing.T) {
 	t.Parallel()
 	in := map[string]any{
-		"name":      "Some Torrent Release",
-		"workflow":  "default",
+		testMapKeyName:      "Some Torrent Release",
+		"workflow":  testWorkflow,
 		"random":    "not-a-url-but-contains-colon://weird",
 		"empty":     "",
 	}
@@ -448,10 +462,10 @@ func TestRedact_NonURLString_Unchanged(t *testing.T) {
 	if !ok {
 		t.Fatalf("expected map[string]any, got %T", out)
 	}
-	if m["name"] != "Some Torrent Release" {
-		t.Errorf("name changed: got %v", m["name"])
+	if m[testMapKeyName] != "Some Torrent Release" {
+		t.Errorf("name changed: got %v", m[testMapKeyName])
 	}
-	if m["workflow"] != "default" {
+	if m["workflow"] != testWorkflow {
 		t.Errorf("workflow changed: got %v", m["workflow"])
 	}
 	if m["random"] != "not-a-url-but-contains-colon://weird" {

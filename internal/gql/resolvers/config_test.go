@@ -12,6 +12,13 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/tmdb"
 )
 
+// Test section keys extracted to satisfy goconst (3+ repeated literals).
+const (
+	testSectionKeyPostgres = "postgres"
+	testSectionKeyTmdb      = "tmdb"
+	testSectionKeyMadeUp   = "made_up_section"
+)
+
 // TestConfig_Resolver_GenericEnumeration_RedactsAllSections exercises the
 // resolver's generic enumeration: it feeds a hand-built ResolvedConfig with
 // three sections (postgres, tmdb, classifier) and asserts:
@@ -29,8 +36,8 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 	// section key, each Value is the resolved typed config.
 	resolved := config.ResolvedConfig{
 		NodeMap: map[string]config.ResolvedNode{
-			"postgres": {
-				Spec: config.Spec{Key: "postgres"},
+			testSectionKeyPostgres: {
+				Spec: config.Spec{Key: testSectionKeyPostgres},
 				Value: postgres.Config{
 					Host:     "db.internal",
 					User:     "app",
@@ -40,16 +47,16 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 					SSLMode:  "require",
 				},
 			},
-			"tmdb": {
-				Spec: config.Spec{Key: "tmdb"},
+			testSectionKeyTmdb: {
+				Spec: config.Spec{Key: testSectionKeyTmdb},
 				Value: tmdb.Config{
 					Enabled: true,
 					BaseURL: "https://api.themoviedb.org/3",
 					APIKey:  "tmdb-leak-me-please",
 				},
 			},
-			"classifier": {
-				Spec: config.Spec{Key: "classifier"},
+			sectionKeyClassifier: {
+				Spec: config.Spec{Key: sectionKeyClassifier},
 				Value: classifier.Config{
 					Workflow:    "default",
 					Concurrency: 10,
@@ -83,11 +90,11 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 	for _, s := range out.Sections {
 		keys = append(keys, s.Key)
 	}
-	if keys[0] != "classifier" || keys[1] != "postgres" || keys[2] != "tmdb" {
+	if keys[0] != sectionKeyClassifier || keys[1] != testSectionKeyPostgres || keys[2] != testSectionKeyTmdb {
 		t.Errorf("sections not sorted by key: got %v", keys)
 	}
 	// postgres: Password redacted, others preserved, RESTART_REQUIRED.
-	pg, ok := byKey["postgres"]
+	pg, ok := byKey[testSectionKeyPostgres]
 	if !ok {
 		t.Fatal("postgres section missing")
 	}
@@ -105,7 +112,7 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 		t.Errorf("postgres runtimeChangeable = %v, want RESTART_REQUIRED", pg.RuntimeChangeable)
 	}
 	// tmdb: APIKey redacted, BaseURL preserved, RESTART_REQUIRED.
-	tm, ok := byKey["tmdb"]
+	tm, ok := byKey[testSectionKeyTmdb]
 	if !ok {
 		t.Fatal("tmdb section missing")
 	}
@@ -124,7 +131,7 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 	}
 	// classifier: nested Llm.ProviderAPIKey redacted, workflow preserved,
 	// LIVE_APPLY_AVAILABLE.
-	cl, ok := byKey["classifier"]
+	cl, ok := byKey[sectionKeyClassifier]
 	if !ok {
 		t.Fatal("classifier section missing")
 	}
@@ -158,8 +165,8 @@ func TestConfig_Resolver_NewSectionAutoAppears(t *testing.T) {
 	t.Parallel()
 	resolved := config.ResolvedConfig{
 		NodeMap: map[string]config.ResolvedNode{
-			"made_up_section": {
-				Spec:  config.Spec{Key: "made_up_section"},
+			testSectionKeyMadeUp: {
+				Spec:  config.Spec{Key: testSectionKeyMadeUp},
 				Value: map[string]any{"host": "x", "secret_token": "leak"},
 			},
 		},
@@ -174,7 +181,7 @@ func TestConfig_Resolver_NewSectionAutoAppears(t *testing.T) {
 		t.Fatalf("expected 1 section, got %d", len(out.Sections))
 	}
 	s := out.Sections[0]
-	if s.Key != "made_up_section" {
+	if s.Key != testSectionKeyMadeUp {
 		t.Errorf("section key = %q, want made_up_section", s.Key)
 	}
 	if s.RuntimeChangeable != gen.ConfigRuntimeChangeabilityRestartRequired {
