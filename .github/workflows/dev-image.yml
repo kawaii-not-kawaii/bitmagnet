@@ -80,16 +80,23 @@ jobs:
           cache-to: type=gha,mode=max
 
       - name: Summary
+        env:
+          # metadata-action's `version` is the primary tag for this ref, so the
+          # pull command below always names a tag that was actually pushed.
+          # Hardcoding :llm here would print an unpullable command on any
+          # non-default branch, where that tag is deliberately not published.
+          PRIMARY_TAG: ${{ steps.meta.outputs.version }}
+          TAGS: ${{ steps.meta.outputs.tags }}
         run: |
           {
             echo "### Dev image pushed"
             echo
             echo '```'
-            echo "${{ steps.meta.outputs.tags }}"
+            echo "$TAGS"
             echo '```'
             echo
             echo "Pull on the host:"
             echo '```'
-            echo "docker pull ${{ env.IMAGE }}:llm"
+            echo "docker pull ${IMAGE}:${PRIMARY_TAG}"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
