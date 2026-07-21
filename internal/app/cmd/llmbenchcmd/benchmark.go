@@ -148,6 +148,7 @@ func RunBenchmark(ctx context.Context, p BenchmarkParams, count int, opts Benchm
 			defer mu.Unlock()
 
 			records[i] = record
+
 			if record.Error != "" {
 				failures++
 			} else {
@@ -156,8 +157,15 @@ func RunBenchmark(ctx context.Context, p BenchmarkParams, count int, opts Benchm
 
 			done := successes + failures
 			if record.Error != "" {
-				fmt.Fprintf(os.Stderr, "  ERR [%d/%d] %s -> %s (%.2fs)\n",
-					done, len(torrents), truncate(t.Name, 40), record.Error, record.Duration.Seconds())
+				fmt.Fprintf(
+					os.Stderr,
+					"  ERR [%d/%d] %s -> %s (%.2fs)\n",
+					done,
+					len(torrents),
+					truncate(t.Name, 40),
+					record.Error,
+					record.Duration.Seconds(),
+				)
 			} else {
 				fmt.Fprintf(os.Stderr, "  OK  [%d/%d] %s -> %s (%.2fs)\n",
 					done, len(torrents), truncate(t.Name, 40), record.ContentType, record.Duration.Seconds())
@@ -195,6 +203,7 @@ func classifyOne(ctx context.Context, provider llm.Provider, t model.Torrent) Cl
 
 	if len(t.Files) > 0 {
 		files := make([]string, 0, min(len(t.Files), maxBenchFiles))
+
 		for i, f := range t.Files {
 			if i >= maxBenchFiles {
 				break
