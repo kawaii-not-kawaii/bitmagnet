@@ -1,0 +1,95 @@
+name: Dev Image
+
+# Builds a runnable container image from a branch and pushes it to GHCR.
+#
+# The upstream ghcr.yml release pipeline only fires on v*.*.* tags, so there was
+# no way to get an image out of a working branch. This fills that gap: the host
+# pulls a stable reference instead of relying on a hand-built local tag that a
+# `docker image prune` can silently delete.
+#
+# Pull on the host with:
+#   docker pull ghcr.io/<owner>/bitmagnet:llm          # default branch
+#   docker pull ghcr.io/<owner>/bitmagnet:<branch>     # a feature branch
+#   docker pull ghcr.io/<owner>/bitmagnet:sha-abc1234  # exact commit, for rollback
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - "fix/**"
+      - "feat/**"
+    # Skip builds that cannot change the image.
+    paths-ignore:
+      - "**.md"
+      - "_bmad-output/**"
+      - ".github/workflows/jekyll-gh-pages.yml"
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  build:
+    name: Build and push dev image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # The Dockerfile runs `git describe --tags --always --dirty` to stamp
+          # the version, and .dockerignore does not exclude .git, so the build
+          # needs full history and tags rather than a shallow clone.
+          fetch-depth: 0
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Derive tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE }}
+          tags: |
+            type=ref,event=branch
+            type=sha,format=short,prefix=sha-
+            type=raw,value=llm,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          # Single-arch on purpose: the deployment host is x86_64, and adding
+          # linux/arm64 roughly doubles build time via QEMU emulation.
+          platforms: linux/amd64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Summary
+        run: |
+          {
+            echo "### Dev image pushed"
+            echo
+            echo '```'
+            echo "${{ steps.meta.outputs.tags }}"
+            echo '```'
+            echo
+            echo "Pull on the host:"
+            echo '```'
+            echo "docker pull ${{ env.IMAGE }}:llm"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
