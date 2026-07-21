@@ -218,5 +218,11 @@ func sanitizeTag(tag string) string {
 	// trim leading/trailing hyphens
 	result = strings.Trim(result, "-")
 
+	if len(result) > model.TagNameMaxLength {
+		result = result[:model.TagNameMaxLength]
+		// truncation may have landed on a trailing hyphen; trim again
+		result = strings.TrimRight(result, "-")
+	}
+
 	return result
 }
