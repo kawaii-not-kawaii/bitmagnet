@@ -150,3 +150,53 @@ func TestApplyLLMResult_LanguageSmokeOneCode(t *testing.T) {
 	assert.Contains(t, cl.Languages, model.Language("en"))
 	assert.False(t, cl.LanguageMulti, "single language must not flip LanguageMulti")
 }
+
+// TestSanitizeTag locks in the contract that sanitizeTag's output always
+// passes model.ValidateTagName, which enforces both the kebab-case shape
+// AND a 30-character max length. The length cap was previously unenforced
+// here: an LLM tag that normalized to a valid but >30-char string sanitized
+// "successfully" yet still failed at insert time via the
+// TorrentTag.BeforeCreate hook, surfacing as a confusing downstream
+// "invalid tag name" DB error instead of being caught at classification time.
+func TestSanitizeTag(t *testing.T) {
+	t.Parallel()
+
+	cases := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{"already_clean", "japanese", "japanese"},
+		{"uppercase", "Japanese", "japanese"},
+		{"spaces_and_underscores", "final fantasy_vii", "final-fantasy-vii"},
+		{"invalid_chars_stripped", "final-fantasy-vii!", "final-fantasy-vii"},
+		{"double_hyphens_collapsed", "final--fantasy---vii", "final-fantasy-vii"},
+		{"trailing_hyphen_trimmed", "final-fantasy-vii-", "final-fantasy-vii"},
+		{
+			"long_input_truncated_to_max_length",
+			"this-is-a-very-long-descriptive-genre-tag-that-a-model-might-invent",
+			"this-is-a-very-long-descriptiv",
+		},
+		{
+			// truncation landing exactly on a hyphen boundary must not
+			// leave a dangling trailing hyphen
+			"truncation_on_hyphen_boundary_retrimmed",
+			"aaaaaaaaaaaaaaaaaaaaaaaaaaaaa-bbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+			"aaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			got := sanitizeTag(tc.in)
+			assert.Equal(t, tc.want, got)
+			assert.LessOrEqual(t, len(got), model.TagNameMaxLength)
+
+			if got != "" {
+				assert.NoError(t, model.ValidateTagName(got), "sanitizeTag output must always satisfy ValidateTagName")
+			}
+		})
+	}
+}
