@@ -41,7 +41,7 @@ func (m *mockProvider) BatchClassify(_ context.Context, inputs []ClassifyInput) 
 	return results, nil
 }
 
-func TestClassifyInput_ValueSemantics(t *testing.T) {
+func TestClassifyInput_ShallowCopySemantics(t *testing.T) {
 	t.Parallel()
 
 	original := ClassifyInput{Name: "Test.Movie.2024.1080p", Files: []string{"file1.mkv", "file2.nfo"}}
@@ -49,12 +49,28 @@ func TestClassifyInput_ValueSemantics(t *testing.T) {
 	copied.Name = "Changed"
 	copied.Files[0] = "changed.mkv"
 
+	// Name is a string — copied independently on struct assignment.
 	if original.Name != "Test.Movie.2024.1080p" {
-		t.Error("Name was not independent after copy")
+		t.Error("Name should be independent after struct copy")
 	}
 
-	if original.Files[0] != "file1.mkv" {
-		t.Error("Files slice was shared (slice header copy)")
+	// Files is a slice — backing array is SHARED after struct copy. This is
+	// intentional and load-bearing: the batch path (internal/llm/openai/batch.go)
+	// stores ClassifyInput by value in pendingRequest.input, and a later flush
+	// goroutine reads input.Files from that stored copy to build the HTTP
+	// request body. If callers ever mutate input.Files after handing it to a
+	// Provider, that mutation will be visible to the flush goroutine racing
+	// against the caller.
+	//
+	// The contract this test pins down: struct copy is shallow on the slice
+	// header. If anyone ever makes Files deep-copy (e.g. by changing the type
+	// to a value-type wrapper, or by adding Clone() calls at handoff), this
+	// assertion will fail and force them to audit the batch path.
+	if original.Files[0] != "changed.mkv" {
+		t.Error("Files backing array should be shared after struct copy; " +
+			"if this fails, audit internal/llm/openai/batch.go pendingRequest " +
+			"callers — they rely on the shallow-copy contract and must be " +
+			"updated together with any deep-copy change.")
 	}
 }
 
