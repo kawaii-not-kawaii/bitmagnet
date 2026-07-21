@@ -30,6 +30,11 @@ const config: CodegenConfig = {
           DateTime: "string",
           Duration: "string",
           Hash20: "string",
+          // The settings API returns each config section's resolved value as an
+          // arbitrary JSON object (see graphql/schema/config.graphqls). There is
+          // no per-section type by design, so consumers must render it
+          // generically and narrow as needed.
+          JSON: "Record<string, unknown>",
           Void: "void",
           Year: "number",
         },
