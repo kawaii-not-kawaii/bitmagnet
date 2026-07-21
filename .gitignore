@@ -40,3 +40,10 @@ testem.log
 # System files
 .DS_Store
 Thumbs.db
+
+# AI agent tooling and generated planning artifacts.
+# Local-only: these are per-developer workflow state, not project source.
+.claude/
+.opencode/
+_bmad/
+_bmad-output/
