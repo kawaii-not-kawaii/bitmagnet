@@ -4,12 +4,15 @@ import (
 	"net/url"
 	"reflect"
 	"strings"
+
+	"github.com/bitmagnet-io/bitmagnet/internal/config/configapply"
 )
 
 // RedactedValuePlaceholder replaces every sensitive field's value in the
 // output tree. Deliberately a visible, greppable string so it cannot be
-// confused with a real credential.
-const RedactedValuePlaceholder = "***REDACTED***"
+// confused with a real credential. Aliases configapply.RedactedPlaceholder,
+// which SetSection recognizes as "keep the existing value" on write-back.
+const RedactedValuePlaceholder = configapply.RedactedPlaceholder
 
 // sensitiveFieldNames is the set of (lowercased) field-name substrings that
 // mark a field as sensitive. Matching is substring-based and case-insensitive
