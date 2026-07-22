@@ -110,18 +110,12 @@
             </h2>
             <span>jobs / bucket</span>
           </header>
-          <div class="bars" aria-label="Queue throughput">
-            @for (bar of view.bars; track $index) {
-              <div class="bar-slot" [title]="bar.count + ' jobs'">
-                <span [style.height.%]="bar.height"></span>
-              </div>
-            }
-          </div>
-          <div class="bar-labels">
-            @for (bar of view.bars; track $index) {
-              <span>{{ bar.label }}</span>
-            }
-          </div>
+          <app-bar-chart
+            [buckets]="view.bars"
+            [series]="queueSeries"
+            unit="jobs"
+            ariaLabel="Queue throughput"
+          />
         </article>
       </div>
     }

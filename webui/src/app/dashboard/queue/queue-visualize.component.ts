@@ -6,6 +6,11 @@ import { map } from "rxjs/operators";
 import { ErrorsService } from "../../errors/errors.service";
 import { AppModule } from "../../app.module";
 import { DocumentTitleComponent } from "../../layout/document-title.component";
+import {
+  BarChartBucket,
+  BarChartComponent,
+  BarChartSeries,
+} from "../../charting/bar-chart.component";
 import { QueueJobStatus } from "../../graphql/generated";
 import {
   availableQueueNames,
@@ -24,16 +29,10 @@ type StatusTotal = {
   percent: number;
 };
 
-type ThroughputBar = {
-  count: number;
-  height: number;
-  label: string;
-};
-
 type VisualizeView = {
   queueLabel: string;
   statusTotals: StatusTotal[];
-  bars: ThroughputBar[];
+  bars: BarChartBucket[];
 };
 
 const statusOrder: QueueJobStatus[] = [
@@ -48,7 +47,7 @@ const statusOrder: QueueJobStatus[] = [
   standalone: true,
   templateUrl: "./queue-visualize.component.html",
   styleUrl: "./queue-visualize.component.scss",
-  imports: [AppModule, DocumentTitleComponent],
+  imports: [AppModule, BarChartComponent, DocumentTitleComponent],
 })
 export class QueueVisualizeComponent implements OnDestroy {
   private apollo = inject(Apollo);
@@ -79,6 +78,9 @@ export class QueueVisualizeComponent implements OnDestroy {
   ];
   protected readonly availableQueueNames = availableQueueNames;
   protected readonly eventNames = eventNames;
+  protected readonly queueSeries: readonly BarChartSeries[] = [
+    { label: "Jobs", tone: "primary" },
+  ];
   protected readonly view$: Observable<VisualizeView> =
     this.queueMetricsController.result$.pipe(
       map((result) => this.createView(result)),
@@ -117,7 +119,7 @@ export class QueueVisualizeComponent implements OnDestroy {
     };
   }
 
-  private createBars(result: Result): ThroughputBar[] {
+  private createBars(result: Result): BarChartBucket[] {
     const counts = new Map<number, number>();
     const events: readonly EventName[] = result.params.event
       ? [result.params.event]
@@ -147,7 +149,6 @@ export class QueueVisualizeComponent implements OnDestroy {
       { length: 12 },
       (_, index) => counts.get(latestBucket - 11 + index) ?? 0,
     );
-    const maxCount = Math.max(...values);
 
     return values.map((count, index) => {
       const bucket = latestBucket - 11 + index;
@@ -156,11 +157,10 @@ export class QueueVisualizeComponent implements OnDestroy {
         durationSeconds[result.params.buckets.duration] *
         result.params.buckets.multiplier *
         bucket;
-      const showLabel = index % 2 === 0 || index === values.length - 1;
+      const showLabel = index % 2 === 0;
 
       return {
-        count,
-        height: count ? Math.max(3, Math.round((count / maxCount) * 100)) : 0,
+        values: [count],
         label: showLabel
           ? formatDate(
               timestamp,

@@ -1,0 +1,35 @@
+<div
+  class="bars"
+  role="img"
+  [attr.aria-label]="ariaLabel"
+  [style.grid-template-columns]="
+    'repeat(' + renderBuckets.length + ', minmax(0, 1fr))'
+  "
+>
+  @for (bucket of renderBuckets; track $index) {
+    <div class="bar-slot" [class.single-series]="bucket.bars.length === 1">
+      @for (bar of bucket.bars; track $index) {
+        <div
+          class="bar-column"
+          [class.secondary]="series[$index].tone === 'secondary'"
+          [style.height.%]="bar.height"
+          [title]="series[$index].label + ' ' + bar.value + ' ' + unit"
+        >
+          <span>{{ bar.value | number }}</span>
+          <i></i>
+        </div>
+      }
+    </div>
+  }
+</div>
+<div
+  class="bar-labels"
+  aria-hidden="true"
+  [style.grid-template-columns]="
+    'repeat(' + renderBuckets.length + ', minmax(0, 1fr))'
+  "
+>
+  @for (bucket of renderBuckets; track $index) {
+    <span>{{ bucket.label }}</span>
+  }
+</div>

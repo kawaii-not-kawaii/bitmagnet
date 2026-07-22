@@ -110,42 +110,41 @@
     </button>
   </div>
 
-  @if (torrentMetricsController.result$ | async; as result) {
+  @if (view$ | async; as view) {
     <article class="chart-card">
       <header>
-        <div>
-          <strong>Throughput</strong>
-          <span>Torrents indexed over time</span>
+        <strong>
+          Throughput
+          <span>· source: {{ view.result.params.source ?? "all" }}</span>
+        </strong>
+        <div class="chart-legend">
+          @for (series of view.series; track series.label) {
+            <span [class.secondary]="series.tone === 'secondary'"
+              ><i></i>{{ series.label }}</span
+            >
+          }
         </div>
-        <span class="live-indicator"><i></i> live metrics</span>
       </header>
-      <div class="chart-wrap">
-        <app-chart
-          title=""
-          [adapter]="timeline"
-          [$data]="torrentMetricsController.result$"
-          [height]="320"
-          [width]="breakpoints.sizeAtLeast('Large') ? 1000 : 680"
-        />
-      </div>
+      <app-bar-chart
+        [buckets]="view.buckets"
+        [series]="view.series"
+        unit="torrents"
+        ariaLabel="Torrent throughput"
+      />
     </article>
 
     <div class="metric-summary">
       <article>
-        <span>Total events</span>
-        <strong>{{ eventTotal(result) | number }}</strong>
+        <span>Total created</span>
+        <strong>{{ eventTotal(view.result, "created") | number }}</strong>
       </article>
       <article>
-        <span>Created</span>
-        <strong>{{ eventTotal(result, "created") | number }}</strong>
+        <span>Total updated</span>
+        <strong>{{ eventTotal(view.result, "updated") | number }}</strong>
       </article>
       <article>
-        <span>Updated</span>
-        <strong>{{ eventTotal(result, "updated") | number }}</strong>
-      </article>
-      <article>
-        <span>Sources</span>
-        <strong>{{ result.availableSources.length | number }}</strong>
+        <span>Peak throughput</span>
+        <strong>{{ view.peakThroughput | number }}</strong>
       </article>
     </div>
   }

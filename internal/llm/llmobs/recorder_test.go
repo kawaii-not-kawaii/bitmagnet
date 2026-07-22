@@ -227,6 +227,7 @@ func TestRecorder_Stats(t *testing.T) {
 		t.Errorf("per provider = %#v, want %#v", stats.PerProvider, wantProviders)
 	}
 }
+
 func TestRecorder_TokenUsage(t *testing.T) {
 	t.Parallel()
 

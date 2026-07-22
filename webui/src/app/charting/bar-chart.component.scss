@@ -1,0 +1,86 @@
+:host {
+  display: block;
+}
+
+.bars {
+  height: var(--bar-chart-height, 210px);
+  padding-top: 8px;
+  display: grid;
+  align-items: end;
+  gap: 10px;
+  border-bottom: 1px solid var(--border);
+}
+
+.bar-slot {
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 3px;
+
+  &.single-series .bar-column {
+    width: 100%;
+  }
+}
+
+.bar-column {
+  width: 44%;
+  min-height: 18px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  transition: height 0.3s ease;
+
+  span {
+    margin-bottom: 4px;
+    color: var(--dim);
+    font:
+      600 9.5px/1 "JetBrains Mono",
+      monospace;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  i {
+    min-height: 2px;
+    flex: 1;
+    border-radius: 3px 3px 0 0;
+    background: var(--accent);
+  }
+
+  &.secondary {
+    span {
+      color: var(--faint);
+    }
+
+    i {
+      background: color-mix(in srgb, var(--accent) 42%, var(--surface2));
+    }
+  }
+}
+
+.bar-labels {
+  padding-top: 8px;
+  display: grid;
+
+  span {
+    overflow: visible;
+    color: var(--faint);
+    font:
+      500 10px "JetBrains Mono",
+      monospace;
+    text-align: center;
+    white-space: nowrap;
+  }
+}
+
+@media (max-width: 760px) {
+  .bars {
+    gap: 5px;
+  }
+
+  .bar-column span,
+  .bar-labels span {
+    font-size: 9px;
+  }
+}

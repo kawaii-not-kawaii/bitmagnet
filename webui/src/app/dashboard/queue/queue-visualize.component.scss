@@ -197,44 +197,8 @@ legend {
   }
 }
 
-.bars {
-  height: 200px;
-  padding-top: 8px;
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  align-items: end;
-  gap: 8px;
-  border-bottom: 1px solid var(--border);
-}
-
-.bar-slot {
-  height: 100%;
-  display: flex;
-  align-items: flex-end;
-
-  > span {
-    width: 100%;
-    min-height: 0;
-    border-radius: 3px 3px 0 0;
-    background: var(--accent);
-    transition: height 0.3s ease;
-  }
-}
-
-.bar-labels {
-  padding-top: 8px;
-  display: grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-
-  span {
-    overflow: visible;
-    color: var(--faint);
-    font:
-      500 10px "JetBrains Mono",
-      monospace;
-    text-align: center;
-    white-space: nowrap;
-  }
+app-bar-chart {
+  --bar-chart-height: 200px;
 }
 
 @keyframes loading-slide {
@@ -254,17 +218,5 @@ legend {
   .filter-groups {
     align-items: flex-start;
     flex-direction: column;
-  }
-
-  .bars {
-    gap: 5px;
-  }
-
-  .bar-labels span {
-    font-size: 9px;
-  }
-
-  .bar-labels span:nth-last-child(2) {
-    visibility: hidden;
   }
 }
