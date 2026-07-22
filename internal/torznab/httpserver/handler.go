@@ -7,13 +7,14 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
 	"github.com/bitmagnet-io/bitmagnet/internal/model"
 	"github.com/bitmagnet-io/bitmagnet/internal/torznab"
 	"github.com/gin-gonic/gin"
 )
 
 type handler struct {
-	config torznab.Config
+	config *concurrency.AtomicValue[torznab.Config]
 	client torznab.Client
 }
 
@@ -170,7 +171,13 @@ func (h handler) getProfile(c *gin.Context) (torznab.Profile, error) {
 	case "", "api", torznab.ProfileDefault.ID:
 		return torznab.ProfileDefault, nil
 	default:
-		profile, ok := h.config.GetProfile(profilePathPart)
+		// Read the current config per request and merge defaults at use-time.
+		// MergeDefaults is idempotent (it only fills zero values), so this is
+		// correct whether the atomic holds a merged or raw config — including a
+		// raw value set by a future runtime mutation. It also allocates a fresh
+		// Profiles slice, so the shared backing array behind the atomic's
+		// shallow copy is never written through.
+		profile, ok := h.config.Get().MergeDefaults().GetProfile(profilePathPart)
 		if !ok {
 			return profile, profileNotFoundError{name: profilePathPart}
 		}

@@ -17,7 +17,7 @@ type Params struct {
 	TmdbConfig  tmdb.Config
 	Search      lazy.Lazy[search.Search]
 	TmdbClient  lazy.Lazy[tmdb.Client]
-	LlmRegistry *llm.Registry
+	LlmRegistry *llm.Registry `optional:"true"`
 	Logger      *zap.SugaredLogger
 }
 
@@ -57,10 +57,19 @@ func New(params Params) Result {
 					search:    localSearch{s},
 					semaphore: make(chan struct{}, 1),
 				},
-				tmdbClient:  tmdbClient,
-				llmRegistry: params.LlmRegistry,
-				_logger:     logger,
-				logger:      logger,
+				tmdbClient: tmdbClient,
+				// Read from the registry at classification time, so a runtime
+				// LLM config update (llm.Registry.Update) is observed without
+				// recompiling the workflow.
+				llmProviders: func() map[string]llm.Provider {
+					if params.LlmRegistry == nil {
+						return nil
+					}
+
+					return params.LlmRegistry.All()
+				},
+				_logger: logger,
+				logger:  logger,
 			},
 		}, nil
 	})

@@ -107,23 +107,30 @@ func (r *queryResolver) TorrentContent(ctx context.Context) (gqlmodel.TorrentCon
 
 // SendToConfig is the resolver for the sendToConfig field.
 func (r *queryResolver) SendToConfig(ctx context.Context) (gen.ClientSendToConfigQuery, error) {
+	// Snapshot the live client config at query time so a runtime update is
+	// reflected without a restart.
+	cfg := r.ClientConfig.Get()
+
 	return gen.ClientSendToConfigQuery{
-		Enabled: r.ClientConfig.Enabled,
-		SendTo:  r.ClientConfig.All(),
+		Enabled: cfg.Enabled,
+		SendTo:  cfg.All(),
 	}, nil
 }
 
 // Config is the resolver for the config field. It returns the effective
 // resolved configuration for every registered section, with sensitive
-// fields redacted. Sections are enumerated generically from
-// r.ResolvedConfig.NodeMap — any section registered via
-// configfx.NewConfigModule appears automatically with no per-section code.
+// fields redacted. Sections are enumerated generically from the resolved
+// config's NodeMap — any section registered via configfx.NewConfigModule
+// appears automatically with no per-section code. The snapshot is read at
+// request time so a runtime config mutation is reflected without a restart.
 func (r *queryResolver) Config(ctx context.Context) (gen.ConfigQuery, error) {
-	sections := make([]gen.ConfigSection, 0, len(r.ResolvedConfig.NodeMap))
-	for key, node := range r.ResolvedConfig.NodeMap {
+	resolved := r.ResolvedConfig.Get()
+
+	sections := make([]gen.ConfigSection, 0, len(resolved.NodeMap))
+	for key, node := range resolved.NodeMap {
 		sections = append(sections, gen.ConfigSection{
 			Key:               key,
-			RuntimeChangeable: configRuntimeChangeability(key),
+			RuntimeChangeable: configRuntimeChangeability(r.Changeability, key),
 			Value:             gqlmodel.Redact(node.Value),
 		})
 	}

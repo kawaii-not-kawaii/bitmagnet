@@ -16,8 +16,13 @@ type Params struct {
 
 type Result struct {
 	fx.Out
-	Logger  *zap.Logger
-	Sugar   *zap.SugaredLogger
+	Logger *zap.Logger
+	Sugar  *zap.SugaredLogger
+	// Level is the primary core's level enabler. It is atomic so the log level
+	// can be changed at runtime (a future config mutation calls SetLevel on
+	// it); a bare zapcore.Level here would fix the threshold for the process
+	// lifetime. The file-rotator core keeps its own independent fixed level.
+	Level   zap.AtomicLevel
 	AppHook fx.Hook `group:"app_hooks"`
 }
 
@@ -41,10 +46,12 @@ func New(params Params) Result {
 		opts = append(opts, zap.Development())
 	}
 
+	level := zap.NewAtomicLevelAt(levelToZapLevel(params.Config.Level))
+
 	core := zapcore.NewCore(
 		encoder,
 		writeSyncer,
-		levelToZapLevel(params.Config.Level),
+		level,
 	)
 
 	if params.Config.FileRotator.Enabled {
@@ -69,6 +76,7 @@ func New(params Params) Result {
 	return Result{
 		Logger:  l,
 		Sugar:   l.Sugar(),
+		Level:   level,
 		AppHook: appHook,
 	}
 }

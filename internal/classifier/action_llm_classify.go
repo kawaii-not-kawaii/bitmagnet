@@ -37,15 +37,12 @@ func (llmClassifyAction) compileAction(ctx compilerContext) (action, error) {
 				return cl, nil
 			}
 
-			registry := ctx.llmRegistry
-			if registry == nil {
-				ctx.logger.Warn("no llm registry configured, skipping llm classification")
-				return cl, classification.RuntimeError{
-					Cause: classification.ErrUnmatched,
-					Path:  path,
-				}
+			// Get the providers current at classification time, so a runtime
+			// LLM config update is observed without recompiling the workflow.
+			var providers map[string]llm.Provider
+			if ctx.llmProviders != nil {
+				providers = ctx.llmProviders()
 			}
-			providers := registry.All()
 			if len(providers) == 0 {
 				ctx.logger.Warn("no llm providers configured, skipping llm classification")
 				return cl, classification.RuntimeError{

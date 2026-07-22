@@ -1,6 +1,7 @@
 package tmdb
 
 import (
+	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
 	"github.com/bitmagnet-io/bitmagnet/internal/lazy"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -8,7 +9,7 @@ import (
 
 type Params struct {
 	fx.In
-	Config Config
+	Config *concurrency.AtomicValue[Config]
 	Logger *zap.SugaredLogger
 }
 

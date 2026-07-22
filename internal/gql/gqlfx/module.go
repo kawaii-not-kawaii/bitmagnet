@@ -4,10 +4,14 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/bitmagnet-io/bitmagnet/internal/blocking"
 	"github.com/bitmagnet-io/bitmagnet/internal/client"
+	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
 	rootconfig "github.com/bitmagnet-io/bitmagnet/internal/config"
+	"github.com/bitmagnet-io/bitmagnet/internal/config/configapply"
+	"github.com/bitmagnet-io/bitmagnet/internal/config/configfx"
 	"github.com/bitmagnet-io/bitmagnet/internal/database/dao"
 	"github.com/bitmagnet-io/bitmagnet/internal/database/search"
 	"github.com/bitmagnet-io/bitmagnet/internal/gql"
+	"github.com/bitmagnet-io/bitmagnet/internal/gql/auth"
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/config"
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/httpserver"
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/resolvers"
@@ -25,9 +29,11 @@ import (
 func New() fx.Option {
 	return fx.Module(
 		"graphql",
+		configfx.NewConfigModule[auth.Config]("auth", auth.NewDefaultConfig()),
 		fx.Provide(
 			config.New,
 			httpserver.New,
+			auth.NewAuthenticator,
 			func(
 				lcfg lazy.Lazy[gql.Config],
 			) lazy.Lazy[graphql.ExecutableSchema] {
@@ -88,6 +94,7 @@ func New() fx.Option {
 							BlockingManager:      bm,
 							ClientConfig:         p.ClientConfig,
 							ResolvedConfig:       p.ResolvedConfig,
+							Changeability:        p.Changeability,
 							LlmRegistry:          p.LlmRegistry,
 							LlmStats:             p.LlmStats,
 						}, nil
@@ -118,8 +125,9 @@ type Params struct {
 	TorrentMetricsClient lazy.Lazy[torrentmetrics.Client]
 	Processor            lazy.Lazy[processor.Processor]
 	BlockingManager      lazy.Lazy[blocking.Manager]
-	ClientConfig         client.Config
-	ResolvedConfig       rootconfig.ResolvedConfig
+	ClientConfig         *concurrency.AtomicValue[client.Config]
+	ResolvedConfig       *concurrency.AtomicValue[rootconfig.ResolvedConfig]
+	Changeability        configapply.Changeability
 	LlmRegistry          *llm.Registry
 	LlmStats             *llm.Stats
 }

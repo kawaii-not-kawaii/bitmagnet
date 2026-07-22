@@ -14,14 +14,28 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// requesterLazy defers instantiation of the requester (and possible failure) until the first request is made,
-// avoiding failure when the TMDB client is not needed.
+// requesterLazy defers instantiation of the requester (and possible failure)
+// until the first request is made, avoiding failure when the TMDB client is not
+// needed.
+//
+// The underlying requester bakes the config (base URL, API key, rate limits)
+// into a resty client at build time, so it cannot observe a config change by
+// itself. To support live-apply, requesterLazy holds the config behind an
+// AtomicValue and rebuilds the requester whenever the value it was built from
+// changes. tmdb.Config is all scalar fields, so the equality check is a plain
+// comparison and the AtomicValue's shallow copy is safe.
 type requesterLazy struct {
-	once      sync.Once
-	config    Config
+	mu        sync.Mutex
+	config    *concurrency.AtomicValue[Config]
 	logger    *zap.SugaredLogger
+	built     bool
+	builtFrom Config
 	err       error
 	requester Requester
+	// build constructs a requester from a config; overridable in tests to
+	// avoid the network API-key validation in newRequester. Defaults to
+	// newRequester when nil.
+	build func(context.Context, Config, *zap.SugaredLogger) (Requester, error)
 }
 
 func (r *requesterLazy) Request(
@@ -30,15 +44,37 @@ func (r *requesterLazy) Request(
 	queryParams map[string]string,
 	result interface{},
 ) (*resty.Response, error) {
-	r.once.Do(func() {
-		r.requester, r.err = newRequester(ctx, r.config, r.logger)
-	})
+	cfg := r.config.Get()
 
-	if r.err != nil {
-		return nil, r.err
+	requester, err := r.requesterFor(ctx, cfg)
+	if err != nil {
+		return nil, err
 	}
 
-	return r.requester.Request(ctx, path, queryParams, result)
+	return requester.Request(ctx, path, queryParams, result)
+}
+
+// requesterFor returns the requester built from cfg, rebuilding it if the
+// current config differs from the one the cached requester was built with (or
+// if none has been built yet). The lock is held across the rebuild — which
+// performs a network API-key validation — but only when the config actually
+// changed, so steady-state requests take the lock only briefly.
+func (r *requesterLazy) requesterFor(ctx context.Context, cfg Config) (Requester, error) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if !r.built || r.builtFrom != cfg {
+		build := r.build
+		if build == nil {
+			build = newRequester
+		}
+
+		r.requester, r.err = build(ctx, cfg, r.logger)
+		r.builtFrom = cfg
+		r.built = true
+	}
+
+	return r.requester, r.err
 }
 
 func newRequester(ctx context.Context, config Config, logger *zap.SugaredLogger) (Requester, error) {

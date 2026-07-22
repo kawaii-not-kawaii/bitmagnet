@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
+	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
 	"github.com/bitmagnet-io/bitmagnet/internal/config"
 	"github.com/bitmagnet-io/bitmagnet/internal/database/postgres"
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/gqlmodel"
@@ -12,12 +13,28 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/tmdb"
 )
 
+// liveResolved wraps a hand-built ResolvedConfig in the AtomicValue the
+// resolver reads at request time, mirroring the configfx provider.
+func liveResolved(r config.ResolvedConfig) *concurrency.AtomicValue[config.ResolvedConfig] {
+	av := &concurrency.AtomicValue[config.ResolvedConfig]{}
+	av.Set(r)
+
+	return av
+}
+
 // Test section keys extracted to satisfy goconst (3+ repeated literals).
 const (
-	testSectionKeyPostgres = "postgres"
-	testSectionKeyTmdb     = "tmdb"
-	testSectionKeyMadeUp   = "made_up_section"
+	testSectionKeyPostgres   = "postgres"
+	testSectionKeyClassifier = "classifier"
+	testSectionKeyTmdb       = "tmdb"
+	testSectionKeyMadeUp     = "made_up_section"
 )
+
+type classifierChangeability struct{}
+
+func (classifierChangeability) IsLive(key string) bool {
+	return key == testSectionKeyClassifier
+}
 
 // TestConfig_Resolver_GenericEnumeration_RedactsAllSections exercises the
 // resolver's generic enumeration: it feeds a hand-built ResolvedConfig with
@@ -55,8 +72,8 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 					APIKey:  "tmdb-leak-me-please",
 				},
 			},
-			sectionKeyClassifier: {
-				Spec: config.Spec{Key: sectionKeyClassifier},
+			testSectionKeyClassifier: {
+				Spec: config.Spec{Key: testSectionKeyClassifier},
 				Value: classifier.Config{
 					Workflow:    "default",
 					Concurrency: 10,
@@ -71,7 +88,10 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 			},
 		},
 	}
-	r := &Resolver{ResolvedConfig: resolved}
+	r := &Resolver{
+		ResolvedConfig: liveResolved(resolved),
+		Changeability:  classifierChangeability{},
+	}
 	qr := &queryResolver{r}
 
 	out, err := qr.Config(context.Background())
@@ -93,7 +113,7 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 		keys = append(keys, s.Key)
 	}
 
-	if keys[0] != sectionKeyClassifier || keys[1] != testSectionKeyPostgres || keys[2] != testSectionKeyTmdb {
+	if keys[0] != testSectionKeyClassifier || keys[1] != testSectionKeyPostgres || keys[2] != testSectionKeyTmdb {
 		t.Errorf("sections not sorted by key: got %v", keys)
 	}
 	// postgres: Password redacted, others preserved, RESTART_REQUIRED.
@@ -142,7 +162,7 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 	}
 	// classifier: nested Llm.ProviderAPIKey redacted, workflow preserved,
 	// LIVE_APPLY_AVAILABLE.
-	cl, ok := byKey[sectionKeyClassifier]
+	cl, ok := byKey[testSectionKeyClassifier]
 	if !ok {
 		t.Fatal("classifier section missing")
 	}
@@ -189,7 +209,7 @@ func TestConfig_Resolver_NewSectionAutoAppears(t *testing.T) {
 			},
 		},
 	}
-	r := &Resolver{ResolvedConfig: resolved}
+	r := &Resolver{ResolvedConfig: liveResolved(resolved)}
 	qr := &queryResolver{r}
 
 	out, err := qr.Config(context.Background())
@@ -221,6 +241,82 @@ func TestConfig_Resolver_NewSectionAutoAppears(t *testing.T) {
 
 	if m["host"] != "x" {
 		t.Errorf("host changed in unknown section: got %v", m["host"])
+	}
+}
+
+// TestConfig_Resolver_ReflectsLiveUpdate is the stage-3 acceptance test for
+// the config mutation API: after a writer replaces the resolved snapshot via
+// AtomicValue.Set (what the ConfigApplier will do), a subsequent read query
+// returns the new value — still redacted — instead of the startup snapshot.
+func TestConfig_Resolver_ReflectsLiveUpdate(t *testing.T) {
+	t.Parallel()
+
+	buildResolved := func(apiKey string) config.ResolvedConfig {
+		return config.ResolvedConfig{
+			NodeMap: map[string]config.ResolvedNode{
+				testSectionKeyTmdb: {
+					Spec: config.Spec{Key: testSectionKeyTmdb},
+					Value: tmdb.Config{
+						Enabled: true,
+						BaseURL: "https://api.themoviedb.org/3",
+						APIKey:  apiKey,
+					},
+				},
+			},
+		}
+	}
+
+	live := liveResolved(buildResolved("initial-secret"))
+	r := &Resolver{ResolvedConfig: live}
+	qr := &queryResolver{r}
+
+	readTmdb := func() map[string]any {
+		t.Helper()
+
+		out, err := qr.Config(context.Background())
+		if err != nil {
+			t.Fatalf("Config resolver returned error: %v", err)
+		}
+
+		if len(out.Sections) != 1 {
+			t.Fatalf("expected 1 section, got %d", len(out.Sections))
+		}
+
+		m, ok := out.Sections[0].Value.(map[string]any)
+		if !ok {
+			t.Fatalf("tmdb value not a map: %T", out.Sections[0].Value)
+		}
+
+		return m
+	}
+
+	before := readTmdb()
+	if v, ok := before["Enabled"].(bool); !ok || !v {
+		t.Fatalf("tmdb.Enabled = %v before update, want true", before["Enabled"])
+	}
+
+	// Simulate the applier: replace the whole snapshot with an updated section.
+	updated := buildResolved("updated-secret")
+	node := updated.NodeMap[testSectionKeyTmdb]
+	node.Value = tmdb.Config{
+		Enabled: false,
+		BaseURL: "https://tmdb.example.com",
+		APIKey:  "updated-secret",
+	}
+	updated.NodeMap[testSectionKeyTmdb] = node
+	live.Set(updated)
+
+	after := readTmdb()
+	if v, ok := after["Enabled"].(bool); !ok || v {
+		t.Errorf("tmdb.Enabled = %v after update, want false (stale snapshot served?)", after["Enabled"])
+	}
+
+	if after["BaseURL"] != "https://tmdb.example.com" {
+		t.Errorf("tmdb.BaseURL = %v after update, want updated URL", after["BaseURL"])
+	}
+
+	if after["APIKey"] != gqlmodel.RedactedValuePlaceholder {
+		t.Errorf("tmdb.APIKey not redacted after live update: got %v", after["APIKey"])
 	}
 }
 

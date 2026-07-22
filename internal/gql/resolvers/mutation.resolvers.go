@@ -20,7 +20,10 @@ import (
 
 // SendTo is the resolver for the sendTo field.
 func (r *clientMutationResolver) SendTo(ctx context.Context, obj *gqlmodel.ClientMutation, clientID *model.ID, infoHashes []protocol.ID) (*string, error) {
-	return nil, adapter.New(&r.ClientConfig, r.Search).AddInfoHashes(ctx,
+	// Snapshot the live client config for the duration of this request.
+	cfg := r.ClientConfig.Get()
+
+	return nil, adapter.New(&cfg, r.Search).AddInfoHashes(ctx,
 		client.AddInfoHashesRequest{
 			ClientID:   *clientID,
 			InfoHashes: infoHashes,

@@ -5,8 +5,10 @@ import (
 	"strings"
 
 	"github.com/adrg/xdg"
+	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
 	"github.com/bitmagnet-io/bitmagnet/internal/config"
 	"github.com/bitmagnet-io/bitmagnet/internal/config/configresolver"
+	"github.com/bitmagnet-io/bitmagnet/internal/config/configwrite"
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
 )
@@ -46,7 +48,25 @@ func New() fx.Option {
 
 	options = append(options,
 		fx.Provide(config.New),
-		fx.Provide(func() WritePath { return defaultWritePath }),
+		// Also provide the whole resolved config behind an AtomicValue, seeded
+		// with the startup snapshot. The settings read query calls Get() at
+		// request time and a runtime config mutation calls Set with a rebuilt
+		// snapshot on the same instance, so mutations are immediately visible
+		// to reads. Readers must not mutate the snapshot's NodeMap in place —
+		// writers replace the whole value.
+		fx.Provide(func(r config.ResolvedConfig) *concurrency.AtomicValue[config.ResolvedConfig] {
+			av := &concurrency.AtomicValue[config.ResolvedConfig]{}
+			av.Set(r)
+
+			return av
+		}),
+		// The single file runtime config mutations persist to. Mirrors the
+		// read search order among writable locations: an existing ./config.yml
+		// wins, else an existing XDG config file; with neither present,
+		// ./config.yml is designated and created on first write.
+		fx.Provide(func() configwrite.TargetPath {
+			return configwrite.TargetPath(resolveWriteTarget())
+		}),
 		fx.Provide(fx.Annotated{
 			Group: "config_resolvers",
 			Target: func() (configresolver.Resolver, error) {
@@ -92,6 +112,23 @@ func New() fx.Option {
 		"config",
 		fx.Options(options...),
 	)
+}
+
+// resolveWriteTarget picks the file runtime config mutations persist to. An
+// existing ./config.yml (the highest-priority file location the resolver
+// reads) wins; else an existing XDG config file; else ./config.yml, which
+// does not exist yet and is created on first write.
+func resolveWriteTarget() string {
+	const localPath = "./config.yml"
+	if _, err := os.Stat(localPath); err == nil {
+		return localPath
+	}
+
+	if path, err := xdg.SearchConfigFile("bitmagnet/config.yml"); err == nil {
+		return path
+	}
+
+	return localPath
 }
 
 func ReadOsEnv() map[string]string {
