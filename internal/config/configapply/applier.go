@@ -110,6 +110,14 @@ func (a *Applier) setSection(
 		return Outcome{}, fmt.Errorf("configapply: section %q: missing value type", key)
 	}
 
+	// A section read over the API has sensitive fields replaced with
+	// RedactedPlaceholder. Full-section replace means clients echo those
+	// placeholders back on write; substitute the current values so a redacted
+	// read round-trips losslessly (otherwise every redacted field — the API
+	// key, or false-positive redactions like classifier.Keywords — would be
+	// corrupted or fail to decode).
+	raw = preserveRedacted(raw, encodeSection(node.Value))
+
 	decodedValue := reflect.New(targetType)
 
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{

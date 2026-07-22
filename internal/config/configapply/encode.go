@@ -9,6 +9,45 @@ import (
 
 var durationType = reflect.TypeOf(time.Duration(0))
 
+// RedactedPlaceholder is the value the config API substitutes for sensitive
+// fields on read (see gqlmodel.RedactedValuePlaceholder, which aliases this).
+// SetSection treats it as "keep the existing value".
+const RedactedPlaceholder = "***REDACTED***"
+
+// preserveRedacted returns raw with every leaf equal to RedactedPlaceholder
+// replaced by the corresponding value from current (the encoded existing
+// section). Keys match exactly or via snake_case, mirroring the section
+// decoder's MatchName.
+func preserveRedacted(raw, current any) any {
+	if s, ok := raw.(string); ok && s == RedactedPlaceholder {
+		return current
+	}
+
+	rawMap, rawOk := raw.(map[string]any)
+
+	currentMap, currentOk := current.(map[string]any)
+	if !rawOk || !currentOk {
+		return raw
+	}
+
+	out := make(map[string]any, len(rawMap))
+
+	for k, v := range rawMap {
+		currentValue, ok := currentMap[k]
+		if !ok {
+			currentValue, ok = currentMap[strcase.ToSnake(k)]
+		}
+
+		if ok {
+			out[k] = preserveRedacted(v, currentValue)
+		} else {
+			out[k] = v
+		}
+	}
+
+	return out
+}
+
 func encodeSection(v any) any {
 	return encodeValue(reflect.ValueOf(v))
 }

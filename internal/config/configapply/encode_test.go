@@ -120,3 +120,41 @@ func TestEncodeSection_RecursesCollections(t *testing.T) {
 		t.Fatalf("by_name = %#v", encoded["by_name"])
 	}
 }
+
+func TestPreserveRedactedRestoresCurrentValues(t *testing.T) {
+	t.Parallel()
+
+	current := map[string]any{
+		"keywords":   map[string]any{"movie": []any{"remux"}},
+		"max_tokens": 256,
+		"llm":        map[string]any{"provider_api_key": "real-key"},
+	}
+	raw := map[string]any{
+		"keywords":   RedactedPlaceholder,
+		"max_tokens": RedactedPlaceholder,
+		"Llm":        map[string]any{"ProviderAPIKey": RedactedPlaceholder, "ProviderModel": "m"},
+		"workflow":   "default",
+	}
+
+	preserved, ok := preserveRedacted(raw, current).(map[string]any)
+	if !ok {
+		t.Fatalf("preserved has type %T", preserved)
+	}
+
+	if !reflect.DeepEqual(preserved["keywords"], current["keywords"]) {
+		t.Fatalf("keywords = %#v", preserved["keywords"])
+	}
+
+	if preserved["max_tokens"] != 256 {
+		t.Fatalf("max_tokens = %#v", preserved["max_tokens"])
+	}
+
+	llm, ok := preserved["Llm"].(map[string]any)
+	if !ok || llm["ProviderAPIKey"] != "real-key" || llm["ProviderModel"] != "m" {
+		t.Fatalf("llm = %#v", preserved["Llm"])
+	}
+
+	if preserved["workflow"] != "default" {
+		t.Fatalf("workflow = %#v", preserved["workflow"])
+	}
+}
