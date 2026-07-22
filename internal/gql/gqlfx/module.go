@@ -5,9 +5,11 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/blocking"
 	"github.com/bitmagnet-io/bitmagnet/internal/client"
 	rootconfig "github.com/bitmagnet-io/bitmagnet/internal/config"
+	"github.com/bitmagnet-io/bitmagnet/internal/config/configfx"
 	"github.com/bitmagnet-io/bitmagnet/internal/database/dao"
 	"github.com/bitmagnet-io/bitmagnet/internal/database/search"
 	"github.com/bitmagnet-io/bitmagnet/internal/gql"
+	"github.com/bitmagnet-io/bitmagnet/internal/gql/auth"
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/config"
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/httpserver"
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/resolvers"
@@ -24,9 +26,11 @@ import (
 func New() fx.Option {
 	return fx.Module(
 		"graphql",
+		configfx.NewConfigModule[auth.Config]("auth", auth.NewDefaultConfig()),
 		fx.Provide(
 			config.New,
 			httpserver.New,
+			auth.NewAuthenticator,
 			func(
 				lcfg lazy.Lazy[gql.Config],
 			) lazy.Lazy[graphql.ExecutableSchema] {
