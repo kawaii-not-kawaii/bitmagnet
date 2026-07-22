@@ -12,7 +12,10 @@ import (
 func TestStaticKeyResolver_CorrectAndWrong(t *testing.T) {
 	t.Parallel()
 
-	r := newStaticKeyResolver("correct-horse")
+	r, err := newStaticKeyResolver("correct-horse")
+	if err != nil {
+		t.Fatalf("newStaticKeyResolver: %v", err)
+	}
 
 	if p, ok := r.Resolve("correct-horse"); !ok || p.AccessLevel != AccessLevelAdmin {
 		t.Errorf("correct key should resolve to admin: ok=%v level=%v", ok, p.AccessLevel)

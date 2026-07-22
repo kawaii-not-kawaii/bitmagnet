@@ -1,9 +1,9 @@
 package auth
 
 import (
+	"crypto/hmac"
 	"crypto/rand"
 	"crypto/sha256"
-	"crypto/subtle"
 	"encoding/base64"
 	"fmt"
 
@@ -58,10 +58,15 @@ func NewAuthenticator(cfg Config, logger *zap.SugaredLogger) (*Authenticator, er
 		)
 	}
 
+	resolver, err := newStaticKeyResolver(key)
+	if err != nil {
+		return nil, fmt.Errorf("auth: init resolver: %w", err)
+	}
+
 	return &Authenticator{
 		disabled: false,
 		required: AccessLevelAdmin,
-		resolver: newStaticKeyResolver(key),
+		resolver: resolver,
 	}, nil
 }
 
@@ -75,21 +80,44 @@ func generateKey() (string, error) {
 }
 
 // staticKeyResolver compares a presented credential against one fixed key.
+//
+// It compares HMAC-SHA256 tags rather than the raw strings. Two properties
+// matter and neither is "password storage":
+//   - Both tags are a fixed 32 bytes, so hmac.Equal (constant-time) does not
+//     leak the key's length the way a raw ConstantTimeCompare would (that
+//     short-circuits on differing lengths).
+//   - The HMAC key is random and per-process, so the stored tag reveals nothing
+//     about the credential even if it were exposed, and tags cannot be
+//     precomputed across restarts.
+//
+// A fast hash is appropriate here: the credential is a high-entropy API key,
+// not a low-entropy user password being stored for later verification.
 type staticKeyResolver struct {
-	// keyHash is the SHA-256 of the key. Hashing both sides to a fixed 32-byte
-	// width before the constant-time compare keeps the comparison from leaking
-	// the key's length (subtle.ConstantTimeCompare short-circuits on differing
-	// lengths and is only constant-time for equal-length inputs).
-	keyHash [32]byte
+	hmacKey []byte
+	tag     []byte
 }
 
-func newStaticKeyResolver(key string) staticKeyResolver {
-	return staticKeyResolver{keyHash: sha256.Sum256([]byte(key))}
+func newStaticKeyResolver(key string) (staticKeyResolver, error) {
+	hmacKey := make([]byte, 32)
+	if _, err := rand.Read(hmacKey); err != nil {
+		return staticKeyResolver{}, fmt.Errorf("auth: init resolver key: %w", err)
+	}
+
+	return staticKeyResolver{
+		hmacKey: hmacKey,
+		tag:     tagOf(hmacKey, key),
+	}, nil
+}
+
+func tagOf(hmacKey []byte, s string) []byte {
+	mac := hmac.New(sha256.New, hmacKey)
+	mac.Write([]byte(s))
+
+	return mac.Sum(nil)
 }
 
 func (r staticKeyResolver) Resolve(credential string) (Principal, bool) {
-	got := sha256.Sum256([]byte(credential))
-	if subtle.ConstantTimeCompare(got[:], r.keyHash[:]) == 1 {
+	if hmac.Equal(tagOf(r.hmacKey, credential), r.tag) {
 		return Principal{AccessLevel: AccessLevelAdmin}, true
 	}
 
