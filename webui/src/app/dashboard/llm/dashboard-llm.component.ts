@@ -111,11 +111,6 @@ export class DashboardLlmComponent implements OnDestroy {
       return;
     }
 
-    if (!this.canSafelySave()) {
-      this.form.controls.enabled.setValue(this.lastView.config.enabled);
-      return;
-    }
-
     this.save();
   }
 
@@ -125,10 +120,8 @@ export class DashboardLlmComponent implements OnDestroy {
       return;
     }
 
-    if (!this.canSafelySave()) {
-      return;
-    }
-
+    // An untouched redacted API key is passed through as-is: the backend
+    // recognizes the placeholder and keeps the configured value.
     const value = buildClassifierConfigValue(
       this.lastView.config,
       this.form.getRawValue(),
@@ -263,14 +256,4 @@ export class DashboardLlmComponent implements OnDestroy {
     });
   }
 
-  private canSafelySave() {
-    if (this.form.controls.apiKey.value !== REDACTED_VALUE) {
-      return true;
-    }
-
-    this.errors.addError(
-      "The API does not expose the configured LLM key. Replace or clear the redacted value before saving.",
-    );
-    return false;
-  }
 }
