@@ -1,0 +1,42 @@
+mutation DashboardLlmUpdate($input: DashboardLlmConfigInput!) {
+  dashboard {
+    updateLlm(input: $input) {
+      enabled
+      running
+      providerName
+      baseUrl
+      model
+      apiKeySet
+      batchSize
+      maxContext
+      maxTokens
+      intervalSeconds
+      timeoutSeconds
+    }
+  }
+}
+
+mutation DashboardLlmTestConnection {
+  dashboard {
+    testLlmConnection {
+      connected
+      latencySeconds
+    }
+  }
+}
+
+mutation DashboardLlmRunBenchmark($sampleSize: Int!) {
+  dashboard {
+    runLlmBenchmark(sampleSize: $sampleSize) {
+      sampleSize
+      successes
+      failures
+      averageLatencySeconds
+      throughputPerSecond
+      distribution {
+        contentType
+        count
+      }
+    }
+  }
+}

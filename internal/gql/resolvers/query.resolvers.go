@@ -136,6 +136,11 @@ func (r *queryResolver) Config(ctx context.Context) (gen.ConfigQuery, error) {
 	return gen.ConfigQuery{Sections: sections}, nil
 }
 
+// Dashboard is the resolver for the dashboard field.
+func (r *queryResolver) Dashboard(ctx context.Context) (gen.DashboardQuery, error) {
+	return r.dashboardQuery(ctx)
+}
+
 // Files is the resolver for the files field.
 func (r *torrentQueryResolver) Files(ctx context.Context, obj *gqlmodel.TorrentQuery, input gqlmodel.TorrentFilesQueryInput) (query.GenericResult[model.TorrentFile], error) {
 	return gqlmodel.TorrentQuery{

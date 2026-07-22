@@ -1,0 +1,228 @@
+@if (llm$ | async; as llm) {
+  <section class="llm-screen" aria-label="LLM engine configuration and metrics">
+    <article class="panel settings-panel">
+      <header>
+        <div>
+          <strong>Matching engine</strong>
+          <span>OpenAI-compatible classifier</span>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" [formControl]="form.controls.enabled" />
+          <i aria-hidden="true"></i>
+          <span>{{
+            form.controls.enabled.value ? "Enabled" : "Disabled"
+          }}</span>
+        </label>
+      </header>
+
+      <form [formGroup]="form" (ngSubmit)="save()">
+        <div class="status-strip">
+          <span
+            class="status-dot"
+            [class.running]="llm.state.running"
+            [class.disabled]="!llm.state.enabled"
+          ></span>
+          <div>
+            <strong>{{
+              !llm.state.enabled
+                ? "Engine disabled"
+                : llm.state.running
+                  ? "Engine running"
+                  : "Engine stopped"
+            }}</strong>
+            <span>{{ llm.state.providerName }} · {{ llm.state.model }}</span>
+          </div>
+        </div>
+
+        <div class="fields">
+          <label>
+            <span>Provider name</span>
+            <input type="text" formControlName="providerName" />
+          </label>
+          <label>
+            <span>Base URL</span>
+            <input type="url" formControlName="baseUrl" />
+          </label>
+          <label>
+            <span>Model</span>
+            <input type="text" formControlName="model" />
+          </label>
+          <label>
+            <span>API key</span>
+            <input
+              type="password"
+              formControlName="apiKey"
+              [placeholder]="
+                llm.state.apiKeySet
+                  ? 'Key saved · leave blank to keep'
+                  : 'Optional'
+              "
+              autocomplete="new-password"
+            />
+          </label>
+          <label>
+            <span>Batch size</span>
+            <input type="number" min="1" formControlName="batchSize" />
+          </label>
+          <label>
+            <span>Max context</span>
+            <input type="number" min="1" formControlName="maxContext" />
+          </label>
+          <label>
+            <span>Max tokens</span>
+            <input type="number" min="1" formControlName="maxTokens" />
+          </label>
+          <label>
+            <span>Interval (seconds)</span>
+            <input type="number" min="0" formControlName="intervalSeconds" />
+          </label>
+          <label>
+            <span>Timeout (seconds)</span>
+            <input type="number" min="1" formControlName="timeoutSeconds" />
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <button
+            type="button"
+            class="secondary"
+            [disabled]="testing || !llm.state.enabled"
+            (click)="testConnection()"
+          >
+            {{ testing ? "Testing…" : "Test connection" }}
+          </button>
+          <button type="submit" class="primary" [disabled]="saving">
+            {{ saving ? "Saving…" : "Save changes" }}
+          </button>
+        </div>
+        @if (connectionResult; as connection) {
+          <p class="action-result" [class.good]="connection.connected">
+            {{ connection.connected ? "Connected" : "Connection failed" }} ·
+            {{ connection.latencySeconds | number: "1.2-2" }}s
+          </p>
+        }
+        @if (saveMessage) {
+          <p class="action-result good">{{ saveMessage }}</p>
+        }
+      </form>
+    </article>
+
+    <div class="metrics-column">
+      <article class="panel live-panel">
+        <header>
+          <div>
+            <strong>Live metrics</strong>
+            <span
+              >Last
+              {{ llm.metrics.windowSeconds / 60 | number: "1.0-0" }}m</span
+            >
+          </div>
+          <span class="live"><i></i> live</span>
+        </header>
+        <div class="metric-grid">
+          <div>
+            <span>Matched</span>
+            <strong>{{ llm.metrics.matched | number }}</strong>
+          </div>
+          <div>
+            <span>Throughput</span>
+            <strong>{{
+              llm.metrics.throughputPerSecond | number: "1.1-2"
+            }}</strong>
+            <small>/ sec</small>
+          </div>
+          <div>
+            <span>Avg latency</span>
+            <strong>{{
+              llm.metrics.averageLatencySeconds | number: "1.2-2"
+            }}</strong>
+            <small>sec</small>
+          </div>
+          <div>
+            <span>P95 latency</span>
+            <strong>{{
+              llm.metrics.p95LatencySeconds | number: "1.2-2"
+            }}</strong>
+            <small>sec</small>
+          </div>
+          <div>
+            <span>Error rate</span>
+            <strong>{{ llm.metrics.errorRate | percent: "1.1-1" }}</strong>
+          </div>
+          <div>
+            <span>Unknown backlog</span>
+            <strong>{{ llm.metrics.unknownBacklog | number }}</strong>
+          </div>
+          <div>
+            <span>Prompt tokens</span>
+            <strong>{{ llm.metrics.promptTokens | number }}</strong>
+          </div>
+          <div>
+            <span>Completion tokens</span>
+            <strong>{{ llm.metrics.completionTokens | number }}</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="panel distribution-panel">
+        <header>
+          <div>
+            <strong>Classification distribution</strong>
+            <span>Successful matches in this window</span>
+          </div>
+        </header>
+        <div class="distribution">
+          @for (entry of llm.metrics.distribution; track entry.contentType) {
+            <div class="distribution-row">
+              <span>{{ entry.contentType }}</span>
+              <div>
+                <i
+                  [style.width]="
+                    distributionWidth(entry.count, llm.metrics.distribution)
+                  "
+                ></i>
+              </div>
+              <b>{{ entry.count | number }}</b>
+            </div>
+          } @empty {
+            <p class="empty">No classifications recorded in this window.</p>
+          }
+        </div>
+      </article>
+
+      <article class="panel benchmark-panel">
+        <header>
+          <div>
+            <strong>Dry-run benchmark</strong>
+            <span>Classify a random sample of 20 unknown torrents</span>
+          </div>
+          <button
+            type="button"
+            [disabled]="benchmarking || !llm.state.enabled"
+            (click)="runBenchmark()"
+          >
+            {{ benchmarking ? "Running…" : "Run benchmark" }}
+          </button>
+        </header>
+        @if (benchmark; as result) {
+          <div class="benchmark-results">
+            <div>
+              <span>Success</span><b>{{ result.successes }}</b>
+            </div>
+            <div>
+              <span>Failed</span><b>{{ result.failures }}</b>
+            </div>
+            <div>
+              <span>Avg latency</span
+              ><b>{{ result.averageLatencySeconds | number: "1.2-2" }}s</b>
+            </div>
+            <div>
+              <span>Throughput</span
+              ><b>{{ result.throughputPerSecond | number: "1.1-2" }}/s</b>
+            </div>
+          </div>
+        }
+      </article>
+    </div>
+  </section>
+}

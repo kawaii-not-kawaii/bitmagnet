@@ -13,6 +13,7 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/resolvers"
 	"github.com/bitmagnet-io/bitmagnet/internal/health"
 	"github.com/bitmagnet-io/bitmagnet/internal/lazy"
+	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 	"github.com/bitmagnet-io/bitmagnet/internal/metrics/queuemetrics"
 	"github.com/bitmagnet-io/bitmagnet/internal/metrics/torrentmetrics"
 	"github.com/bitmagnet-io/bitmagnet/internal/processor"
@@ -87,6 +88,8 @@ func New() fx.Option {
 							BlockingManager:      bm,
 							ClientConfig:         p.ClientConfig,
 							ResolvedConfig:       p.ResolvedConfig,
+							LlmRegistry:          p.LlmRegistry,
+							LlmStats:             p.LlmStats,
 						}, nil
 					}),
 				}
@@ -117,6 +120,8 @@ type Params struct {
 	BlockingManager      lazy.Lazy[blocking.Manager]
 	ClientConfig         client.Config
 	ResolvedConfig       rootconfig.ResolvedConfig
+	LlmRegistry          *llm.Registry
+	LlmStats             *llm.Stats
 }
 
 type Result struct {

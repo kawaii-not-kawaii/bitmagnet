@@ -43,6 +43,92 @@ type ContentTypeFacetInput struct {
 	Filter    graphql.Omittable[[]*model1.ContentType] `json:"filter,omitempty"`
 }
 
+type DashboardLlm struct {
+	State   DashboardLlmState   `json:"state"`
+	Metrics DashboardLlmMetrics `json:"metrics"`
+}
+
+type DashboardLlmBenchmark struct {
+	SampleSize            int                                 `json:"sampleSize"`
+	Successes             int                                 `json:"successes"`
+	Failures              int                                 `json:"failures"`
+	AverageLatencySeconds float64                             `json:"averageLatencySeconds"`
+	ThroughputPerSecond   float64                             `json:"throughputPerSecond"`
+	Distribution          []DashboardLlmBenchmarkDistribution `json:"distribution"`
+}
+
+type DashboardLlmBenchmarkDistribution struct {
+	ContentType string `json:"contentType"`
+	Count       int    `json:"count"`
+}
+
+type DashboardLlmConfigInput struct {
+	Enabled         bool                       `json:"enabled"`
+	ProviderName    string                     `json:"providerName"`
+	BaseURL         string                     `json:"baseUrl"`
+	Model           string                     `json:"model"`
+	APIKey          graphql.Omittable[*string] `json:"apiKey,omitempty"`
+	BatchSize       int                        `json:"batchSize"`
+	MaxContext      int                        `json:"maxContext"`
+	MaxTokens       int                        `json:"maxTokens"`
+	IntervalSeconds int                        `json:"intervalSeconds"`
+	TimeoutSeconds  int                        `json:"timeoutSeconds"`
+}
+
+type DashboardLlmConnectionResult struct {
+	Connected      bool    `json:"connected"`
+	LatencySeconds float64 `json:"latencySeconds"`
+}
+
+type DashboardLlmMetrics struct {
+	WindowSeconds         int                                 `json:"windowSeconds"`
+	Matched               int                                 `json:"matched"`
+	PromptTokens          int                                 `json:"promptTokens"`
+	CompletionTokens      int                                 `json:"completionTokens"`
+	AverageLatencySeconds float64                             `json:"averageLatencySeconds"`
+	P95LatencySeconds     float64                             `json:"p95LatencySeconds"`
+	ThroughputPerSecond   float64                             `json:"throughputPerSecond"`
+	ErrorRate             float64                             `json:"errorRate"`
+	UnknownBacklog        int                                 `json:"unknownBacklog"`
+	Distribution          []DashboardLlmBenchmarkDistribution `json:"distribution"`
+}
+
+type DashboardLlmState struct {
+	Enabled         bool   `json:"enabled"`
+	Running         bool   `json:"running"`
+	ProviderName    string `json:"providerName"`
+	BaseURL         string `json:"baseUrl"`
+	Model           string `json:"model"`
+	APIKeySet       bool   `json:"apiKeySet"`
+	BatchSize       int    `json:"batchSize"`
+	MaxContext      int    `json:"maxContext"`
+	MaxTokens       int    `json:"maxTokens"`
+	IntervalSeconds int    `json:"intervalSeconds"`
+	TimeoutSeconds  int    `json:"timeoutSeconds"`
+}
+
+type DashboardMutation struct {
+	UpdateLlm         DashboardLlmState            `json:"updateLlm"`
+	TestLlmConnection DashboardLlmConnectionResult `json:"testLlmConnection"`
+	RunLlmBenchmark   DashboardLlmBenchmark        `json:"runLlmBenchmark"`
+}
+
+type DashboardQuery struct {
+	Summary DashboardSummary `json:"summary"`
+	Llm     DashboardLlm     `json:"llm"`
+}
+
+type DashboardSummary struct {
+	TotalTorrents       int     `json:"totalTorrents"`
+	TorrentsToday       int     `json:"torrentsToday"`
+	IndexedLastHour     int     `json:"indexedLastHour"`
+	IndexedPreviousHour int     `json:"indexedPreviousHour"`
+	ClassifiedPercent   float64 `json:"classifiedPercent"`
+	QueueProcessed      int     `json:"queueProcessed"`
+	QueuePending        int     `json:"queuePending"`
+	QueueFailed         int     `json:"queueFailed"`
+}
+
 type GenreAgg struct {
 	Value      string `json:"value"`
 	Label      string `json:"label"`

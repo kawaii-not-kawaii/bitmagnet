@@ -11,11 +11,11 @@ import (
 )
 
 type dependencies struct {
-	search       LocalSearch
-	tmdbClient   tmdb.Client
-	llmProviders map[string]llm.Provider
-	_logger      *zap.SugaredLogger
-	logger       *zap.SugaredLogger
+	search      LocalSearch
+	tmdbClient  tmdb.Client
+	llmRegistry *llm.Registry
+	_logger     *zap.SugaredLogger
+	logger      *zap.SugaredLogger
 }
 
 func (dependencies) CleanObj(o interface{}) map[string]any {

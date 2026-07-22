@@ -32,11 +32,10 @@
         }}</a>
         <a
           routerLink="/dashboard"
-          [routerLinkActiveOptions]="{ exact: true }"
-          routerLinkActive="active"
+          [class.active]="router.url.startsWith('/dashboard')"
           >{{ t("routes.dashboard") }}</a
         >
-        <a routerLink="/dashboard/queues" routerLinkActive="active">{{
+        <a routerLink="/queues" routerLinkActive="active">{{
           t("routes.queues")
         }}</a>
       </nav>
@@ -62,11 +61,10 @@
     >
     <a
       routerLink="/dashboard"
-      [routerLinkActiveOptions]="{ exact: true }"
-      routerLinkActive="active"
+      [class.active]="router.url.startsWith('/dashboard')"
       ><span aria-hidden="true">▦</span>{{ t("routes.dashboard") }}</a
     >
-    <a routerLink="/dashboard/queues" routerLinkActive="active"
+    <a routerLink="/queues" routerLinkActive="active"
       ><span aria-hidden="true">≣</span>{{ t("routes.queues") }}</a
     >
   </nav>

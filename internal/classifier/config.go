@@ -17,6 +17,7 @@ type Config struct {
 // LlmConfig holds the configuration for LLM-based classification.
 // Flattened to single-provider to avoid config resolver issues with map[string]struct.
 type LlmConfig struct {
+	Enabled         bool
 	ProviderName    string
 	ProviderBaseURL string
 	ProviderModel   string
@@ -33,6 +34,7 @@ func NewDefaultConfig() Config {
 		Workflow:    "default",
 		Concurrency: 10,
 		Llm: LlmConfig{
+			Enabled:    true,
 			BatchSize:  5,
 			MaxContext: 16000,
 			MaxTokens:  256,

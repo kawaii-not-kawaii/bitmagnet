@@ -15,6 +15,7 @@ import {
 import { TorrentMetricsController } from "./torrent-metrics.controller";
 import { TorrentChartAdapterTimeline } from "./torrent-chart-adapter.timeline";
 
+import type { EventName, Result } from "./torrent-metrics.types";
 @Component({
   selector: "app-torrent-metrics",
   standalone: true,
@@ -44,6 +45,26 @@ export class TorrentMetricsComponent implements OnDestroy {
   }
 
   protected readonly eventNames = eventNames;
+
+  eventTotal(result: Result, eventName?: EventName) {
+    let total = 0;
+    const names: readonly EventName[] = eventName ? [eventName] : eventNames;
+    for (const source of result.sourceSummaries) {
+      for (const name of names) {
+        const entries = source.events?.eventBuckets[name]?.entries ?? {};
+        for (const entry of Object.values(entries)) {
+          total += entry?.count ?? 0;
+        }
+      }
+    }
+    return total;
+  }
+
+  optionLabel(value: string) {
+    if (value === "off") return "Off";
+    const [unit, amount] = value.split("_");
+    return amount ? `${amount}${unit[0]}` : value;
+  }
 
   handleMultiplierEvent(event: Event) {
     const value = (event.currentTarget as HTMLInputElement).value;

@@ -1,20 +1,132 @@
-<ng-container *transloco="let t">
-  <app-document-title [parts]="[t('routes.dashboard')]" />
-  <mat-card class="dashboard-card">
-    <mat-card-header>
-      <mat-toolbar>
-        <h2><mat-icon>dashboard</mat-icon>{{ t("routes.dashboard") }}</h2>
-      </mat-toolbar>
-    </mat-card-header>
-    <mat-card-content>
-      <mat-divider></mat-divider>
-      <div class="grid-container">
-        <mat-grid-list cols="1" rowHeight="500px">
-          <mat-grid-tile [colspan]="1" [rowspan]="1">
-            <app-health-card></app-health-card>
-          </mat-grid-tile>
-        </mat-grid-list>
-      </div>
-    </mat-card-content>
-  </mat-card>
-</ng-container>
+@if (dashboard$ | async; as dashboard) {
+  <section class="overview" aria-label="Dashboard overview">
+    <div class="stat-grid">
+      <article class="stat-card">
+        <span>Total torrents</span>
+        <strong>{{ format(dashboard.summary.totalTorrents) }}</strong>
+        <small class="good"
+          >+{{ format(dashboard.summary.torrentsToday) }} today</small
+        >
+      </article>
+      <article class="stat-card">
+        <span>Indexed (1h)</span>
+        <strong>{{ format(dashboard.summary.indexedLastHour) }}</strong>
+        <small
+          [class.good]="
+            dashboard.summary.indexedLastHour >=
+            dashboard.summary.indexedPreviousHour
+          "
+          >{{
+            indexedTrend(
+              dashboard.summary.indexedLastHour,
+              dashboard.summary.indexedPreviousHour
+            )
+          }}</small
+        >
+      </article>
+      <article class="stat-card">
+        <span>Queue pending</span>
+        <strong>{{ format(dashboard.summary.queuePending) }}</strong>
+        <small>current backlog</small>
+      </article>
+      <article class="stat-card">
+        <span>Classified</span>
+        <strong
+          >{{ dashboard.summary.classifiedPercent | number: "1.1-1" }}%</strong
+        >
+        <small>of indexed torrents</small>
+      </article>
+    </div>
+
+    <div class="overview-grid">
+      <article class="panel health-panel">
+        <header>
+          <strong>Health</strong>
+          <span>polled every 10s</span>
+        </header>
+        @if (health.result$ | async; as healthResult) {
+          <div class="panel-body">
+            <h2>Components</h2>
+            @for (check of healthResult.checks; track check.key) {
+              <div class="health-row">
+                <span class="health-dot" [class]="check.status"></span>
+                <span>{{ check.key }}</span>
+                <b [class]="check.status">{{ check.status }}</b>
+              </div>
+            } @empty {
+              <p class="empty">No component checks reported.</p>
+            }
+
+            <h2>Workers</h2>
+            @for (worker of healthResult.workers; track worker.key) {
+              <div class="health-row">
+                <span
+                  class="health-dot"
+                  [class.up]="worker.started"
+                  [class.inactive]="!worker.started"
+                ></span>
+                <span>{{ worker.key }}</span>
+                <b [class.up]="worker.started">{{
+                  worker.started ? "started" : "inactive"
+                }}</b>
+              </div>
+            } @empty {
+              <p class="empty">No workers registered.</p>
+            }
+          </div>
+        }
+      </article>
+
+      <article class="panel queue-panel">
+        <header>
+          <strong>Queues</strong>
+          <a routerLink="/queues/visualize">View all →</a>
+        </header>
+        <div class="queue-body">
+          @let queueTotal =
+            dashboard.summary.queueProcessed +
+            dashboard.summary.queuePending +
+            dashboard.summary.queueFailed;
+          <div class="queue-bar" aria-label="Queue status distribution">
+            <span
+              class="processed"
+              [style.width]="
+                queueWidth(dashboard.summary.queueProcessed, queueTotal)
+              "
+            ></span>
+            <span
+              class="pending"
+              [style.width]="
+                queueWidth(dashboard.summary.queuePending, queueTotal)
+              "
+            ></span>
+            <span
+              class="failed"
+              [style.width]="
+                queueWidth(dashboard.summary.queueFailed, queueTotal)
+              "
+            ></span>
+          </div>
+          <div class="queue-row">
+            <span class="legend processed"></span><span>Processed</span
+            ><b>{{ format(dashboard.summary.queueProcessed) }}</b>
+          </div>
+          <div class="queue-row">
+            <span class="legend pending"></span><span>Pending</span
+            ><b>{{ format(dashboard.summary.queuePending) }}</b>
+          </div>
+          <div class="queue-row">
+            <span class="legend failed"></span><span>Failed</span
+            ><b>{{ format(dashboard.summary.queueFailed) }}</b>
+          </div>
+          <div class="queue-actions">
+            <a routerLink="/queues/admin">Enqueue jobs</a>
+            <a routerLink="/queues/admin" class="danger">Purge</a>
+          </div>
+        </div>
+      </article>
+    </div>
+  </section>
+} @else {
+  <div class="loading-state">Loading dashboard…</div>
+}

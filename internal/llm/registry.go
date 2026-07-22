@@ -33,6 +33,7 @@ type ProviderConfig struct {
 
 // RegistryConfig holds the full LLM configuration for persistence.
 type RegistryConfig struct {
+	Enabled    bool                      `json:"enabled"            yaml:"enabled"`
 	Providers  map[string]ProviderConfig `json:"providers"          yaml:"providers"`
 	BatchSize  int                       `json:"batch_size"         yaml:"batch_size"`
 	MaxContext int                       `json:"max_context_tokens" yaml:"max_context_tokens"`
@@ -41,12 +42,13 @@ type RegistryConfig struct {
 	Timeout    time.Duration             `json:"timeout"            yaml:"timeout"`
 }
 
-// ProviderFactory creates a Provider from a ProviderConfig.
-type ProviderFactory func(name string, cfg ProviderConfig) Provider
+// ProviderFactory creates a Provider from provider and registry configuration.
+type ProviderFactory func(name string, provider ProviderConfig, registry RegistryConfig) Provider
 
 // Registry holds the current LLM providers and configuration.
 // It supports live updates and graceful persistence on shutdown.
 type Registry struct {
+	updateMu   sync.Mutex
 	mu         sync.RWMutex
 	providers  map[string]Provider
 	config     RegistryConfig
@@ -62,8 +64,10 @@ func NewRegistry(cfg RegistryConfig, factory ProviderFactory, configPath string)
 		configPath: configPath,
 		providers:  make(map[string]Provider, len(cfg.Providers)),
 	}
-	for name, pCfg := range cfg.Providers {
-		r.providers[name] = factory(name, pCfg)
+	if cfg.Enabled {
+		for name, pCfg := range cfg.Providers {
+			r.providers[name] = factory(name, pCfg, cfg)
+		}
 	}
 
 	return r
@@ -103,12 +107,34 @@ func (r *Registry) Config() RegistryConfig {
 // New providers are created via the factory.
 // Any evicted provider that implements Drainer is drained before being discarded.
 func (r *Registry) Update(cfg RegistryConfig) {
+	r.updateMu.Lock()
+	defer r.updateMu.Unlock()
+
+	r.update(cfg)
+}
+
+// UpdateAndFlush persists a new configuration before applying it at runtime.
+func (r *Registry) UpdateAndFlush(cfg RegistryConfig) error {
+	r.updateMu.Lock()
+	defer r.updateMu.Unlock()
+
+	if err := r.flushConfig(cfg); err != nil {
+		return err
+	}
+	r.update(cfg)
+
+	return nil
+}
+
+func (r *Registry) update(cfg RegistryConfig) {
 	r.mu.Lock()
 	old := r.providers
 
 	newProviders := make(map[string]Provider, len(cfg.Providers))
-	for name, pCfg := range cfg.Providers {
-		newProviders[name] = r.factory(name, pCfg)
+	if cfg.Enabled {
+		for name, pCfg := range cfg.Providers {
+			newProviders[name] = r.factory(name, pCfg, cfg)
+		}
 	}
 
 	r.providers = newProviders
@@ -144,13 +170,20 @@ func (r *Registry) Update(cfg RegistryConfig) {
 // Returns ErrPersistenceDisabled (not nil) when no config path is set, so the
 // caller can distinguish "did nothing" from "wrote successfully".
 func (r *Registry) Flush() error {
-	if r.configPath == "" {
-		return ErrPersistenceDisabled
-	}
+	r.updateMu.Lock()
+	defer r.updateMu.Unlock()
 
 	r.mu.RLock()
 	cfg := r.config
 	r.mu.RUnlock()
+
+	return r.flushConfig(cfg)
+}
+
+func (r *Registry) flushConfig(cfg RegistryConfig) error {
+	if r.configPath == "" {
+		return ErrPersistenceDisabled
+	}
 
 	root, mode, err := r.loadConfigTree()
 	if err != nil {

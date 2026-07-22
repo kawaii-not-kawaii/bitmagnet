@@ -42,6 +42,11 @@ func (r *mutationResolver) Client(ctx context.Context) (gqlmodel.ClientMutation,
 	return gqlmodel.ClientMutation{}, nil
 }
 
+// Dashboard is the resolver for the dashboard field.
+func (r *mutationResolver) Dashboard(ctx context.Context) (gen.DashboardMutation, error) {
+	return gen.DashboardMutation{}, nil
+}
+
 // Delete is the resolver for the delete field.
 func (r *torrentMutationResolver) Delete(ctx context.Context, obj *gqlmodel.TorrentMutation, infoHashes []protocol.ID) (*string, error) {
 	err := r.BlockingManager.Block(ctx, infoHashes, true)

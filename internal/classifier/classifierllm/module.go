@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
+	"github.com/bitmagnet-io/bitmagnet/internal/config/configfx"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm/openai"
 	"go.uber.org/fx"
@@ -14,102 +15,95 @@ import (
 
 type Params struct {
 	fx.In
-	Config    classifier.Config
-	Logger    *zap.SugaredLogger
-	Lifecycle fx.Lifecycle
+	Config     classifier.Config
+	Logger     *zap.SugaredLogger
+	Lifecycle  fx.Lifecycle
+	ConfigPath configfx.WritePath
 }
 
 type Result struct {
 	fx.Out
-	Registry     *llm.Registry           `optional:"true"`
-	LlmProviders map[string]llm.Provider `optional:"true"`
+	Registry *llm.Registry
+	Stats    *llm.Stats
 }
 
 func New(p Params) Result {
 	cfg := p.Config.Llm
-	if cfg.ProviderBaseURL == "" {
-		return Result{}
-	}
-
 	name := cfg.ProviderName
 	if name == "" {
 		name = "default"
 	}
 
-	p.Logger.Infof(
-		"llm provider config: name=%s base_url=%s model=%s",
-		name,
-		cfg.ProviderBaseURL,
-		cfg.ProviderModel,
-	)
+	providers := make(map[string]llm.ProviderConfig)
+	if cfg.ProviderBaseURL != "" {
+		providers[name] = llm.ProviderConfig{
+			BaseURL: cfg.ProviderBaseURL,
+			Model:   cfg.ProviderModel,
+			APIKey:  cfg.ProviderAPIKey,
+			Timeout: cfg.Timeout,
+		}
+	}
 
 	regCfg := llm.RegistryConfig{
-		Providers: map[string]llm.ProviderConfig{
-			name: {
-				BaseURL: cfg.ProviderBaseURL,
-				Model:   cfg.ProviderModel,
-				APIKey:  cfg.ProviderAPIKey,
-				Timeout: cfg.Timeout,
-			},
-		},
+		Enabled:    cfg.Enabled && cfg.ProviderBaseURL != "",
+		Providers:  providers,
 		BatchSize:  cfg.BatchSize,
 		MaxContext: cfg.MaxContext,
 		MaxTokens:  cfg.MaxTokens,
 		Interval:   cfg.Interval,
 		Timeout:    cfg.Timeout,
 	}
+	stats := llm.NewStats()
 
-	defaultTimeout := regCfg.Timeout
-	batchSize := regCfg.BatchSize
-
-	flushAfter := regCfg.Interval
-	if flushAfter <= 0 {
-		flushAfter = 5 * time.Second
-	}
-
-	factory := func(name string, cfg llm.ProviderConfig) llm.Provider {
-		timeout := cfg.Timeout
+	factory := func(name string, providerCfg llm.ProviderConfig, registryCfg llm.RegistryConfig) llm.Provider {
+		timeout := providerCfg.Timeout
 		if timeout <= 0 {
-			timeout = defaultTimeout
+			timeout = registryCfg.Timeout
+		}
+		flushAfter := registryCfg.Interval
+		if flushAfter <= 0 {
+			flushAfter = 5 * time.Second
 		}
 
-		p.Logger.Infof("llm provider '%s' ready: %s (batch=%d)", name, cfg.BaseURL, batchSize)
+		p.Logger.Infof(
+			"llm provider '%s' ready: %s (batch=%d)",
+			name,
+			providerCfg.BaseURL,
+			registryCfg.BatchSize,
+		)
 
 		base := openai.New(openai.Config{
 			Name:    name,
-			BaseURL: cfg.BaseURL,
-			Model:   cfg.Model,
-			APIKey:  cfg.APIKey,
+			BaseURL: providerCfg.BaseURL,
+			Model:   providerCfg.Model,
+			APIKey:  providerCfg.APIKey,
 			Timeout: timeout,
+			Observe: stats.Record,
 		})
-		if batchSize > 1 {
-			return openai.NewBatchClient(base, batchSize, flushAfter)
+		if registryCfg.BatchSize > 1 {
+			return openai.NewBatchClient(base, registryCfg.BatchSize, flushAfter)
 		}
 
 		return base
 	}
 
-	registry := llm.NewRegistry(regCfg, factory, "")
-	providers := registry.All()
-
+	registry := llm.NewRegistry(regCfg, factory, string(p.ConfigPath))
 	p.Lifecycle.Append(fx.Hook{
 		OnStop: func(_ context.Context) error {
+			providers := registry.All()
 			names := make([]string, 0, len(providers))
 			for name := range providers {
 				names = append(names, name)
 			}
 			sort.Strings(names)
 			for _, name := range names {
-				if d, ok := providers[name].(llm.Drainer); ok {
-					d.Drain()
+				if drainer, ok := providers[name].(llm.Drainer); ok {
+					drainer.Drain()
 				}
 			}
 			return nil
 		},
 	})
 
-	return Result{
-		Registry:     registry,
-		LlmProviders: providers,
-	}
+	return Result{Registry: registry, Stats: stats}
 }

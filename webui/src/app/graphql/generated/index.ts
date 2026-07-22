@@ -133,6 +133,111 @@ export type ContentTypeFacetInput = {
   filter?: InputMaybe<Array<InputMaybe<ContentType>>>;
 };
 
+export type DashboardLlm = {
+  __typename?: 'DashboardLlm';
+  metrics: DashboardLlmMetrics;
+  state: DashboardLlmState;
+};
+
+export type DashboardLlmBenchmark = {
+  __typename?: 'DashboardLlmBenchmark';
+  averageLatencySeconds: Scalars['Float']['output'];
+  distribution: Array<DashboardLlmBenchmarkDistribution>;
+  failures: Scalars['Int']['output'];
+  sampleSize: Scalars['Int']['output'];
+  successes: Scalars['Int']['output'];
+  throughputPerSecond: Scalars['Float']['output'];
+};
+
+export type DashboardLlmBenchmarkDistribution = {
+  __typename?: 'DashboardLlmBenchmarkDistribution';
+  contentType: Scalars['String']['output'];
+  count: Scalars['Int']['output'];
+};
+
+export type DashboardLlmConfigInput = {
+  apiKey?: InputMaybe<Scalars['String']['input']>;
+  baseUrl: Scalars['String']['input'];
+  batchSize: Scalars['Int']['input'];
+  enabled: Scalars['Boolean']['input'];
+  intervalSeconds: Scalars['Int']['input'];
+  maxContext: Scalars['Int']['input'];
+  maxTokens: Scalars['Int']['input'];
+  model: Scalars['String']['input'];
+  providerName: Scalars['String']['input'];
+  timeoutSeconds: Scalars['Int']['input'];
+};
+
+export type DashboardLlmConnectionResult = {
+  __typename?: 'DashboardLlmConnectionResult';
+  connected: Scalars['Boolean']['output'];
+  latencySeconds: Scalars['Float']['output'];
+};
+
+export type DashboardLlmMetrics = {
+  __typename?: 'DashboardLlmMetrics';
+  averageLatencySeconds: Scalars['Float']['output'];
+  completionTokens: Scalars['Int']['output'];
+  distribution: Array<DashboardLlmBenchmarkDistribution>;
+  errorRate: Scalars['Float']['output'];
+  matched: Scalars['Int']['output'];
+  p95LatencySeconds: Scalars['Float']['output'];
+  promptTokens: Scalars['Int']['output'];
+  throughputPerSecond: Scalars['Float']['output'];
+  unknownBacklog: Scalars['Int']['output'];
+  windowSeconds: Scalars['Int']['output'];
+};
+
+export type DashboardLlmState = {
+  __typename?: 'DashboardLlmState';
+  apiKeySet: Scalars['Boolean']['output'];
+  baseUrl: Scalars['String']['output'];
+  batchSize: Scalars['Int']['output'];
+  enabled: Scalars['Boolean']['output'];
+  intervalSeconds: Scalars['Int']['output'];
+  maxContext: Scalars['Int']['output'];
+  maxTokens: Scalars['Int']['output'];
+  model: Scalars['String']['output'];
+  providerName: Scalars['String']['output'];
+  running: Scalars['Boolean']['output'];
+  timeoutSeconds: Scalars['Int']['output'];
+};
+
+export type DashboardMutation = {
+  __typename?: 'DashboardMutation';
+  runLlmBenchmark: DashboardLlmBenchmark;
+  testLlmConnection: DashboardLlmConnectionResult;
+  updateLlm: DashboardLlmState;
+};
+
+
+export type DashboardMutationRunLlmBenchmarkArgs = {
+  sampleSize: Scalars['Int']['input'];
+};
+
+
+export type DashboardMutationUpdateLlmArgs = {
+  input: DashboardLlmConfigInput;
+};
+
+export type DashboardQuery = {
+  __typename?: 'DashboardQuery';
+  llm: DashboardLlm;
+  summary: DashboardSummary;
+};
+
+export type DashboardSummary = {
+  __typename?: 'DashboardSummary';
+  classifiedPercent: Scalars['Float']['output'];
+  indexedLastHour: Scalars['Int']['output'];
+  indexedPreviousHour: Scalars['Int']['output'];
+  queueFailed: Scalars['Int']['output'];
+  queuePending: Scalars['Int']['output'];
+  queueProcessed: Scalars['Int']['output'];
+  torrentsToday: Scalars['Int']['output'];
+  totalTorrents: Scalars['Int']['output'];
+};
+
 export type Episodes = {
   __typename?: 'Episodes';
   label: Scalars['String']['output'];
@@ -296,6 +401,7 @@ export type MetricsBucketDuration =
 export type Mutation = {
   __typename?: 'Mutation';
   client: ClientMutation;
+  dashboard: DashboardMutation;
   queue: QueueMutation;
   torrent: TorrentMutation;
 };
@@ -303,6 +409,7 @@ export type Mutation = {
 export type Query = {
   __typename?: 'Query';
   config: ConfigQuery;
+  dashboard: DashboardQuery;
   health: HealthQuery;
   queue: QueueQuery;
   sendToConfig: ClientSendToConfigQuery;
@@ -928,6 +1035,25 @@ export type ClientSendToMutationVariables = Exact<{
 
 export type ClientSendToMutation = { __typename?: 'Mutation', client: { __typename?: 'ClientMutation', sendTo?: void | null } };
 
+export type DashboardLlmUpdateMutationVariables = Exact<{
+  input: DashboardLlmConfigInput;
+}>;
+
+
+export type DashboardLlmUpdateMutation = { __typename?: 'Mutation', dashboard: { __typename?: 'DashboardMutation', updateLlm: { __typename?: 'DashboardLlmState', enabled: boolean, running: boolean, providerName: string, baseUrl: string, model: string, apiKeySet: boolean, batchSize: number, maxContext: number, maxTokens: number, intervalSeconds: number, timeoutSeconds: number } } };
+
+export type DashboardLlmTestConnectionMutationVariables = Exact<{ [key: string]: never; }>;
+
+
+export type DashboardLlmTestConnectionMutation = { __typename?: 'Mutation', dashboard: { __typename?: 'DashboardMutation', testLlmConnection: { __typename?: 'DashboardLlmConnectionResult', connected: boolean, latencySeconds: number } } };
+
+export type DashboardLlmRunBenchmarkMutationVariables = Exact<{
+  sampleSize: Scalars['Int']['input'];
+}>;
+
+
+export type DashboardLlmRunBenchmarkMutation = { __typename?: 'Mutation', dashboard: { __typename?: 'DashboardMutation', runLlmBenchmark: { __typename?: 'DashboardLlmBenchmark', sampleSize: number, successes: number, failures: number, averageLatencySeconds: number, throughputPerSecond: number, distribution: Array<{ __typename?: 'DashboardLlmBenchmarkDistribution', contentType: string, count: number }> } } };
+
 export type QueueEnqueueReprocessTorrentsBatchMutationVariables = Exact<{
   input: QueueEnqueueReprocessTorrentsBatchInput;
 }>;
@@ -984,6 +1110,11 @@ export type SendToConfigQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type SendToConfigQuery = { __typename?: 'Query', sendToConfig: { __typename?: 'ClientSendToConfigQuery', enabled: boolean, sendTo: Array<ClientId> } };
+
+export type DashboardDataQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type DashboardDataQuery = { __typename?: 'Query', dashboard: { __typename?: 'DashboardQuery', summary: { __typename?: 'DashboardSummary', totalTorrents: number, torrentsToday: number, indexedLastHour: number, indexedPreviousHour: number, classifiedPercent: number, queueProcessed: number, queuePending: number, queueFailed: number }, llm: { __typename?: 'DashboardLlm', state: { __typename?: 'DashboardLlmState', enabled: boolean, running: boolean, providerName: string, baseUrl: string, model: string, apiKeySet: boolean, batchSize: number, maxContext: number, maxTokens: number, intervalSeconds: number, timeoutSeconds: number }, metrics: { __typename?: 'DashboardLlmMetrics', windowSeconds: number, matched: number, promptTokens: number, completionTokens: number, averageLatencySeconds: number, p95LatencySeconds: number, throughputPerSecond: number, errorRate: number, unknownBacklog: number, distribution: Array<{ __typename?: 'DashboardLlmBenchmarkDistribution', contentType: string, count: number }> } } } };
 
 export type HealthCheckQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1289,6 +1420,85 @@ export const ClientSendToDocument = gql`
       super(apollo);
     }
   }
+export const DashboardLlmUpdateDocument = gql`
+    mutation DashboardLlmUpdate($input: DashboardLlmConfigInput!) {
+  dashboard {
+    updateLlm(input: $input) {
+      enabled
+      running
+      providerName
+      baseUrl
+      model
+      apiKeySet
+      batchSize
+      maxContext
+      maxTokens
+      intervalSeconds
+      timeoutSeconds
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class DashboardLlmUpdateGQL extends Apollo.Mutation<DashboardLlmUpdateMutation, DashboardLlmUpdateMutationVariables> {
+    override document = DashboardLlmUpdateDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const DashboardLlmTestConnectionDocument = gql`
+    mutation DashboardLlmTestConnection {
+  dashboard {
+    testLlmConnection {
+      connected
+      latencySeconds
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class DashboardLlmTestConnectionGQL extends Apollo.Mutation<DashboardLlmTestConnectionMutation, DashboardLlmTestConnectionMutationVariables> {
+    override document = DashboardLlmTestConnectionDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const DashboardLlmRunBenchmarkDocument = gql`
+    mutation DashboardLlmRunBenchmark($sampleSize: Int!) {
+  dashboard {
+    runLlmBenchmark(sampleSize: $sampleSize) {
+      sampleSize
+      successes
+      failures
+      averageLatencySeconds
+      throughputPerSecond
+      distribution {
+        contentType
+        count
+      }
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class DashboardLlmRunBenchmarkGQL extends Apollo.Mutation<DashboardLlmRunBenchmarkMutation, DashboardLlmRunBenchmarkMutationVariables> {
+    override document = DashboardLlmRunBenchmarkDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
 export const QueueEnqueueReprocessTorrentsBatchDocument = gql`
     mutation QueueEnqueueReprocessTorrentsBatch($input: QueueEnqueueReprocessTorrentsBatchInput!) {
   queue {
@@ -1429,6 +1639,63 @@ export const SendToConfigDocument = gql`
   })
   export class SendToConfigGQL extends Apollo.Query<SendToConfigQuery, SendToConfigQueryVariables> {
     override document = SendToConfigDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const DashboardDataDocument = gql`
+    query DashboardData {
+  dashboard {
+    summary {
+      totalTorrents
+      torrentsToday
+      indexedLastHour
+      indexedPreviousHour
+      classifiedPercent
+      queueProcessed
+      queuePending
+      queueFailed
+    }
+    llm {
+      state {
+        enabled
+        running
+        providerName
+        baseUrl
+        model
+        apiKeySet
+        batchSize
+        maxContext
+        maxTokens
+        intervalSeconds
+        timeoutSeconds
+      }
+      metrics {
+        windowSeconds
+        matched
+        promptTokens
+        completionTokens
+        averageLatencySeconds
+        p95LatencySeconds
+        throughputPerSecond
+        errorRate
+        unknownBacklog
+        distribution {
+          contentType
+          count
+        }
+      }
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class DashboardDataGQL extends Apollo.Query<DashboardDataQuery, DashboardDataQueryVariables> {
+    override document = DashboardDataDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
