@@ -13,6 +13,8 @@ import (
 // NOT run lifecycle hooks (no DB, no listeners), so it is a pure static check —
 // enough to catch a broken fx wiring introduced by the auth provider/config.
 func TestGraphValidates(t *testing.T) {
+	t.Parallel()
+
 	if err := fx.ValidateApp(
 		appfx.New(),
 		loggingfx.WithLogger(),
