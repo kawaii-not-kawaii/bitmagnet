@@ -48,6 +48,16 @@ export type ClientSendToConfigQuery = {
   sendTo: Array<ClientId>;
 };
 
+export type ConfigMutation = {
+  __typename?: 'ConfigMutation';
+  setSection: SetConfigSectionResult;
+};
+
+
+export type ConfigMutationSetSectionArgs = {
+  input: SetConfigSectionInput;
+};
+
 export type ConfigQuery = {
   __typename?: 'ConfigQuery';
   sections: Array<ConfigSection>;
@@ -401,6 +411,7 @@ export type MetricsBucketDuration =
 export type Mutation = {
   __typename?: 'Mutation';
   client: ClientMutation;
+  config: ConfigMutation;
   dashboard: DashboardMutation;
   queue: QueueMutation;
   torrent: TorrentMutation;
@@ -594,6 +605,17 @@ export type Season = {
   __typename?: 'Season';
   episodes?: Maybe<Array<Scalars['Int']['output']>>;
   season: Scalars['Int']['output'];
+};
+
+export type SetConfigSectionInput = {
+  key: Scalars['String']['input'];
+  value: Scalars['JSON']['input'];
+};
+
+export type SetConfigSectionResult = {
+  __typename?: 'SetConfigSectionResult';
+  applied: ConfigRuntimeChangeability;
+  section: ConfigSection;
 };
 
 export type SuggestTagsQueryInput = {

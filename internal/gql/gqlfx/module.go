@@ -97,6 +97,7 @@ func New() fx.Option {
 							Changeability:        p.Changeability,
 							LlmRegistry:          p.LlmRegistry,
 							LlmStats:             p.LlmStats,
+							Applier:              p.Applier,
 						}, nil
 					}),
 				}
@@ -130,6 +131,7 @@ type Params struct {
 	Changeability        configapply.Changeability
 	LlmRegistry          *llm.Registry
 	LlmStats             *llm.Stats
+	Applier              *configapply.Applier
 }
 
 type Result struct {

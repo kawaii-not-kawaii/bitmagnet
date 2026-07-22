@@ -21,6 +21,10 @@ type ClientSendToConfigQuery struct {
 	SendTo  []model.ID `json:"sendTo"`
 }
 
+type ConfigMutation struct {
+	SetSection SetConfigSectionResult `json:"setSection"`
+}
+
 type ConfigQuery struct {
 	Sections []ConfigSection `json:"sections"`
 }
@@ -231,6 +235,16 @@ type ReleaseYearAgg struct {
 type ReleaseYearFacetInput struct {
 	Aggregate graphql.Omittable[*bool]          `json:"aggregate,omitempty"`
 	Filter    graphql.Omittable[[]*model1.Year] `json:"filter,omitempty"`
+}
+
+type SetConfigSectionInput struct {
+	Key   string `json:"key"`
+	Value any    `json:"value"`
+}
+
+type SetConfigSectionResult struct {
+	Section ConfigSection              `json:"section"`
+	Applied ConfigRuntimeChangeability `json:"applied"`
 }
 
 type SuggestTagsQueryInput struct {

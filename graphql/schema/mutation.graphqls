@@ -3,6 +3,7 @@ type Mutation {
   queue: QueueMutation!
   client: ClientMutation!
   dashboard: DashboardMutation!
+  config: ConfigMutation!
 }
 
 type TorrentMutation {
@@ -23,4 +24,18 @@ input TorrentReprocessInput {
 
 type ClientMutation {
   sendTo(clientID: ClientID, infoHashes: [Hash20!]): Void
+}
+
+type ConfigMutation {
+  setSection(input: SetConfigSectionInput!): SetConfigSectionResult!
+}
+
+input SetConfigSectionInput {
+  key: String!
+  value: JSON!
+}
+
+type SetConfigSectionResult {
+  section: ConfigSection!
+  applied: ConfigRuntimeChangeability!
 }
