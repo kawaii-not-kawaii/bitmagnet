@@ -47,6 +47,7 @@ func TestLlmQuery_Events(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Events: %v", err)
 	}
+
 	if len(events) != 1 {
 		t.Fatalf("Events returned %d items, want 1", len(events))
 	}
@@ -55,6 +56,7 @@ func TestLlmQuery_Events(t *testing.T) {
 	if event.InfoHash != "new-hash" || event.TorrentName != "New torrent" {
 		t.Fatalf("newest event = %#v", event)
 	}
+
 	if event.Provider != "gemma" || event.DurationMs != 1250 ||
 		event.Outcome != gen.LlmClassificationOutcomeMatched {
 		t.Errorf("event classification fields = %#v", event)
@@ -120,6 +122,7 @@ func TestLlmQuery_Stats(t *testing.T) {
 			stats.Errored,
 		)
 	}
+
 	if stats.SuccessRate != 0.5 {
 		t.Errorf("successRate = %v, want 0.5", stats.SuccessRate)
 	}

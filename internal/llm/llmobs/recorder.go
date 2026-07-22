@@ -131,15 +131,17 @@ func (r *Recorder) Events(limit int) []Event {
 		limit = r.count
 	}
 
-	// r.count never exceeds eventCapacity; explicit bound for static analysis.
-	limit = min(limit, eventCapacity)
-
-	events := make([]Event, limit)
+	// Allocate at the constant ring capacity rather than the caller-provided
+	// limit: the limit is already bounded by r.count <= eventCapacity, but a
+	// constant-sized allocation makes that invariant obvious to static
+	// analysis (CodeQL go/uncontrolled-allocation-size).
+	events := make([]Event, 0, eventCapacity)
 
 	for i := range limit {
 		index := (r.next - 1 - i + eventCapacity) % eventCapacity
-		events[i] = r.events[index]
-		events[i].Languages = slices.Clone(events[i].Languages)
+		event := r.events[index]
+		event.Languages = slices.Clone(event.Languages)
+		events = append(events, event)
 	}
 
 	return events

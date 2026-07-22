@@ -55,6 +55,7 @@ func llmStats(
 	}
 
 	stats := recorder.Stats(window)
+
 	buckets, err := queueMetrics.Request(ctx, queuemetrics.Request{
 		BucketDuration: "minute",
 		Statuses:       []model.QueueJobStatus{model.QueueJobStatusPending},
