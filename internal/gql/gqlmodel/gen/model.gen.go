@@ -170,6 +170,54 @@ type LanguageFacetInput struct {
 	Filter    graphql.Omittable[[]model1.Language] `json:"filter,omitempty"`
 }
 
+type LlmClassificationEvent struct {
+	Timestamp   time.Time                `json:"timestamp"`
+	InfoHash    string                   `json:"infoHash"`
+	TorrentName string                   `json:"torrentName"`
+	Provider    string                   `json:"provider"`
+	DurationMs  int                      `json:"durationMs"`
+	Outcome     LlmClassificationOutcome `json:"outcome"`
+	ContentType string                   `json:"contentType"`
+	Title       string                   `json:"title"`
+	Year        int                      `json:"year"`
+	Season      int                      `json:"season"`
+	Episode     int                      `json:"episode"`
+	Languages   []string                 `json:"languages"`
+	Error       string                   `json:"error"`
+}
+
+type LlmProviderStats struct {
+	Provider  string `json:"provider"`
+	Attempted int    `json:"attempted"`
+	Matched   int    `json:"matched"`
+	Unmatched int    `json:"unmatched"`
+	Errored   int    `json:"errored"`
+}
+
+type LlmQuery struct {
+	Events []LlmClassificationEvent `json:"events"`
+	Stats  LlmStats                 `json:"stats"`
+}
+
+type LlmStats struct {
+	Attempted           int                `json:"attempted"`
+	Matched             int                `json:"matched"`
+	Unmatched           int                `json:"unmatched"`
+	Errored             int                `json:"errored"`
+	Skipped             int                `json:"skipped"`
+	SuccessRate         float64            `json:"successRate"`
+	PerProvider         []LlmProviderStats `json:"perProvider"`
+	InFlight            int                `json:"inFlight"`
+	Concurrency         int                `json:"concurrency"`
+	WindowStart         time.Time          `json:"windowStart"`
+	OldestBuffered      *time.Time         `json:"oldestBuffered,omitempty"`
+	WindowAttempted     int                `json:"windowAttempted"`
+	LatencyP50Ms        int                `json:"latencyP50Ms"`
+	LatencyP95Ms        int                `json:"latencyP95Ms"`
+	ThroughputPerMinute float64            `json:"throughputPerMinute"`
+	QueuePending        int                `json:"queuePending"`
+}
+
 type Mutation struct {
 }
 
@@ -468,6 +516,51 @@ func (e *HealthStatus) UnmarshalGQL(v any) error {
 }
 
 func (e HealthStatus) MarshalGQL(w io.Writer) {
+	fmt.Fprint(w, strconv.Quote(e.String()))
+}
+
+type LlmClassificationOutcome string
+
+const (
+	LlmClassificationOutcomeMatched   LlmClassificationOutcome = "MATCHED"
+	LlmClassificationOutcomeUnmatched LlmClassificationOutcome = "UNMATCHED"
+	LlmClassificationOutcomeError     LlmClassificationOutcome = "ERROR"
+	LlmClassificationOutcomeSkipped   LlmClassificationOutcome = "SKIPPED"
+)
+
+var AllLlmClassificationOutcome = []LlmClassificationOutcome{
+	LlmClassificationOutcomeMatched,
+	LlmClassificationOutcomeUnmatched,
+	LlmClassificationOutcomeError,
+	LlmClassificationOutcomeSkipped,
+}
+
+func (e LlmClassificationOutcome) IsValid() bool {
+	switch e {
+	case LlmClassificationOutcomeMatched, LlmClassificationOutcomeUnmatched, LlmClassificationOutcomeError, LlmClassificationOutcomeSkipped:
+		return true
+	}
+	return false
+}
+
+func (e LlmClassificationOutcome) String() string {
+	return string(e)
+}
+
+func (e *LlmClassificationOutcome) UnmarshalGQL(v any) error {
+	str, ok := v.(string)
+	if !ok {
+		return fmt.Errorf("enums must be strings")
+	}
+
+	*e = LlmClassificationOutcome(str)
+	if !e.IsValid() {
+		return fmt.Errorf("%s is not a valid LlmClassificationOutcome", str)
+	}
+	return nil
+}
+
+func (e LlmClassificationOutcome) MarshalGQL(w io.Writer) {
 	fmt.Fprint(w, strconv.Quote(e.String()))
 }
 

@@ -8,6 +8,7 @@ type Query {
   sendToConfig: ClientSendToConfigQuery!
   config: ConfigQuery!
   dashboard: DashboardQuery!
+  llm: LlmQuery!
 }
 
 type TorrentQuery {

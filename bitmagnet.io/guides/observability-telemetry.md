@@ -25,6 +25,15 @@ The example integration includes:
 - [Pyroscope](https://pyroscope.io/) - A continuous profiling tool
 - [Postgres exporter](https://github.com/prometheus-community/postgres_exporter) - Exposes Postgres metrics to Prometheus
 
+## LLM classification metrics
+
+The `/metrics` endpoint exports two LLM classification metric families:
+
+- `bitmagnet_llm_classifications_total{provider, outcome}` — a process-lifetime counter of classification attempts. `outcome` is `matched`, `unmatched`, `error`, or `skipped`; skipped attempts have an empty `provider` label because no provider ran.
+- `bitmagnet_llm_classification_duration_seconds{provider}` — a histogram of classification duration, exposed through the standard `_bucket`, `_sum`, and `_count` series.
+
+These metrics reset when the process restarts. For recent event details and windowed aggregates, use the [GraphQL LLM queries]({% link guides/endpoints.md %}#inspecting-llm-classifications).
+
 # Profiling with pprof
 
 **bitmagnet** exposes [Go pprof](https://golang.org/pkg/net/http/pprof/) profiling endpoints at `/debug/pprof/*`, for example:

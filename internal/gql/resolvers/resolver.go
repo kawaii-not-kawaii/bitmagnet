@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"github.com/bitmagnet-io/bitmagnet/internal/blocking"
+	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
 	"github.com/bitmagnet-io/bitmagnet/internal/client"
 	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
 	"github.com/bitmagnet-io/bitmagnet/internal/config"
@@ -10,6 +11,7 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/database/search"
 	"github.com/bitmagnet-io/bitmagnet/internal/health"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
+	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmobs"
 	"github.com/bitmagnet-io/bitmagnet/internal/metrics/queuemetrics"
 	"github.com/bitmagnet-io/bitmagnet/internal/metrics/torrentmetrics"
 	"github.com/bitmagnet-io/bitmagnet/internal/processor"
@@ -37,4 +39,6 @@ type Resolver struct {
 	ResolvedConfig       *concurrency.AtomicValue[config.ResolvedConfig]
 	Changeability        configapply.Changeability
 	Applier              *configapply.Applier
+	LlmRecorder          *llmobs.Recorder
+	ClassifierConfig     classifier.Config
 }

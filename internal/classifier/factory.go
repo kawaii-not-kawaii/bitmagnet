@@ -6,6 +6,7 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/database/search"
 	"github.com/bitmagnet-io/bitmagnet/internal/lazy"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
+	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmobs"
 	"github.com/bitmagnet-io/bitmagnet/internal/tmdb"
 	"go.uber.org/fx"
 	"go.uber.org/zap"
@@ -17,7 +18,8 @@ type Params struct {
 	TmdbConfig  tmdb.Config
 	Search      lazy.Lazy[search.Search]
 	TmdbClient  lazy.Lazy[tmdb.Client]
-	LlmRegistry *llm.Registry `optional:"true"`
+	LlmRegistry *llm.Registry    `optional:"true"`
+	Recorder    *llmobs.Recorder `optional:"true"`
 	Logger      *zap.SugaredLogger
 }
 
@@ -68,8 +70,9 @@ func New(params Params) Result {
 
 					return params.LlmRegistry.All()
 				},
-				_logger: logger,
-				logger:  logger,
+				recorder: params.Recorder,
+				_logger:  logger,
+				logger:   logger,
 			},
 		}, nil
 	})
