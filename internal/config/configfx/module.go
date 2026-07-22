@@ -8,6 +8,7 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
 	"github.com/bitmagnet-io/bitmagnet/internal/config"
 	"github.com/bitmagnet-io/bitmagnet/internal/config/configresolver"
+	"github.com/bitmagnet-io/bitmagnet/internal/config/configwrite"
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/fx"
 )
@@ -54,6 +55,13 @@ func New() fx.Option {
 
 			return av
 		}),
+		// The single file runtime config mutations persist to. Mirrors the
+		// read search order among writable locations: an existing ./config.yml
+		// wins, else an existing XDG config file; with neither present,
+		// ./config.yml is designated and created on first write.
+		fx.Provide(func() configwrite.TargetPath {
+			return configwrite.TargetPath(resolveWriteTarget())
+		}),
 		fx.Provide(fx.Annotated{
 			Group: "config_resolvers",
 			Target: func() (configresolver.Resolver, error) {
@@ -99,6 +107,23 @@ func New() fx.Option {
 		"config",
 		fx.Options(options...),
 	)
+}
+
+// resolveWriteTarget picks the file runtime config mutations persist to. An
+// existing ./config.yml (the highest-priority file location the resolver
+// reads) wins; else an existing XDG config file; else ./config.yml, which
+// does not exist yet and is created on first write.
+func resolveWriteTarget() string {
+	const localPath = "./config.yml"
+	if _, err := os.Stat(localPath); err == nil {
+		return localPath
+	}
+
+	if path, err := xdg.SearchConfigFile("bitmagnet/config.yml"); err == nil {
+		return path
+	}
+
+	return localPath
 }
 
 func ReadOsEnv() map[string]string {
