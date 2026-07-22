@@ -1,118 +1,122 @@
 <ng-container *transloco="let t">
-  <app-document-title
-    [parts]="[t('routes.jobs'), t('routes.queues'), t('routes.dashboard')]"
-  />
-  <mat-drawer-container class="drawer-container">
-    <mat-drawer
-      #drawer
-      class="drawer"
-      [attr.role]="breakpoints.sizeAtLeast('Medium') ? 'navigation' : 'dialog'"
-      [mode]="breakpoints.sizeAtLeast('Medium') ? 'side' : 'over'"
-      [opened]="breakpoints.sizeAtLeast('Medium')"
-    >
-      @for (facet of facets$ | async; track facet.key) {
-        <mat-card>
-          <mat-card-header>
-            <mat-card-title>
-              {{ t("facets." + facet.key) }}
-            </mat-card-title>
-          </mat-card-header>
-          @if (facet.filter?.length) {
-            <mat-card-content class="filtered">
-              @for (agg of facet.aggregations; track agg.value) {
-                <mat-checkbox
-                  [checked]="facet.filter?.includes(agg.value)"
-                  (change)="
-                    $event.checked
-                      ? controller.activateFilter(facet, agg.value)
-                      : controller.deactivateFilter(facet, agg.value)
-                  "
-                >
-                  {{ agg.label }}
-                  <small>{{ agg.count | number }}</small>
-                </mat-checkbox>
-              }
-            </mat-card-content>
-          } @else {
-            <mat-card-content class="unfiltered">
-              @for (agg of facet.aggregations; track agg.value) {
-                <mat-checkbox
-                  checked="true"
-                  (change)="controller.activateFilter(facet, agg.value)"
-                >
-                  {{ agg.label }}
-                  <small>{{ agg.count | number }}</small>
-                </mat-checkbox>
-              }
-            </mat-card-content>
-          }
-        </mat-card>
-      }
-    </mat-drawer>
-    <mat-drawer-content>
-      <div class="query-form">
-        <div
-          class="form-field-container button-container button-container-toggle-drawer"
+  <app-document-title [parts]="[t('routes.jobs'), t('routes.queues')]" />
+
+  <section class="jobs" aria-label="Queue jobs">
+    <div class="jobs-toolbar">
+      <button
+        type="button"
+        class="filter-button"
+        [class.active]="filtersOpen || activeFilterCount()"
+        (click)="filtersOpen = !filtersOpen"
+        aria-controls="queue-job-filters"
+        [attr.aria-expanded]="filtersOpen"
+      >
+        <b>＋</b> Filters
+        @if (activeFilterCount()) {
+          <span>{{ activeFilterCount() }}</span>
+        }
+      </button>
+
+      <label class="sort-control">
+        <span>{{ t("torrents.order_by") }}</span>
+        <select
+          [value]="controls.orderBy.field"
+          (change)="controller.selectOrderBy($any($event.target).value)"
         >
+          @for (option of orderByOptions; track option.field) {
+            <option [value]="option.field">
+              {{ t("dashboard.queues." + option.field) }}
+            </option>
+          }
+        </select>
+      </label>
+
+      <button
+        type="button"
+        class="direction-button"
+        [title]="t('torrents.order_direction_toggle')"
+        (click)="controller.toggleOrderByDirection()"
+      >
+        {{ controls.orderBy.descending ? "↓" : "↑" }}
+      </button>
+
+      <button
+        type="button"
+        class="refresh-button"
+        [class.loading]="dataSource.loading$ | async"
+        (click)="dataSource.refresh()"
+        [title]="t('torrents.refresh')"
+        [attr.aria-label]="t('torrents.refresh')"
+      >
+        ↻
+      </button>
+    </div>
+
+    <div class="jobs-layout">
+      @if (filtersOpen) {
+        <button
+          type="button"
+          class="filter-backdrop"
+          (click)="filtersOpen = false"
+          aria-label="Close filters"
+        ></button>
+      }
+      <aside
+        id="queue-job-filters"
+        class="filter-panel"
+        [class.open]="filtersOpen"
+        aria-label="Queue job filters"
+      >
+        <header>
+          <strong>Filters</strong>
           <button
             type="button"
-            class="button-toggle-drawer"
-            mat-icon-button
-            (click)="drawer.toggle()"
-            [matTooltip]="t('torrents.toggle_drawer')"
+            (click)="filtersOpen = false"
+            aria-label="Close filters"
           >
-            <mat-icon fontSet="material-icons">{{
-              drawer.opened ? "arrow_circle_left" : "arrow_circle_right"
-            }}</mat-icon>
+            ✕
           </button>
-        </div>
-        <div class="form-field-container form-field-container-order-by">
-          <mat-form-field subscriptSizing="dynamic">
-            <mat-label>{{ t("torrents.order_by") }}</mat-label>
-            <mat-select
-              [value]="controls.orderBy.field"
-              (valueChange)="controller.selectOrderBy($event)"
-            >
-              @for (option of orderByOptions; track option.field) {
-                <mat-option [value]="option.field">
-                  {{ t("dashboard.queues." + option.field) }}
-                </mat-option>
-              }
-            </mat-select>
-          </mat-form-field>
-          <button
-            mat-icon-button
-            [matTooltip]="t('torrents.order_direction_toggle')"
-            (click)="controller.toggleOrderByDirection()"
-          >
-            <mat-icon>{{
-              controls.orderBy.descending ? "arrow_downward" : "arrow_upward"
-            }}</mat-icon>
-          </button>
-        </div>
-        <div
-          class="form-field-container button-container button-container-refresh"
-        >
-          <button
-            mat-mini-fab
-            [matTooltip]="t('torrents.refresh')"
-            color="primary"
-            (click)="dataSource.refresh()"
-          >
-            <mat-icon>sync</mat-icon>
-          </button>
-        </div>
+        </header>
+        @for (facet of facets$ | async; track facet.key) {
+          <fieldset>
+            <legend>{{ t("facets." + facet.key) }}</legend>
+            @for (aggregation of facet.aggregations; track aggregation.value) {
+              <label>
+                <input
+                  type="checkbox"
+                  [checked]="facet.filter?.includes(aggregation.value)"
+                  (change)="
+                    $any($event.target).checked
+                      ? controller.activateFilter(facet, aggregation.value)
+                      : controller.deactivateFilter(facet, aggregation.value)
+                  "
+                />
+                <span class="checkbox">{{
+                  facet.filter?.includes(aggregation.value) ? "✓" : ""
+                }}</span>
+                <span>{{ aggregation.label }}</span>
+                <small>{{ aggregation.count | number }}</small>
+              </label>
+            } @empty {
+              <p>{{ t("general.none") }}</p>
+            }
+          </fieldset>
+        }
+      </aside>
+
+      <div class="jobs-results">
+        <app-queue-jobs-table [dataSource]="dataSource" />
+        <app-paginator
+          (paging)="controller.handlePageEvent($event)"
+          [page]="controls.page"
+          [pageSize]="controls.limit"
+          [pageSizes]="[20, 50, 100]"
+          [pageLength]="dataSource.result.items.length"
+          [totalLength]="dataSource.result.totalCount"
+          [totalIsEstimate]="false"
+          [showLastPage]="true"
+        />
       </div>
-      <app-queue-jobs-table [dataSource]="dataSource" [selection]="selection" />
-      <app-paginator
-        (paging)="controller.handlePageEvent($event)"
-        [page]="controls.page"
-        [pageSize]="controls.limit"
-        [pageLength]="dataSource.result.items.length"
-        [totalLength]="dataSource.result.totalCount"
-        [totalIsEstimate]="false"
-        [showLastPage]="true"
-      />
-    </mat-drawer-content>
-  </mat-drawer-container>
+    </div>
+  </section>
 </ng-container>

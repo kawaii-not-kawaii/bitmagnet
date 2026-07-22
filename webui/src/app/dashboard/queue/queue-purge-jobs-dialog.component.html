@@ -1,64 +1,106 @@
 <ng-container *transloco="let t">
-  <mat-card>
-    <h2 mat-dialog-title>{{ t("dashboard.queues.purge_queue_jobs") }}</h2>
-    <mat-dialog-content>
-      @if (stage === "PENDING") {
-        <section>
-          <h4>{{ t("dashboard.queues.queues") }}:</h4>
-          <mat-checkbox
-            value="_all"
-            [checked]="queues === undefined"
-            (change)="handleQueueEvent($event)"
-            >{{ t("general.all") }}</mat-checkbox
-          >
-          @for (queue of availableQueueNames; track queue) {
-            <mat-checkbox
-              [value]="queue"
-              [checked]="queues?.includes(queue)"
-              (change)="handleQueueEvent($event)"
-              >{{ queue }}</mat-checkbox
-            >
-          }
-        </section>
-        <section>
-          <h4>{{ t("general.status") }}:</h4>
-          <mat-checkbox
-            value="_all"
-            [checked]="statuses === undefined"
-            (change)="handleStatusEvent($event)"
-            >{{ t("general.all") }}</mat-checkbox
-          >
-          @for (status of statusNames; track status) {
-            <mat-checkbox
-              [value]="status"
-              [checked]="statuses?.includes(status)"
-              (change)="handleStatusEvent($event)"
-              >{{ t("dashboard.queues." + status) }}</mat-checkbox
-            >
-          }
-        </section>
-      } @else if (stage === "REQUESTING") {
-        <mat-spinner></mat-spinner>
-      } @else if (stage === "DONE") {
-        @if (error) {
-          <p>{{ t("general.error") }}: {{ error.message }}</p>
-        } @else {
-          <p>{{ t("dashboard.queues.queue_purged") }}</p>
-        }
-      }
-    </mat-dialog-content>
-    <mat-dialog-actions>
+  <section class="dialog-shell">
+    <header>
+      <div>
+        <span>Destructive operation</span>
+        <h2>{{ t("dashboard.queues.purge_jobs") }}</h2>
+      </div>
       <button
-        mat-stroked-button
-        [disabled]="stage !== 'PENDING'"
-        color="warning"
-        (click)="handlePurgeJobs()"
+        type="button"
+        class="dialog-close"
+        (click)="dialogRef.close()"
+        [attr.aria-label]="t('general.dismiss')"
       >
-        {{ t("dashboard.queues.purge_jobs") }}
+        ✕
       </button>
-      <button mat-stroked-button (click)="dialogRef.close()">
+    </header>
+
+    @if (stage === "PENDING") {
+      <p class="dialog-intro">
+        Permanently delete matching queue jobs. Select a narrower scope or leave
+        <b>All</b> active.
+      </p>
+
+      <fieldset>
+        <legend>{{ t("dashboard.queues.queues") }}</legend>
+        <div class="option-grid">
+          <label>
+            <input
+              type="checkbox"
+              [checked]="queues === undefined"
+              (change)="selectAllQueues()"
+            />
+            <span class="checkbox">✓</span>
+            <b>{{ t("general.all") }}</b>
+          </label>
+          @for (queue of availableQueueNames; track queue) {
+            <label>
+              <input
+                type="checkbox"
+                [checked]="queues?.includes(queue)"
+                (change)="toggleQueue(queue, $any($event.target).checked)"
+              />
+              <span class="checkbox">✓</span>
+              <span class="queue-label">{{ formatQueueName(queue) }}</span>
+            </label>
+          }
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>{{ t("general.status") }}</legend>
+        <div class="option-grid">
+          <label>
+            <input
+              type="checkbox"
+              [checked]="statuses === undefined"
+              (change)="selectAllStatuses()"
+            />
+            <span class="checkbox">✓</span>
+            <b>{{ t("general.all") }}</b>
+          </label>
+          @for (status of statusNames; track status) {
+            <label>
+              <input
+                type="checkbox"
+                [checked]="statuses?.includes(status)"
+                (change)="toggleStatus(status, $any($event.target).checked)"
+              />
+              <span class="checkbox">✓</span>
+              <span>{{ t("dashboard.queues." + status) }}</span>
+            </label>
+          }
+        </div>
+      </fieldset>
+
+      <div class="dialog-warning">
+        <b>!</b>
+        <span>This action cannot be undone.</span>
+      </div>
+    } @else if (stage === "REQUESTING") {
+      <div class="dialog-state">
+        <span class="spinner"></span>
+        <strong>Purging queue jobs…</strong>
+      </div>
+    } @else if (error) {
+      <div class="dialog-state error-state">
+        <strong>{{ t("general.error") }}</strong>
+        <p>{{ error.message }}</p>
+      </div>
+    } @else {
+      <div class="dialog-state success-state">
+        <strong>{{ t("dashboard.queues.queue_purged") }}</strong>
+      </div>
+    }
+    <footer>
+      <button type="button" class="secondary" (click)="dialogRef.close()">
         {{ t("general.dismiss") }}
       </button>
-    </mat-dialog-actions>
-  </mat-card>
+      @if (stage === "PENDING") {
+        <button type="button" class="danger" (click)="handlePurgeJobs()">
+          {{ t("dashboard.queues.purge_jobs") }}
+        </button>
+      }
+    </footer>
+  </section>
 </ng-container>

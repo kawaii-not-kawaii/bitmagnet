@@ -1,21 +1,62 @@
 <ng-container *transloco="let t">
-  <app-document-title
-    [parts]="[t('routes.admin'), t('routes.queues'), t('routes.dashboard')]"
-  />
-  <mat-card>
-    <mat-card-content>
-      <ul>
-        <li>
-          <a mat-button (click)="openDialogPurgeJobs()">{{
-            t("dashboard.queues.purge_queue_jobs")
-          }}</a>
-        </li>
-        <li>
-          <a mat-button (click)="openDialogEnqueueReprocessTorrentsBatch()">{{
-            t("dashboard.queues.enqueue_torrent_processing_batch")
-          }}</a>
-        </li>
-      </ul>
-    </mat-card-content>
-  </mat-card>
+  <app-document-title [parts]="[t('routes.admin'), t('routes.queues')]" />
+
+  <section class="admin-screen" aria-label="Queue administration">
+    <header class="admin-heading">
+      <div>
+        <h2>Queue administration</h2>
+        <p>Maintenance actions for the background job system.</p>
+      </div>
+      <span>operator tools</span>
+    </header>
+
+    <div class="action-grid">
+      <article class="action-card">
+        <div class="action-icon enqueue">↻</div>
+        <div class="action-copy">
+          <span class="eyebrow">Batch operation</span>
+          <h3>Reprocess torrents</h3>
+          <p>
+            Enqueue torrents for another classification pass, with optional
+            content-type and orphan filters.
+          </p>
+          <button
+            type="button"
+            class="primary-action"
+            (click)="openEnqueueReprocessTorrentsBatch()"
+          >
+            {{ t("dashboard.queues.enqueue_torrent_processing_batch") }}
+            <span>→</span>
+          </button>
+        </div>
+      </article>
+
+      <article class="action-card danger-card">
+        <div class="action-icon purge">!</div>
+        <div class="action-copy">
+          <span class="eyebrow">Destructive operation</span>
+          <h3>Purge queue jobs</h3>
+          <p>
+            Permanently remove jobs by queue and status. Review the selected
+            scope before confirming.
+          </p>
+          <button
+            type="button"
+            class="danger-action"
+            (click)="openPurgeDialog()"
+          >
+            {{ t("dashboard.queues.purge_jobs") }}
+            <span>→</span>
+          </button>
+        </div>
+      </article>
+    </div>
+
+    <aside class="safety-note">
+      <b>Safety note</b>
+      <span>
+        These actions change queue state immediately and cannot be undone.
+      </span>
+    </aside>
+  </section>
 </ng-container>

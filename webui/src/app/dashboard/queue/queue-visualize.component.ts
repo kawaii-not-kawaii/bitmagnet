@@ -1,11 +1,10 @@
 import { Component, inject, OnDestroy, OnInit } from "@angular/core";
 import { Apollo } from "apollo-angular";
-import { GraphQLModule } from "../../graphql/graphql.module";
 import { ChartComponent } from "../../charting/chart.component";
-import { BreakpointsService } from "../../layout/breakpoints.service";
 import { ErrorsService } from "../../errors/errors.service";
 import { AppModule } from "../../app.module";
 import { DocumentTitleComponent } from "../../layout/document-title.component";
+import { BreakpointsService } from "../../layout/breakpoints.service";
 import {
   autoRefreshIntervalNames,
   availableQueueNames,
@@ -13,7 +12,6 @@ import {
   resolutionNames,
   timeframeNames,
 } from "./queue.constants";
-import { QueueModule } from "./queue.module";
 import { QueueChartAdapterTotals } from "./queue-chart-adapter.totals";
 import { QueueMetricsController } from "./queue-metrics.controller";
 import { QueueChartAdapterTimeline } from "./queue-chart-adapter.timeline";
@@ -23,16 +21,9 @@ import { QueueChartAdapterTimeline } from "./queue-chart-adapter.timeline";
   standalone: true,
   templateUrl: "./queue-visualize.component.html",
   styleUrl: "./queue-visualize.component.scss",
-  imports: [
-    AppModule,
-    ChartComponent,
-    GraphQLModule,
-    QueueModule,
-    DocumentTitleComponent,
-  ],
+  imports: [AppModule, ChartComponent, DocumentTitleComponent],
 })
 export class QueueVisualizeComponent implements OnInit, OnDestroy {
-  breakpoints = inject(BreakpointsService);
   private apollo = inject(Apollo);
   queueMetricsController = new QueueMetricsController(
     this.apollo,
@@ -48,15 +39,16 @@ export class QueueVisualizeComponent implements OnInit, OnDestroy {
   );
   protected readonly timeline = inject(QueueChartAdapterTimeline);
   protected readonly totals = inject(QueueChartAdapterTotals);
+  protected readonly breakpoints = inject(BreakpointsService);
 
   protected readonly resolutionNames = resolutionNames;
   protected readonly timeframeNames = timeframeNames;
   protected readonly availableQueueNames = availableQueueNames;
   protected readonly autoRefreshIntervalNames = autoRefreshIntervalNames;
+  protected readonly eventNames = eventNames;
 
   ngOnInit() {
     this.queueMetricsController.result$.subscribe((result) => {
-      // change the default settings to more sensible ones if there is <12 hours of data to show
       if (
         this.queueMetricsController.params.buckets.timeframe === "all" &&
         this.queueMetricsController.params.buckets.duration === "AUTO" &&
@@ -73,8 +65,6 @@ export class QueueVisualizeComponent implements OnInit, OnDestroy {
   ngOnDestroy() {
     this.queueMetricsController.setAutoRefreshInterval("off");
   }
-
-  protected readonly eventNames = eventNames;
 
   handleMultiplierEvent(event: Event) {
     const value = (event.currentTarget as HTMLInputElement).value;

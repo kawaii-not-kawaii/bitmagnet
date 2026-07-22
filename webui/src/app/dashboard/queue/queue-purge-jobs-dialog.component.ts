@@ -1,93 +1,70 @@
 import { Component, Inject, inject } from "@angular/core";
-import { Apollo } from "apollo-angular";
-import { MatCheckboxChange } from "@angular/material/checkbox";
 import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
-import { map } from "rxjs/operators";
+import { Apollo } from "apollo-angular";
 import { catchError, EMPTY } from "rxjs";
-import * as generated from "../../graphql/generated";
-import { GraphQLModule } from "../../graphql/graphql.module";
+import { map } from "rxjs/operators";
 import { AppModule } from "../../app.module";
+import * as generated from "../../graphql/generated";
 import { availableQueueNames, statusNames } from "./queue.constants";
 
 @Component({
   selector: "app-queue-purge-jobs-dialog",
   standalone: true,
-  imports: [AppModule, GraphQLModule],
+  imports: [AppModule],
   templateUrl: "./queue-purge-jobs-dialog.component.html",
   styleUrl: "./queue-purge-jobs-dialog.component.scss",
 })
 export class QueuePurgeJobsDialogComponent {
-  apollo = inject(Apollo);
-  readonly dialogRef = inject(MatDialogRef<QueuePurgeJobsDialogComponent>);
+  private apollo = inject(Apollo);
+  protected readonly dialogRef = inject(
+    MatDialogRef<QueuePurgeJobsDialogComponent>,
+  );
 
-  queues?: string[];
-  statuses?: generated.QueueJobStatus[];
+  protected queues?: string[];
+  protected statuses?: generated.QueueJobStatus[];
+  protected stage: "PENDING" | "REQUESTING" | "DONE" = "PENDING";
+  protected error?: Error;
 
   protected readonly availableQueueNames = availableQueueNames;
   protected readonly statusNames = statusNames;
 
-  protected stage: "PENDING" | "REQUESTING" | "DONE" = "PENDING";
-
   @Inject(MAT_DIALOG_DATA) public data: { onPurged?: () => void };
 
-  protected error?: Error;
-
-  handleQueueEvent(event: MatCheckboxChange) {
-    if (event.source.value === "_all") {
-      this.queues = undefined;
-      return;
-    }
-    if (event.checked) {
-      let queues = this.queues ?? [];
-      if (!queues.includes(event.source.value as generated.QueueJobStatus)) {
-        queues = [...queues, event.source.value];
-      }
-      if (queues.length === this.availableQueueNames.length) {
-        event.source.checked = false;
-        this.queues = undefined;
-      } else {
-        this.queues = queues;
-      }
-    } else {
-      const queues = this.queues?.filter((q) => q !== event.source.value);
-      if (!queues?.length) {
-        this.queues = undefined;
-      } else {
-        this.queues = queues;
-      }
-    }
+  protected selectAllQueues() {
+    this.queues = undefined;
   }
 
-  handleStatusEvent(event: MatCheckboxChange) {
-    if (event.source.value === "_all") {
-      this.statuses = undefined;
-      return;
-    }
-    if (event.checked) {
-      let statuses = this.statuses ?? [];
-      if (!statuses.includes(event.source.value as generated.QueueJobStatus)) {
-        statuses = [
-          ...statuses,
-          event.source.value as generated.QueueJobStatus,
-        ];
-      }
-      if (statuses.length === this.statusNames.length) {
-        event.source.checked = false;
-        this.statuses = undefined;
-      } else {
-        this.statuses = statuses;
-      }
-    } else {
-      const statuses = this.statuses?.filter((s) => s !== event.source.value);
-      if (!statuses?.length) {
-        this.statuses = undefined;
-      } else {
-        this.statuses = statuses;
-      }
-    }
+  protected formatQueueName(queue: string) {
+    return queue.replaceAll("_", " ");
   }
 
-  handlePurgeJobs() {
+  protected toggleQueue(queue: string, checked: boolean) {
+    if (checked) {
+      const queues = [...(this.queues ?? []), queue];
+      this.queues =
+        queues.length === this.availableQueueNames.length ? undefined : queues;
+      return;
+    }
+    const queues = this.queues?.filter((value) => value !== queue);
+    this.queues = queues?.length ? queues : undefined;
+  }
+
+  protected selectAllStatuses() {
+    this.statuses = undefined;
+  }
+
+  protected toggleStatus(status: generated.QueueJobStatus, checked: boolean) {
+    if (checked) {
+      const statuses = [...(this.statuses ?? []), status];
+      this.statuses =
+        statuses.length === this.statusNames.length ? undefined : statuses;
+      return;
+    }
+    const statuses = this.statuses?.filter((value) => value !== status);
+    this.statuses = statuses?.length ? statuses : undefined;
+  }
+
+  protected handlePurgeJobs() {
     if (this.stage !== "PENDING") {
       return;
     }

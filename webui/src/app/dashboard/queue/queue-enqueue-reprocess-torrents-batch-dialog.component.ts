@@ -1,13 +1,13 @@
 import { Component, Inject, inject } from "@angular/core";
-import { Apollo } from "apollo-angular";
 import { MAT_DIALOG_DATA, MatDialogRef } from "@angular/material/dialog";
-import { MatSelectChange } from "@angular/material/select";
+import { Apollo } from "apollo-angular";
 import { catchError, EMPTY } from "rxjs";
-import * as generated from "../../graphql/generated";
 import { AppModule } from "../../app.module";
-import { contentTypeList } from "../../torrents/content-types";
 import { ErrorsService } from "../../errors/errors.service";
-import { QueuePurgeJobsDialogComponent } from "./queue-purge-jobs-dialog.component";
+import * as generated from "../../graphql/generated";
+import { contentTypeList } from "../../torrents/content-types";
+
+type ReprocessContentType = generated.ContentType | "null" | "all";
 
 @Component({
   selector: "app-queue-enqueue-reprocess-torrents-batch-dialog",
@@ -17,24 +17,52 @@ import { QueuePurgeJobsDialogComponent } from "./queue-purge-jobs-dialog.compone
   styleUrl: "./queue-enqueue-reprocess-torrents-batch-dialog.component.scss",
 })
 export class QueueEnqueueReprocessTorrentsBatchDialogComponent {
-  apollo = inject(Apollo);
-  readonly dialogRef = inject(MatDialogRef<QueuePurgeJobsDialogComponent>);
+  private apollo = inject(Apollo);
   private errorsService = inject(ErrorsService);
+  protected readonly dialogRef = inject(
+    MatDialogRef<QueueEnqueueReprocessTorrentsBatchDialogComponent>,
+  );
 
-  allContentTypes = contentTypeList;
-
+  protected readonly allContentTypes = contentTypeList;
   protected stage: "PENDING" | "REQUESTING" | "DONE" = "PENDING";
+
+  protected purge = true;
+  protected apisDisabled = true;
+  protected localSearchDisabled = true;
+  protected classifierRematch = false;
+  protected contentTypes: ReprocessContentType[] = ["all"];
+  protected orphans = false;
 
   @Inject(MAT_DIALOG_DATA) public data: { onEnqueued?: () => void };
 
-  purge = true;
-  apisDisabled = true;
-  localSearchDisabled = true;
-  classifierRematch = false;
-  contentTypes: Array<generated.ContentType | "null" | "all"> = ["all"];
-  orphans = false;
+  protected selectAllContentTypes() {
+    this.contentTypes = ["all"];
+    this.orphans = false;
+  }
 
-  handleEnqueue() {
+  protected toggleContentType(
+    contentType: Exclude<ReprocessContentType, "all">,
+    checked: boolean,
+  ) {
+    const current = this.contentTypes.includes("all") ? [] : this.contentTypes;
+    const next = checked
+      ? [...current, contentType]
+      : current.filter((value) => value !== contentType);
+    this.contentTypes =
+      next.length === this.allContentTypes.length || !next.length
+        ? ["all"]
+        : next;
+    this.orphans = false;
+  }
+
+  protected toggleOrphans(checked: boolean) {
+    this.orphans = checked;
+    if (checked) {
+      this.contentTypes = ["all"];
+    }
+  }
+
+  protected handleEnqueue() {
     if (this.stage !== "PENDING") {
       return;
     }
@@ -53,10 +81,12 @@ export class QueueEnqueueReprocessTorrentsBatchDialogComponent {
             classifierRematch: this.classifierRematch,
             contentTypes: this.contentTypes.includes("all")
               ? undefined
-              : this.contentTypes.map((ct) =>
-                  ct === "null" ? null : (ct as generated.ContentType),
+              : this.contentTypes.map((contentType) =>
+                  contentType === "null"
+                    ? null
+                    : (contentType as generated.ContentType),
                 ),
-            orphans: this.orphans ? true : undefined,
+            orphans: this.orphans || undefined,
           },
         },
       })
@@ -69,23 +99,7 @@ export class QueueEnqueueReprocessTorrentsBatchDialogComponent {
       )
       .subscribe(() => {
         this.stage = "DONE";
-        this.data.onEnqueued?.();
+        this.data?.onEnqueued?.();
       });
-  }
-
-  onContentTypeSelectionChange(change: MatSelectChange) {
-    if (
-      !Array.isArray(change.value) ||
-      !change.value.length ||
-      (change.value.includes("all") &&
-        (!this.contentTypes.includes("all") || change.value.length === 1))
-    ) {
-      this.contentTypes = ["all"];
-    } else {
-      this.orphans = false;
-      this.contentTypes = this.allContentTypes
-        .map((ct) => ct.key)
-        .filter((ct) => (change.value as string[]).includes(ct));
-    }
   }
 }

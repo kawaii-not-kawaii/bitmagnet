@@ -1,11 +1,9 @@
 import { Component, inject } from "@angular/core";
 import { Apollo } from "apollo-angular";
 import { TranslocoService } from "@jsverse/transloco";
-import { SelectionModel } from "@angular/cdk/collections";
 import { combineLatestWith, Observable } from "rxjs";
 import { map } from "rxjs/operators";
 import { PaginatorComponent } from "../../paginator/paginator.component";
-import { BreakpointsService } from "../../layout/breakpoints.service";
 import { ErrorsService } from "../../errors/errors.service";
 import { AppModule } from "../../app.module";
 import { DocumentTitleComponent } from "../../layout/document-title.component";
@@ -34,7 +32,6 @@ import {
 export class QueueJobsComponent {
   private apollo = inject(Apollo);
   private errorsService = inject(ErrorsService);
-  protected breakpoints = inject(BreakpointsService);
   protected transloco = inject(TranslocoService);
   protected controller = new QueueJobsController();
   protected dataSource = new QueueJobsDatasource(
@@ -45,7 +42,7 @@ export class QueueJobsComponent {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   facets$: Observable<FacetInfo<any>[]>;
   protected controls: QueueJobsControls;
-  selection = new SelectionModel<string>();
+  protected filtersOpen = false;
 
   constructor() {
     this.facets$ = this.controller.controls$.pipe(
@@ -66,6 +63,13 @@ export class QueueJobsComponent {
     this.controller.controls$.subscribe((ctrl) => {
       this.controls = ctrl;
     });
+  }
+
+  protected activeFilterCount() {
+    return (
+      (this.controls.facets.queue.filter?.length ?? 0) +
+      (this.controls.facets.status.filter?.length ?? 0)
+    );
   }
 
   protected readonly orderByOptions = orderByOptions;

@@ -13,13 +13,23 @@ import { QueuePurgeJobsDialogComponent } from "./queue-purge-jobs-dialog.compone
   styleUrl: "./queue-admin.component.scss",
 })
 export class QueueAdminComponent {
-  readonly dialog = inject(MatDialog);
+  private dialog = inject(MatDialog);
 
-  openDialogPurgeJobs() {
-    this.dialog.open(QueuePurgeJobsDialogComponent);
+  protected openPurgeDialog() {
+    this.dialog.open(QueuePurgeJobsDialogComponent, {
+      panelClass: "bm-dialog",
+      backdropClass: "bm-dialog-backdrop",
+      width: "480px",
+      maxWidth: "calc(100vw - 24px)",
+    });
   }
 
-  openDialogEnqueueReprocessTorrentsBatch() {
-    this.dialog.open(QueueEnqueueReprocessTorrentsBatchDialogComponent);
+  protected openEnqueueReprocessTorrentsBatch() {
+    this.dialog.open(QueueEnqueueReprocessTorrentsBatchDialogComponent, {
+      panelClass: "bm-dialog",
+      backdropClass: "bm-dialog-backdrop",
+      width: "560px",
+      maxWidth: "calc(100vw - 24px)",
+    });
   }
 }

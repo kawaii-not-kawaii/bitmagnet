@@ -1,55 +1,239 @@
-.actions {
-  width: 210px;
-  padding-top: 12px;
-  --mdc-icon-button-state-layer-size: 32px;
-  mat-icon {
-    font-size: 22px;
-  }
-  button {
-    margin-right: 0;
+:host {
+  display: block;
+}
+
+.visualize {
+  animation: bm-fade 0.2s ease;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+}
+
+.select-control,
+.resolution-control label {
+  display: grid;
+  gap: 5px;
+  flex: 1 0 128px;
+
+  > span {
+    color: var(--faint);
+    font:
+      600 10px "JetBrains Mono",
+      monospace;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
   }
 }
 
-.progress-bar-container {
-  width: 100%;
-  height: 10px;
+.select-control select,
+.resolution-control select,
+.resolution-control input {
+  height: 36px;
+  box-sizing: border-box;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: 0;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+
+  &:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 15%, transparent);
+  }
 }
 
-mat-grid-tile mat-card {
-  width: 100%;
-  mat-card-content {
-    min-width: 190px;
+.select-control select,
+.resolution-control select {
+  min-width: 128px;
+  padding: 0 28px 0 10px;
+  cursor: pointer;
+}
+
+.resolution-control {
+  display: flex;
+  gap: 6px;
+  flex: 1.3 0 184px;
+
+  label {
+    min-width: 0;
+    flex-basis: 64px;
   }
-  h4 {
-    margin-bottom: 16px;
-    font-size: 18px;
+
+  .resolution-unit {
+    flex-basis: 110px;
+  }
+
+  input {
+    width: 100%;
+    padding: 0 9px;
   }
 }
 
-mat-form-field {
-  width: 186px;
+.refresh-button {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--dim);
+  cursor: pointer;
+  font-size: 19px;
+
+  &:hover {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  &.loading {
+    animation: spin 0.9s linear infinite;
+  }
 }
 
-.form-resolution {
-  .actions {
-    margin-left: -2px;
-  }
-  .form-input-multiplier {
-    width: 60px;
-    margin-right: 10px;
+.loading-line {
+  height: 2px;
+  margin: -20px 0 18px;
+  overflow: hidden;
+  background: transparent;
 
-    input::-webkit-outer-spin-button,
-    input::-webkit-inner-spin-button {
-      /* display: none; <- Crashes Chrome on hover */
-      -webkit-appearance: none;
-      margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+  &.active::after {
+    content: "";
+    width: 32%;
+    height: 100%;
+    display: block;
+    background: var(--accent);
+    animation: loading-slide 1s ease-in-out infinite;
+  }
+}
+
+.chart-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.chart-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+
+  > header {
+    min-height: 56px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    box-sizing: border-box;
+    border-bottom: 1px solid var(--border);
+
+    div {
+      display: grid;
+      gap: 2px;
     }
 
-    input[type="number"] {
-      -moz-appearance: textfield; /* Firefox */
+    strong {
+      font-size: 13px;
+    }
+
+    span {
+      color: var(--faint);
+      font-size: 10.5px;
     }
   }
-  .form-select-duration {
-    width: 116px;
+}
+
+.chart-wrap {
+  min-height: 360px;
+  padding: 16px 12px 8px;
+  display: grid;
+  place-items: center;
+  box-sizing: border-box;
+}
+
+.live-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  font:
+    500 10px "JetBrains Mono",
+    monospace;
+
+  i {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #3fb950;
+    box-shadow: 0 0 7px #3fb95088;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes loading-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(315%);
+  }
+}
+
+@media (max-width: 880px) {
+  .chart-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .filter-bar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  .select-control,
+  .resolution-control {
+    min-width: 0;
+  }
+
+  .select-control select,
+  .resolution-control select {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .resolution-control {
+    grid-column: span 2;
+  }
+
+  .refresh-button {
+    align-self: end;
+  }
+
+  .chart-card > header {
+    align-items: flex-start;
+  }
+
+  .chart-wrap {
+    min-height: 300px;
+    padding-inline: 4px;
   }
 }

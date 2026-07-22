@@ -1,19 +1,45 @@
-.icon-toggle-legend {
-  cursor: pointer;
-  position: relative;
-  top: 4px;
-  margin-right: 8px;
-  opacity: 0.6;
-  &.icon-toggle-legend-active {
-    opacity: 1;
+:host {
+  width: 100%;
+  min-width: 0;
+  display: block;
+}
+
+.chart-heading {
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+
+  h4 {
+    margin: 0;
+    font-size: 13px;
+  }
+
+  button {
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    background: transparent;
+    color: var(--faint);
+    cursor: pointer;
+
+    &.active,
+    &:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
   }
 }
 
-.app-chart {
+.chart {
+  width: 100%;
+  min-width: 0;
+  margin: 0 auto;
   position: relative;
-}
 
-.app-chart-small {
-  position: relative;
-  width: calc(40vw + 100px);
+  canvas {
+    max-width: 100%;
+  }
 }

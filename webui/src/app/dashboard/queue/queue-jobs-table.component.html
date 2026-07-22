@@ -1,163 +1,109 @@
 <ng-container *transloco="let t">
-  <div class="progress-bar-container">
-    <mat-progress-bar
-      [mode]="(dataSource.loading$ | async) ? 'indeterminate' : 'determinate'"
-      [value]="0"
-    ></mat-progress-bar>
-  </div>
-  <table
-    mat-table
-    [dataSource]="dataSource"
-    [multiTemplateDataRows]="true"
-    class="table-results"
-  >
-    <ng-container matColumnDef="id">
-      <th mat-header-cell *matHeaderCellDef>ID</th>
-      <td
-        mat-cell
-        *matCellDef="let i"
-        (click)="toggleQueueJobId(i.id); $event.stopPropagation()"
-      >
-        {{ item(i).id }}
-      </td>
-    </ng-container>
+  <div class="loading-line" [class.active]="dataSource.loading$ | async"></div>
 
-    <ng-container matColumnDef="queue">
-      <th mat-header-cell *matHeaderCellDef>
-        {{ t("dashboard.queues.queue") }}
-      </th>
-      <td
-        mat-cell
-        *matCellDef="let i"
-        (click)="toggleQueueJobId(i.id); $event.stopPropagation()"
-      >
-        {{ item(i).queue }}
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="priority">
-      <th mat-header-cell *matHeaderCellDef>
-        {{ t("dashboard.queues.priority") }}
-      </th>
-      <td
-        mat-cell
-        *matCellDef="let i"
-        (click)="toggleQueueJobId(i.id); $event.stopPropagation()"
-      >
-        {{ item(i).priority | number }}
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="status">
-      <th mat-header-cell *matHeaderCellDef>
-        {{ t("general.status") }}
-      </th>
-      <td
-        mat-cell
-        *matCellDef="let i"
-        (click)="toggleQueueJobId(i.id); $event.stopPropagation()"
-      >
-        {{ item(i).status }}
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="error">
-      <th mat-header-cell *matHeaderCellDef>{{ t("general.error") }}</th>
-      <td
-        mat-cell
-        *matCellDef="let i"
-        (click)="toggleQueueJobId(i.id); $event.stopPropagation()"
-      >
-        @if (i.error) {
-          {{ (item(i).error | slice: 0 : 20) + "..." }}
-        }
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="createdAt">
-      <th mat-header-cell *matHeaderCellDef style="text-align: center">
-        {{ t("dashboard.queues.created_at") }}
-      </th>
-      <td
-        mat-cell
-        *matCellDef="let i"
-        (click)="toggleQueueJobId(i.id); $event.stopPropagation()"
-      >
-        {{ item(i).createdAt | timeAgo }}
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="ranAt">
-      <th mat-header-cell *matHeaderCellDef style="text-align: center">
-        {{ t("dashboard.queues.ran_at") }}
-      </th>
-      <td
-        mat-cell
-        *matCellDef="let i"
-        (click)="toggleQueueJobId(i.id); $event.stopPropagation()"
-      >
-        @if (i.ranAt; as ranAt) {
-          {{ ranAt | timeAgo }}
-        }
-      </td>
-    </ng-container>
-
-    <ng-container matColumnDef="expandedDetail">
-      <td mat-cell *matCellDef="let i" [attr.colspan]="displayedColumns.length">
-        <div
-          class="item-detail"
-          [@detailExpand]="
-            expandedId.getValue() === i.id ? 'expanded' : 'collapsed'
-          "
-        >
-          <p>
-            <strong>ID:</strong>&nbsp;<span
-              class="copy"
-              [matTooltip]="t('torrents.copy_to_clipboard')"
-              [cdkCopyToClipboard]="item(i).id"
-              >{{ item(i).id }}</span
-            >
-          </p>
-          <h5>
-            <span
-              class="copy"
-              [matTooltip]="t('torrents.copy_to_clipboard')"
-              [cdkCopyToClipboard]="item(i).payload"
-              >{{ t("dashboard.queues.payload") }}:</span
-            >
-          </h5>
-          <pre class="payload">{{ beautifyPayload(item(i).payload) }}</pre>
-          @if (item(i).error; as error) {
-            <h5>
-              <span
-                class="copy"
-                [matTooltip]="t('torrents.copy_to_clipboard')"
-                [cdkCopyToClipboard]="error!"
-                >{{ t("general.error") }}:</span
-              >
-            </h5>
-            <pre class="payload">{{ error }}</pre>
+  <div class="table-frame">
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>{{ t("dashboard.queues.queue") }}</th>
+          <th>{{ t("dashboard.queues.priority") }}</th>
+          <th>{{ t("general.status") }}</th>
+          <th>{{ t("general.error") }}</th>
+          <th>{{ t("dashboard.queues.created_at") }}</th>
+          <th>{{ t("dashboard.queues.ran_at") }}</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (item of items; track item.id) {
+          <tr
+            class="job-row"
+            [class.expanded]="expandedId === item.id"
+            tabindex="0"
+            (click)="toggleQueueJobId(item.id)"
+            (keydown.enter)="toggleQueueJobId(item.id)"
+          >
+            <td class="job-id">{{ item.id | slice: -8 }}</td>
+            <td class="queue-name">{{ item.queue }}</td>
+            <td class="priority">{{ item.priority | number }}</td>
+            <td>
+              <span [class]="'status-pill ' + item.status">{{
+                t("dashboard.queues." + item.status)
+              }}</span>
+            </td>
+            <td class="error-cell">
+              @if (item.error) {
+                <span>{{ item.error | slice: 0 : 24 }}</span>
+                @if (item.error.length > 24) {
+                  <span>…</span>
+                }
+              } @else {
+                <span class="empty">—</span>
+              }
+            </td>
+            <td class="time">{{ item.createdAt | timeAgo }}</td>
+            <td class="time">
+              @if (item.ranAt; as ranAt) {
+                {{ ranAt | timeAgo }}
+              } @else {
+                <span class="empty">—</span>
+              }
+            </td>
+          </tr>
+          @if (expandedId === item.id) {
+            <tr class="detail-row">
+              <td colspan="7">
+                <div class="item-detail">
+                  <div class="detail-heading">
+                    <span>ID</span>
+                    <button
+                      type="button"
+                      [cdkCopyToClipboard]="item.id"
+                      [title]="t('torrents.copy_to_clipboard')"
+                    >
+                      {{ item.id }} <b>copy</b>
+                    </button>
+                  </div>
+                  <div class="detail-meta">
+                    <span>Created {{ item.createdAt | timeAgo }}</span>
+                    @if (item.ranAt; as ranAt) {
+                      <span>Ran {{ ranAt | timeAgo }}</span>
+                    }
+                  </div>
+                  <div class="detail-heading">
+                    <span>{{ t("dashboard.queues.payload") }}</span>
+                    <button
+                      type="button"
+                      [cdkCopyToClipboard]="item.payload"
+                      [title]="t('torrents.copy_to_clipboard')"
+                    >
+                      copy
+                    </button>
+                  </div>
+                  <pre>{{ beautifyPayload(item.payload) }}</pre>
+                  @if (item.error; as error) {
+                    <div class="detail-heading error-heading">
+                      <span>{{ t("general.error") }}</span>
+                      <button
+                        type="button"
+                        [cdkCopyToClipboard]="error"
+                        [title]="t('torrents.copy_to_clipboard')"
+                      >
+                        copy
+                      </button>
+                    </div>
+                    <pre class="error-payload">{{ error }}</pre>
+                  }
+                </div>
+              </td>
+            </tr>
           }
-        </div>
-      </td>
-    </ng-container>
-
-    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-    <tr
-      mat-row
-      *matRowDef="let i; columns: displayedColumns"
-      [class]="
-        'summary-row ' +
-        (i.id === expandedId.getValue() ? 'expanded' : 'collapsed')
-      "
-    ></tr>
-    <tr
-      mat-row
-      *matRowDef="let i; columns: ['expandedDetail']"
-      [class]="
-        'expanded-detail-row ' +
-        (i.id === expandedId.getValue() ? 'expanded' : 'collapsed')
-      "
-    ></tr>
-  </table>
+        } @empty {
+          <tr class="empty-row">
+            <td colspan="7">No queue jobs match the current filters.</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
 </ng-container>
