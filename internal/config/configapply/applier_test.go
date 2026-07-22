@@ -118,6 +118,7 @@ func TestSetSection_OutcomesAndVisibility(t *testing.T) {
 			}
 
 			applier, resolved := newTestApplier(path, map[string]any{"sample": initial}, liveAppliers)
+
 			outcome, err := applier.SetSection("sample", map[string]any{
 				"Count":   float64(7),
 				"Timeout": "45s",
