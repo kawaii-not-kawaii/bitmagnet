@@ -50,7 +50,6 @@ type ProviderFactory func(name string, cfg ProviderConfig, reg RegistryConfig) P
 // Registry holds the current LLM providers and configuration.
 // It supports live updates and graceful persistence on shutdown.
 type Registry struct {
-	updateMu   sync.Mutex
 	mu         sync.RWMutex
 	providers  map[string]Provider
 	config     RegistryConfig
@@ -66,7 +65,6 @@ func NewRegistry(cfg RegistryConfig, factory ProviderFactory, configPath string)
 		configPath: configPath,
 		providers:  make(map[string]Provider, len(cfg.Providers)),
 	}
-
 	if cfg.Enabled {
 		for name, pCfg := range cfg.Providers {
 			r.providers[name] = factory(name, pCfg, cfg)
@@ -113,26 +111,6 @@ func (r *Registry) Update(cfg RegistryConfig) {
 	r.Swap(cfg)()
 }
 
-// UpdateAndFlush persists a new configuration before applying it at runtime.
-func (r *Registry) UpdateAndFlush(cfg RegistryConfig) error {
-	r.updateMu.Lock()
-	if r.configPath == "" {
-		r.updateMu.Unlock()
-		return ErrPersistenceDisabled
-	}
-
-	if err := configwrite.WriteSection(r.configPath, []string{"classifier", "llm"}, cfg); err != nil {
-		r.updateMu.Unlock()
-		return fmt.Errorf("llm registry: %w", err)
-	}
-
-	drain := r.Swap(cfg)
-	r.updateMu.Unlock()
-	drain()
-
-	return nil
-}
-
 // Swap replaces providers from a new config like Update, but defers draining:
 // it returns a func the caller MUST invoke — after releasing any locks it
 // holds — to drain the evicted providers. This lets a caller that serializes
@@ -144,7 +122,6 @@ func (r *Registry) Swap(cfg RegistryConfig) (drain func()) {
 	old := r.providers
 
 	newProviders := make(map[string]Provider, len(cfg.Providers))
-
 	if cfg.Enabled {
 		for name, pCfg := range cfg.Providers {
 			newProviders[name] = r.factory(name, pCfg, cfg)
@@ -193,16 +170,13 @@ func (r *Registry) Swap(cfg RegistryConfig) (drain func()) {
 // Returns ErrPersistenceDisabled (not nil) when no config path is set, so the
 // caller can distinguish "did nothing" from "wrote successfully".
 func (r *Registry) Flush() error {
-	r.updateMu.Lock()
-	defer r.updateMu.Unlock()
+	if r.configPath == "" {
+		return ErrPersistenceDisabled
+	}
 
 	r.mu.RLock()
 	cfg := r.config
 	r.mu.RUnlock()
-
-	if r.configPath == "" {
-		return ErrPersistenceDisabled
-	}
 
 	if err := configwrite.WriteSection(r.configPath, []string{"classifier", "llm"}, cfg); err != nil {
 		return fmt.Errorf("llm registry: %w", err)

@@ -13,11 +13,6 @@ import (
 	"go.uber.org/fx"
 )
 
-// WritePath is the highest-priority writable YAML source used by the default resolver stack.
-type WritePath string
-
-const defaultWritePath WritePath = "./config.yml"
-
 func New() fx.Option {
 	osEnv := ReadOsEnv()
 
@@ -81,7 +76,7 @@ func New() fx.Option {
 				Group: "config_resolvers",
 				Target: func(val *validator.Validate) (configresolver.Resolver, error) {
 					return configresolver.NewFromYamlFile(
-						string(defaultWritePath),
+						"./config.yml",
 						true,
 						val,
 						configresolver.WithPriority(10),

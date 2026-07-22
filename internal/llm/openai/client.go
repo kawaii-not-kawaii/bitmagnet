@@ -38,8 +38,6 @@ type Config struct {
 	SystemPrompt string
 	// UserPrompt is the user message template. Uses {{.Name}}, {{.Files}}, {{.ContentTypes}}.
 	UserPrompt string
-	// Observe receives one record for each completed provider request.
-	Observe func(llm.Observation)
 }
 
 func (c *Config) timeout() time.Duration {
@@ -113,37 +111,25 @@ type chatResponse struct {
 	Error   *chatResponseError   `json:"error,omitempty"`
 }
 
-type rawResponse struct {
-	content string
-	usage   chatResponseUsage
-}
-
 func (c *client) Classify(ctx context.Context, input llm.ClassifyInput) (*llm.ClassifyResult, error) {
 	reqBytes, err := c.buildRequest(input)
 	if err != nil {
 		return nil, fmt.Errorf("openai: build request: %w", err)
 	}
 
-	startedAt := time.Now()
-
-	raw, err := c.doRequestRaw(ctx, reqBytes)
+	content, err := c.doRequestRaw(ctx, reqBytes)
 	if err != nil {
-		c.observe(startedAt, raw, nil, true)
 		return nil, err
 	}
 
 	var result llm.ClassifyResult
-	if err := json.Unmarshal([]byte(raw.content), &result); err != nil {
-		c.observe(startedAt, raw, nil, true)
+	if err := json.Unmarshal([]byte(content), &result); err != nil {
 		return nil, fmt.Errorf("%w: %w", llm.ErrInvalidJSON, err)
 	}
 
 	if result.ContentType == "" {
-		c.observe(startedAt, raw, nil, true)
 		return nil, llm.ErrNoResult
 	}
-
-	c.observe(startedAt, raw, []string{result.ContentType}, false)
 
 	return &result, nil
 }
@@ -209,26 +195,12 @@ func (c *client) BatchClassify(ctx context.Context, inputs []llm.ClassifyInput) 
 		return nil, fmt.Errorf("openai: build batch request: %w", err)
 	}
 
-	startedAt := time.Now()
-
-	raw, err := c.doRequestRaw(ctx, reqBytes)
+	content, err := c.doRequestRaw(ctx, reqBytes)
 	if err != nil {
-		c.observe(startedAt, raw, nil, true)
 		return nil, err
 	}
 
-	results, err := ParseBatchResponse(raw.content)
-	contentTypes := make([]string, 0, len(results))
-
-	if err == nil {
-		for _, result := range results {
-			contentTypes = append(contentTypes, result.ContentType)
-		}
-	}
-
-	c.observe(startedAt, raw, contentTypes, err != nil)
-
-	return results, err
+	return ParseBatchResponse(content)
 }
 
 func (c *client) buildRequest(input llm.ClassifyInput) ([]byte, error) {
@@ -296,25 +268,9 @@ func (*client) estimateMaxTokens(input llm.ClassifyInput) int {
 	return 256
 }
 
-func (c *client) observe(startedAt time.Time, response rawResponse, contentTypes []string, failed bool) {
-	if c.config.Observe == nil {
-		return
-	}
-
-	c.config.Observe(llm.Observation{
-		Provider:         c.config.Name,
-		At:               time.Now(),
-		Duration:         time.Since(startedAt),
-		PromptTokens:     response.usage.PromptTokens,
-		CompletionTokens: response.usage.CompletionTokens,
-		Classifications:  len(contentTypes),
-		ContentTypes:     contentTypes,
-		Failed:           failed,
-	})
-}
-
-// doRequestRaw sends the request and returns the raw first-choice content and token usage.
-func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (rawResponse, error) {
+// doRequestRaw sends the request and returns the raw content string from the first choice.
+// Used by BatchClassify which needs the raw content for array parsing.
+func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, error) {
 	url := strings.TrimRight(c.config.BaseURL, "/") + "/v1/chat/completions"
 
 	var lastErr error
@@ -324,14 +280,14 @@ func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (rawResponse,
 			backoff := time.Duration(100*math.Pow(2, float64(attempt-1))) * time.Millisecond
 			select {
 			case <-ctx.Done():
-				return rawResponse{}, ctx.Err()
+				return "", ctx.Err()
 			case <-time.After(backoff):
 			}
 		}
 
 		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(reqBody))
 		if err != nil {
-			return rawResponse{}, fmt.Errorf("openai: create request: %w", err)
+			return "", fmt.Errorf("openai: create request: %w", err)
 		}
 
 		httpReq.Header.Set("Content-Type", "application/json")
@@ -357,7 +313,7 @@ func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (rawResponse,
 		if resp.StatusCode != http.StatusOK {
 			lastErr = fmt.Errorf("openai: HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 			if resp.StatusCode >= 400 && resp.StatusCode < 500 {
-				return rawResponse{}, lastErr
+				return "", lastErr
 			}
 
 			continue
@@ -379,7 +335,7 @@ func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (rawResponse,
 
 				lastErr = fmt.Errorf("openai: API error: %s (type=%s)", msg, chatResp.Error.Type)
 
-				return rawResponse{}, lastErr
+				return "", lastErr
 			}
 			// Both fields empty — ambiguous transient condition; retry.
 			lastErr = fmt.Errorf("openai: API error: empty error object")
@@ -388,16 +344,16 @@ func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (rawResponse,
 		}
 
 		if len(chatResp.Choices) == 0 {
-			return rawResponse{usage: chatResp.Usage}, llm.ErrNoResult
+			return "", llm.ErrNoResult
 		}
 
 		content := chatResp.Choices[0].Message.Content
 		if content == "" {
-			return rawResponse{usage: chatResp.Usage}, llm.ErrNoResult
+			return "", llm.ErrNoResult
 		}
 
-		return rawResponse{content: content, usage: chatResp.Usage}, nil
+		return content, nil
 	}
 
-	return rawResponse{}, fmt.Errorf("openai: %w (after %d retries)", lastErr, maxRetries)
+	return "", fmt.Errorf("openai: %w (after %d retries)", lastErr, maxRetries)
 }

@@ -11,11 +11,6 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/gqlmodel/gen"
 )
 
-// UpdateLlm is the resolver for the updateLlm field.
-func (r *dashboardMutationResolver) UpdateLlm(ctx context.Context, obj *gen.DashboardMutation, input gen.DashboardLlmConfigInput) (gen.DashboardLlmState, error) {
-	return r.updateDashboardLlm(input)
-}
-
 // TestLlmConnection is the resolver for the testLlmConnection field.
 func (r *dashboardMutationResolver) TestLlmConnection(ctx context.Context, obj *gen.DashboardMutation) (gen.DashboardLlmConnectionResult, error) {
 	return r.testDashboardLlmConnection(ctx)

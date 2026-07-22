@@ -98,7 +98,6 @@ func New() fx.Option {
 							ResolvedConfig:       p.ResolvedConfig,
 							Changeability:        p.Changeability,
 							LlmRegistry:          p.LlmRegistry,
-							LlmStats:             p.LlmStats,
 							Applier:              p.Applier,
 							LlmRecorder:          p.LlmRecorder,
 							ClassifierConfig:     p.ClassifierConfig,
@@ -134,7 +133,6 @@ type Params struct {
 	ResolvedConfig       *concurrency.AtomicValue[rootconfig.ResolvedConfig]
 	Changeability        configapply.Changeability
 	LlmRegistry          *llm.Registry
-	LlmStats             *llm.Stats
 	Applier              *configapply.Applier
 	LlmRecorder          *llmobs.Recorder
 	ClassifierConfig     classifier.Config

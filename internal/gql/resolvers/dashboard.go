@@ -3,7 +3,6 @@ package resolvers
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"sort"
 	"strings"
 	"sync"
@@ -72,8 +71,6 @@ func (r *Resolver) dashboardQuery(ctx context.Context) (gen.DashboardQuery, erro
 		classifiedPercent = min(100, 100*float64(classified)/float64(total))
 	}
 
-	unknownBacklog := max(0, total-classified)
-
 	return gen.DashboardQuery{
 		Summary: gen.DashboardSummary{
 			TotalTorrents:       int(total),
@@ -85,135 +82,7 @@ func (r *Resolver) dashboardQuery(ctx context.Context) (gen.DashboardQuery, erro
 			QueuePending:        int(pending),
 			QueueFailed:         int(failed),
 		},
-		Llm: gen.DashboardLlm{
-			State:   r.dashboardLlmState(),
-			Metrics: r.dashboardLlmMetrics(int(unknownBacklog)),
-		},
 	}, nil
-}
-
-func (r *Resolver) dashboardLlmState() gen.DashboardLlmState {
-	cfg := r.LlmRegistry.Config()
-	name, providerCfg, _ := firstProviderConfig(cfg)
-
-	return gen.DashboardLlmState{
-		Enabled:         cfg.Enabled,
-		Running:         len(r.LlmRegistry.All()) > 0,
-		ProviderName:    name,
-		BaseURL:         providerCfg.BaseURL,
-		Model:           providerCfg.Model,
-		APIKeySet:       providerCfg.APIKey != "",
-		BatchSize:       cfg.BatchSize,
-		MaxContext:      cfg.MaxContext,
-		MaxTokens:       cfg.MaxTokens,
-		IntervalSeconds: int(cfg.Interval.Seconds()),
-		TimeoutSeconds:  int(cfg.Timeout.Seconds()),
-	}
-}
-
-func (r *Resolver) dashboardLlmMetrics(unknownBacklog int) gen.DashboardLlmMetrics {
-	snapshot := r.LlmStats.Snapshot(time.Now())
-	distribution := make([]gen.DashboardLlmBenchmarkDistribution, 0, len(snapshot.Distribution))
-
-	for contentType, count := range snapshot.Distribution {
-		distribution = append(distribution, gen.DashboardLlmBenchmarkDistribution{
-			ContentType: contentType,
-			Count:       count,
-		})
-	}
-
-	sort.Slice(distribution, func(i, j int) bool {
-		return distribution[i].Count > distribution[j].Count
-	})
-
-	return gen.DashboardLlmMetrics{
-		WindowSeconds:         snapshot.WindowSeconds,
-		Matched:               snapshot.Matched,
-		PromptTokens:          snapshot.PromptTokens,
-		CompletionTokens:      snapshot.CompletionTokens,
-		AverageLatencySeconds: snapshot.AverageLatency,
-		P95LatencySeconds:     snapshot.P95Latency,
-		ThroughputPerSecond:   snapshot.Throughput,
-		ErrorRate:             snapshot.ErrorRate,
-		UnknownBacklog:        unknownBacklog,
-		Distribution:          distribution,
-	}
-}
-
-func (r *Resolver) updateDashboardLlm(input gen.DashboardLlmConfigInput) (gen.DashboardLlmState, error) {
-	name := strings.TrimSpace(input.ProviderName)
-	baseURL := strings.TrimSpace(input.BaseURL)
-	modelName := strings.TrimSpace(input.Model)
-
-	if err := validateDashboardLlmInput(input, name, baseURL, modelName); err != nil {
-		return gen.DashboardLlmState{}, err
-	}
-
-	current := r.LlmRegistry.Config()
-	_, currentProvider, _ := firstProviderConfig(current)
-
-	apiKey := currentProvider.APIKey
-	if input.APIKey.IsSet() {
-		apiKey = ""
-		if value := input.APIKey.Value(); value != nil {
-			apiKey = *value
-		}
-	}
-
-	cfg := llm.RegistryConfig{
-		Enabled: input.Enabled,
-		Providers: map[string]llm.ProviderConfig{
-			name: {
-				BaseURL: baseURL,
-				Model:   modelName,
-				APIKey:  apiKey,
-				Timeout: time.Duration(input.TimeoutSeconds) * time.Second,
-			},
-		},
-		BatchSize:  input.BatchSize,
-		MaxContext: input.MaxContext,
-		MaxTokens:  input.MaxTokens,
-		Interval:   time.Duration(input.IntervalSeconds) * time.Second,
-		Timeout:    time.Duration(input.TimeoutSeconds) * time.Second,
-	}
-	if err := r.LlmRegistry.UpdateAndFlush(cfg); err != nil {
-		return gen.DashboardLlmState{}, fmt.Errorf("dashboard: save LLM config: %w", err)
-	}
-
-	return r.dashboardLlmState(), nil
-}
-
-func validateDashboardLlmInput(input gen.DashboardLlmConfigInput, name, baseURL, modelName string) error {
-	if name == "" {
-		return fmt.Errorf("dashboard: provider name is required")
-	}
-
-	parsedURL, err := url.Parse(baseURL)
-	if err != nil || parsedURL.Host == "" || (parsedURL.Scheme != "http" && parsedURL.Scheme != "https") {
-		return fmt.Errorf("dashboard: base URL must be an absolute HTTP or HTTPS URL")
-	}
-
-	if modelName == "" {
-		return fmt.Errorf("dashboard: model is required")
-	}
-
-	if input.BatchSize < 1 || input.BatchSize > 100 {
-		return fmt.Errorf("dashboard: batch size must be between 1 and 100")
-	}
-
-	if input.MaxContext < 1 || input.MaxTokens < 1 {
-		return fmt.Errorf("dashboard: context and output token limits must be positive")
-	}
-
-	if input.IntervalSeconds < 1 || input.IntervalSeconds > 3600 {
-		return fmt.Errorf("dashboard: batch interval must be between 1 and 3600 seconds")
-	}
-
-	if input.TimeoutSeconds < 1 || input.TimeoutSeconds > 600 {
-		return fmt.Errorf("dashboard: timeout must be between 1 and 600 seconds")
-	}
-
-	return nil
 }
 
 func (r *Resolver) testDashboardLlmConnection(ctx context.Context) (gen.DashboardLlmConnectionResult, error) {
@@ -365,19 +234,4 @@ func (r *Resolver) dashboardProvider() (string, llm.Provider, error) {
 	sort.Strings(names)
 
 	return names[0], providers[names[0]], nil
-}
-
-func firstProviderConfig(cfg llm.RegistryConfig) (string, llm.ProviderConfig, bool) {
-	names := make([]string, 0, len(cfg.Providers))
-	for name := range cfg.Providers {
-		names = append(names, name)
-	}
-
-	if len(names) == 0 {
-		return "", llm.ProviderConfig{}, false
-	}
-
-	sort.Strings(names)
-
-	return names[0], cfg.Providers[names[0]], true
 }

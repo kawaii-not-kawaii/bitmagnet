@@ -10,35 +10,5 @@ query DashboardData {
       queuePending
       queueFailed
     }
-    llm {
-      state {
-        enabled
-        running
-        providerName
-        baseUrl
-        model
-        apiKeySet
-        batchSize
-        maxContext
-        maxTokens
-        intervalSeconds
-        timeoutSeconds
-      }
-      metrics {
-        windowSeconds
-        matched
-        promptTokens
-        completionTokens
-        averageLatencySeconds
-        p95LatencySeconds
-        throughputPerSecond
-        errorRate
-        unknownBacklog
-        distribution {
-          contentType
-          count
-        }
-      }
-    }
   }
 }

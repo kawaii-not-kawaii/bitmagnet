@@ -31,7 +31,6 @@ type Resolver struct {
 	QueueMetricsClient   queuemetrics.Client
 	QueueManager         manager.Manager
 	LlmRegistry          *llm.Registry
-	LlmStats             *llm.Stats
 	TorrentMetricsClient torrentmetrics.Client
 	Processor            processor.Processor
 	BlockingManager      blocking.Manager

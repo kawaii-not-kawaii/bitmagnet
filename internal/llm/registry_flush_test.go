@@ -6,7 +6,6 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"gopkg.in/yaml.v3"
 )
@@ -261,54 +260,6 @@ func TestFlush_RewrittenConfigStillParses(t *testing.T) {
 
 	if doc.Other["keep"] != "me" {
 		t.Errorf("sibling scalar section not preserved: %+v", doc.Other)
-	}
-}
-
-func TestUpdateAndFlushAppliesRuntimeConfig(t *testing.T) {
-	t.Parallel()
-
-	path := filepath.Join(t.TempDir(), "config.yml")
-
-	var factoryConfig RegistryConfig
-
-	registry := NewRegistry(
-		RegistryConfig{Enabled: false},
-		func(name string, _ ProviderConfig, cfg RegistryConfig) Provider {
-			factoryConfig = cfg
-			return &mockProvider{name: name}
-		},
-		path,
-	)
-
-	cfg := RegistryConfig{
-		Enabled: true,
-		Providers: map[string]ProviderConfig{
-			"local": {BaseURL: "http://localhost:8080", Model: "gemma"},
-		},
-		BatchSize: 7,
-		Interval:  3 * time.Second,
-	}
-	if err := registry.UpdateAndFlush(cfg); err != nil {
-		t.Fatalf("UpdateAndFlush: %v", err)
-	}
-
-	if len(registry.All()) != 1 {
-		t.Fatalf("provider was not enabled: %+v", registry.All())
-	}
-
-	if factoryConfig.BatchSize != 7 || factoryConfig.Interval != 3*time.Second {
-		t.Fatalf("factory received stale registry config: %+v", factoryConfig)
-	}
-
-	if !strings.Contains(readBack(t, path), "enabled: true") {
-		t.Fatalf("enabled state was not persisted:\n%s", readBack(t, path))
-	}
-
-	cfg.Enabled = false
-	registry.Update(cfg)
-
-	if len(registry.All()) != 0 {
-		t.Fatalf("provider was not disabled: %+v", registry.All())
 	}
 }
 

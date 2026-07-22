@@ -1,6 +1,5 @@
 type DashboardQuery {
   summary: DashboardSummary!
-  llm: DashboardLlm!
 }
 
 type DashboardSummary {
@@ -14,55 +13,9 @@ type DashboardSummary {
   queueFailed: Int!
 }
 
-type DashboardLlm {
-  state: DashboardLlmState!
-  metrics: DashboardLlmMetrics!
-}
-
-type DashboardLlmState {
-  enabled: Boolean!
-  running: Boolean!
-  providerName: String!
-  baseUrl: String!
-  model: String!
-  apiKeySet: Boolean!
-  batchSize: Int!
-  maxContext: Int!
-  maxTokens: Int!
-  intervalSeconds: Int!
-  timeoutSeconds: Int!
-}
-
-type DashboardLlmMetrics {
-  windowSeconds: Int!
-  matched: Int!
-  promptTokens: Int!
-  completionTokens: Int!
-  averageLatencySeconds: Float!
-  p95LatencySeconds: Float!
-  throughputPerSecond: Float!
-  errorRate: Float!
-  unknownBacklog: Int!
-  distribution: [DashboardLlmBenchmarkDistribution!]!
-}
-
 type DashboardMutation {
-  updateLlm(input: DashboardLlmConfigInput!): DashboardLlmState!
   testLlmConnection: DashboardLlmConnectionResult!
   runLlmBenchmark(sampleSize: Int!): DashboardLlmBenchmark!
-}
-
-input DashboardLlmConfigInput {
-  enabled: Boolean!
-  providerName: String!
-  baseUrl: String!
-  model: String!
-  apiKey: String
-  batchSize: Int!
-  maxContext: Int!
-  maxTokens: Int!
-  intervalSeconds: Int!
-  timeoutSeconds: Int!
 }
 
 type DashboardLlmConnectionResult {

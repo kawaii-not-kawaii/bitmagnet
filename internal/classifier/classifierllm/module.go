@@ -27,7 +27,6 @@ type Result struct {
 	fx.Out
 	Registry    *llm.Registry           `optional:"true"`
 	LiveApplier configapply.LiveApplier `group:"config_live_appliers"`
-	Stats       *llm.Stats
 	// LlmProviders is a static snapshot of the providers built at startup,
 	// kept for one-shot CLI consumers (llm-bench). The live path — anything
 	// that must observe runtime config updates — reads Registry.All() at
@@ -80,8 +79,6 @@ func New(p Params) Result {
 		)
 	}
 
-	stats := llm.NewStats()
-
 	// Registry-wide settings (timeout fallback, batch size, flush interval)
 	// are read from the RegistryConfig passed at build time, not captured
 	// from the startup config: a runtime Update with a new batch_size must
@@ -105,7 +102,6 @@ func New(p Params) Result {
 			Model:   cfg.Model,
 			APIKey:  cfg.APIKey,
 			Timeout: timeout,
-			Observe: stats.Record,
 		})
 		if reg.BatchSize > 1 {
 			return openai.NewBatchClient(base, reg.BatchSize, flushAfter)
@@ -123,14 +119,15 @@ func New(p Params) Result {
 			// the evicted ones are drained by the updater. Sorted for a
 			// deterministic drain order.
 			providers := registry.All()
+
 			names := make([]string, 0, len(providers))
 			for name := range providers {
 				names = append(names, name)
 			}
 			sort.Strings(names)
 			for _, name := range names {
-				if drainer, ok := providers[name].(llm.Drainer); ok {
-					drainer.Drain()
+				if d, ok := providers[name].(llm.Drainer); ok {
+					d.Drain()
 				}
 			}
 			return nil
@@ -139,7 +136,6 @@ func New(p Params) Result {
 
 	return Result{
 		Registry: registry,
-		Stats:    stats,
 		LiveApplier: configapply.LiveApplier{
 			Key: "classifier",
 			Apply: func(value any) (func(), error) {
