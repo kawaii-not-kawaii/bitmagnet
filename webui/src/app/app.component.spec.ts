@@ -1,13 +1,20 @@
 import { TestBed } from "@angular/core/testing";
 import { TranslocoModule } from "@jsverse/transloco";
 import { AppComponent } from "./app.component";
+import { AuthService } from "./auth/auth.service";
 import { appConfig } from "./app.config";
 
 describe("AppComponent", () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      ...appConfig,
       imports: [AppComponent, TranslocoModule],
+      providers: [
+        ...appConfig.providers,
+        {
+          provide: AuthService,
+          useValue: { bootstrap: () => Promise.resolve() },
+        },
+      ],
     }).compileComponents();
   });
 

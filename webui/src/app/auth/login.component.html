@@ -1,0 +1,77 @@
+<app-auth-shell>
+  <form class="auth-card" [formGroup]="form" (ngSubmit)="submit()">
+    <h1>Sign in</h1>
+    <p>
+      {{
+        mode === "password"
+          ? "Enter your credentials to access the web UI."
+          : "Authenticate with an API key instead of a password."
+      }}
+    </p>
+
+    @if (mode === "password") {
+      <div class="auth-fields">
+        <div>
+          <label for="login-username">Username</label>
+          <input
+            id="login-username"
+            type="text"
+            formControlName="username"
+            autocomplete="username"
+            placeholder="admin"
+            autofocus
+          />
+        </div>
+        <div>
+          <label for="login-password">Password</label>
+          <input
+            id="login-password"
+            type="password"
+            formControlName="password"
+            autocomplete="current-password"
+            placeholder="••••••••"
+          />
+        </div>
+      </div>
+    } @else {
+      <div class="api-key-mode">
+        <label for="login-api-key">API key</label>
+        <input
+          id="login-api-key"
+          class="api-key-input"
+          type="password"
+          formControlName="apiKey"
+          autocomplete="off"
+          placeholder="bm_xxxxxxxxxxxxxxxxxxxx"
+        />
+        <p>
+          Paste an API key to authenticate directly — the same key torznab
+          clients use.
+        </p>
+      </div>
+    }
+
+    <button class="auth-primary" type="submit" [disabled]="!canSubmit">
+      {{
+        busy
+          ? "Authenticating…"
+          : mode === "password"
+            ? "Sign in"
+            : "Authenticate"
+      }}
+    </button>
+    @if (error) {
+      <div class="auth-error" role="alert">{{ error }}</div>
+    }
+
+    <div class="mode-toggle">
+      <button type="button" (click)="toggleMode()">
+        {{
+          mode === "password"
+            ? "Use an API key instead"
+            : "← Back to password sign-in"
+        }}
+      </button>
+    </div>
+  </form>
+</app-auth-shell>

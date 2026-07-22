@@ -1,0 +1,68 @@
+<app-auth-shell>
+  <form class="auth-card" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="auth-eyebrow">First-run setup</div>
+    <h1>Create your account</h1>
+    <p>
+      This is a fresh deployment. Set an administrator username and password to
+      secure the web UI.
+    </p>
+
+    <div class="auth-fields">
+      <div>
+        <label for="setup-username">Username</label>
+        <input
+          id="setup-username"
+          type="text"
+          formControlName="username"
+          autocomplete="username"
+          autofocus
+        />
+      </div>
+      <div>
+        <label for="setup-password">Password</label>
+        <input
+          id="setup-password"
+          type="password"
+          formControlName="password"
+          autocomplete="new-password"
+        />
+        @if (strength.level > 0) {
+          <div class="strength" [class]="'strength level-' + strength.level">
+            <span><i></i></span>
+            <strong>{{ strength.label }}</strong>
+          </div>
+        }
+      </div>
+      <div>
+        <label for="setup-confirm">Confirm password</label>
+        <input
+          id="setup-confirm"
+          type="password"
+          formControlName="confirm"
+          autocomplete="new-password"
+          [class.matches]="passwordsMatch"
+        />
+        @if (passwordsMatch) {
+          <div class="match" aria-live="polite">✓ passwords match</div>
+        }
+      </div>
+    </div>
+
+    <button class="auth-primary" type="submit" [disabled]="!canSubmit">
+      {{ busy ? "Creating account…" : "Create account & continue" }}
+    </button>
+    @if (error) {
+      <div class="auth-error" role="alert">{{ error }}</div>
+    }
+  </form>
+
+  <aside class="setup-callout">
+    <span aria-hidden="true">ⓘ</span>
+    <p>
+      Credentials are written once through the <code>ConfigApplier</code> and
+      persist across restarts. Unlike older builds,
+      <strong>no API key is generated or shown here</strong> — create and manage
+      keys later under Settings.
+    </p>
+  </aside>
+</app-auth-shell>

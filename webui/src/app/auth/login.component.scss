@@ -1,0 +1,36 @@
+.api-key-mode {
+  animation: bm-fade 0.16s ease;
+
+  .api-key-input {
+    font-family: "JetBrains Mono", monospace;
+  }
+
+  p {
+    margin: 9px 0 0;
+    color: var(--faint);
+    font-size: 12px;
+    line-height: 1.5;
+  }
+}
+
+.mode-toggle {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+
+  button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 12.5px;
+    font-weight: 500;
+
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 4px;
+    }
+  }
+}
