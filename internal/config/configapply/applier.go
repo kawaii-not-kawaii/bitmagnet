@@ -11,6 +11,7 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/config/configwrite"
 	"github.com/go-playground/validator/v10"
 	"github.com/go-viper/mapstructure/v2"
+	"github.com/iancoleman/strcase"
 	"go.uber.org/fx"
 )
 
@@ -96,8 +97,12 @@ func (a *Applier) SetSection(key string, raw any) (Outcome, error) {
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		Result:      decodedValue.Interface(),
 		ErrorUnused: true,
+		// Accept both the Go field name (what the settings read query
+		// returns) and its snake_case form (what config.yml uses) — an
+		// operator will reach for either shape, and the superset stays
+		// unambiguous while ErrorUnused still rejects unknown fields.
 		MatchName: func(mapKey, fieldName string) bool {
-			return mapKey == fieldName
+			return mapKey == fieldName || mapKey == strcase.ToSnake(fieldName)
 		},
 		DecodeHook: mapstructure.StringToTimeDurationHookFunc(),
 	})

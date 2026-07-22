@@ -49,6 +49,7 @@ type Config struct {
 
 type ResolverRoot interface {
 	ClientMutation() ClientMutationResolver
+	ConfigMutation() ConfigMutationResolver
 	Content() ContentResolver
 	Mutation() MutationResolver
 	Query() QueryResolver
@@ -71,6 +72,10 @@ type ComplexityRoot struct {
 	ClientSendToConfigQuery struct {
 		Enabled func(childComplexity int) int
 		SendTo  func(childComplexity int) int
+	}
+
+	ConfigMutation struct {
+		SetSection func(childComplexity int, input gen.SetConfigSectionInput) int
 	}
 
 	ConfigQuery struct {
@@ -180,6 +185,7 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		Client  func(childComplexity int) int
+		Config  func(childComplexity int) int
 		Queue   func(childComplexity int) int
 		Torrent func(childComplexity int) int
 	}
@@ -266,6 +272,11 @@ type ComplexityRoot struct {
 	Season struct {
 		Episodes func(childComplexity int) int
 		Season   func(childComplexity int) int
+	}
+
+	SetConfigSectionResult struct {
+		Applied func(childComplexity int) int
+		Section func(childComplexity int) int
 	}
 
 	SuggestedTag struct {
@@ -458,6 +469,9 @@ type ComplexityRoot struct {
 type ClientMutationResolver interface {
 	SendTo(ctx context.Context, obj *gqlmodel.ClientMutation, clientID *model.ID, infoHashes []protocol.ID) (*string, error)
 }
+type ConfigMutationResolver interface {
+	SetSection(ctx context.Context, obj *gen.ConfigMutation, input gen.SetConfigSectionInput) (gen.SetConfigSectionResult, error)
+}
 type ContentResolver interface {
 	OriginalLanguage(ctx context.Context, obj *model1.Content) (*model1.Language, error)
 }
@@ -465,6 +479,7 @@ type MutationResolver interface {
 	Torrent(ctx context.Context) (gqlmodel.TorrentMutation, error)
 	Queue(ctx context.Context) (gqlmodel.QueueMutation, error)
 	Client(ctx context.Context) (gqlmodel.ClientMutation, error)
+	Config(ctx context.Context) (gen.ConfigMutation, error)
 }
 type QueryResolver interface {
 	Version(ctx context.Context) (string, error)
@@ -544,6 +559,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.ClientSendToConfigQuery.SendTo(childComplexity), true
+
+	case "ConfigMutation.setSection":
+		if e.complexity.ConfigMutation.SetSection == nil {
+			break
+		}
+
+		args, err := ec.field_ConfigMutation_setSection_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.ConfigMutation.SetSection(childComplexity, args["input"].(gen.SetConfigSectionInput)), true
 
 	case "ConfigQuery.sections":
 		if e.complexity.ConfigQuery.Sections == nil {
@@ -993,6 +1020,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.Client(childComplexity), true
 
+	case "Mutation.config":
+		if e.complexity.Mutation.Config == nil {
+			break
+		}
+
+		return e.complexity.Mutation.Config(childComplexity), true
+
 	case "Mutation.queue":
 		if e.complexity.Mutation.Queue == nil {
 			break
@@ -1362,6 +1396,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Season.Season(childComplexity), true
+
+	case "SetConfigSectionResult.applied":
+		if e.complexity.SetConfigSectionResult.Applied == nil {
+			break
+		}
+
+		return e.complexity.SetConfigSectionResult.Applied(childComplexity), true
+
+	case "SetConfigSectionResult.section":
+		if e.complexity.SetConfigSectionResult.Section == nil {
+			break
+		}
+
+		return e.complexity.SetConfigSectionResult.Section(childComplexity), true
 
 	case "SuggestedTag.count":
 		if e.complexity.SuggestedTag.Count == nil {
@@ -2226,6 +2274,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputQueueMetricsQueryInput,
 		ec.unmarshalInputQueuePurgeJobsInput,
 		ec.unmarshalInputReleaseYearFacetInput,
+		ec.unmarshalInputSetConfigSectionInput,
 		ec.unmarshalInputSuggestTagsQueryInput,
 		ec.unmarshalInputTorrentContentFacetsInput,
 		ec.unmarshalInputTorrentContentOrderByInput,
@@ -2745,6 +2794,7 @@ type ContentCollection {
   torrent: TorrentMutation!
   queue: QueueMutation!
   client: ClientMutation!
+  config: ConfigMutation!
 }
 
 type TorrentMutation {
@@ -2765,6 +2815,20 @@ input TorrentReprocessInput {
 
 type ClientMutation {
   sendTo(clientID: ClientID, infoHashes: [Hash20!]): Void
+}
+
+type ConfigMutation {
+  setSection(input: SetConfigSectionInput!): SetConfigSectionResult!
+}
+
+input SetConfigSectionInput {
+  key: String!
+  value: JSON!
+}
+
+type SetConfigSectionResult {
+  section: ConfigSection!
+  applied: ConfigRuntimeChangeability!
 }
 `, BuiltIn: false},
 	{Name: "../../graphql/schema/query.graphqls", Input: `type Query {
@@ -3207,6 +3271,34 @@ func (ec *executionContext) field_ClientMutation_sendTo_argsInfoHashes(
 	}
 
 	var zeroVal []protocol.ID
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_ConfigMutation_setSection_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_ConfigMutation_setSection_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_ConfigMutation_setSection_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (gen.SetConfigSectionInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal gen.SetConfigSectionInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNSetConfigSectionInput2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐSetConfigSectionInput(ctx, tmp)
+	}
+
+	var zeroVal gen.SetConfigSectionInput
 	return zeroVal, nil
 }
 
@@ -3927,6 +4019,67 @@ func (ec *executionContext) fieldContext_ClientSendToConfigQuery_sendTo(_ contex
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type ClientID does not have child fields")
 		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ConfigMutation_setSection(ctx context.Context, field graphql.CollectedField, obj *gen.ConfigMutation) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ConfigMutation_setSection(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.ConfigMutation().SetSection(rctx, obj, fc.Args["input"].(gen.SetConfigSectionInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(gen.SetConfigSectionResult)
+	fc.Result = res
+	return ec.marshalNSetConfigSectionResult2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐSetConfigSectionResult(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ConfigMutation_setSection(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ConfigMutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "section":
+				return ec.fieldContext_SetConfigSectionResult_section(ctx, field)
+			case "applied":
+				return ec.fieldContext_SetConfigSectionResult_applied(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type SetConfigSectionResult", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_ConfigMutation_setSection_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
 	}
 	return fc, nil
 }
@@ -6911,6 +7064,54 @@ func (ec *executionContext) fieldContext_Mutation_client(_ context.Context, fiel
 	return fc, nil
 }
 
+func (ec *executionContext) _Mutation_config(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_config(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().Config(rctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(gen.ConfigMutation)
+	fc.Result = res
+	return ec.marshalNConfigMutation2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐConfigMutation(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_config(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "setSection":
+				return ec.fieldContext_ConfigMutation_setSection(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ConfigMutation", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Query_version(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Query_version(ctx, field)
 	if err != nil {
@@ -9274,6 +9475,102 @@ func (ec *executionContext) fieldContext_Season_episodes(_ context.Context, fiel
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SetConfigSectionResult_section(ctx context.Context, field graphql.CollectedField, obj *gen.SetConfigSectionResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SetConfigSectionResult_section(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Section, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(gen.ConfigSection)
+	fc.Result = res
+	return ec.marshalNConfigSection2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐConfigSection(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SetConfigSectionResult_section(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SetConfigSectionResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "key":
+				return ec.fieldContext_ConfigSection_key(ctx, field)
+			case "runtimeChangeable":
+				return ec.fieldContext_ConfigSection_runtimeChangeable(ctx, field)
+			case "value":
+				return ec.fieldContext_ConfigSection_value(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type ConfigSection", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _SetConfigSectionResult_applied(ctx context.Context, field graphql.CollectedField, obj *gen.SetConfigSectionResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_SetConfigSectionResult_applied(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Applied, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(gen.ConfigRuntimeChangeability)
+	fc.Result = res
+	return ec.marshalNConfigRuntimeChangeability2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐConfigRuntimeChangeability(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_SetConfigSectionResult_applied(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "SetConfigSectionResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ConfigRuntimeChangeability does not have child fields")
 		},
 	}
 	return fc, nil
@@ -17104,6 +17401,40 @@ func (ec *executionContext) unmarshalInputReleaseYearFacetInput(ctx context.Cont
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputSetConfigSectionInput(ctx context.Context, obj any) (gen.SetConfigSectionInput, error) {
+	var it gen.SetConfigSectionInput
+	asMap := map[string]any{}
+	for k, v := range obj.(map[string]any) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"key", "value"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "key":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("key"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Key = data
+		case "value":
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("value"))
+			data, err := ec.unmarshalNJSON2interface(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.Value = data
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputSuggestTagsQueryInput(ctx context.Context, obj any) (gen.SuggestTagsQueryInput, error) {
 	var it gen.SuggestTagsQueryInput
 	asMap := map[string]any{}
@@ -17852,6 +18183,76 @@ func (ec *executionContext) _ClientSendToConfigQuery(ctx context.Context, sel as
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var configMutationImplementors = []string{"ConfigMutation"}
+
+func (ec *executionContext) _ConfigMutation(ctx context.Context, sel ast.SelectionSet, obj *gen.ConfigMutation) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, configMutationImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ConfigMutation")
+		case "setSection":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._ConfigMutation_setSection(ctx, field, obj)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			if field.Deferrable != nil {
+				dfs, ok := deferred[field.Deferrable.Label]
+				di := 0
+				if ok {
+					dfs.AddField(field)
+					di = len(dfs.Values) - 1
+				} else {
+					dfs = graphql.NewFieldSet([]graphql.CollectedField{field})
+					deferred[field.Deferrable.Label] = dfs
+				}
+				dfs.Concurrently(di, func(ctx context.Context) graphql.Marshaler {
+					return innerFunc(ctx, dfs)
+				})
+
+				// don't run the out.Concurrently() call below
+				out.Values[i] = graphql.Null
+				continue
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -18697,6 +19098,13 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		case "client":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_client(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "config":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_config(ctx, field)
 			})
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
@@ -19623,6 +20031,50 @@ func (ec *executionContext) _Season(ctx context.Context, sel ast.SelectionSet, o
 			}
 		case "episodes":
 			out.Values[i] = ec._Season_episodes(ctx, field, obj)
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var setConfigSectionResultImplementors = []string{"SetConfigSectionResult"}
+
+func (ec *executionContext) _SetConfigSectionResult(ctx context.Context, sel ast.SelectionSet, obj *gen.SetConfigSectionResult) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, setConfigSectionResultImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("SetConfigSectionResult")
+		case "section":
+			out.Values[i] = ec._SetConfigSectionResult_section(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "applied":
+			out.Values[i] = ec._SetConfigSectionResult_applied(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -21673,6 +22125,10 @@ func (ec *executionContext) marshalNClientSendToConfigQuery2githubᚗcomᚋbitma
 	return ec._ClientSendToConfigQuery(ctx, sel, &v)
 }
 
+func (ec *executionContext) marshalNConfigMutation2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐConfigMutation(ctx context.Context, sel ast.SelectionSet, v gen.ConfigMutation) graphql.Marshaler {
+	return ec._ConfigMutation(ctx, sel, &v)
+}
+
 func (ec *executionContext) marshalNConfigQuery2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐConfigQuery(ctx context.Context, sel ast.SelectionSet, v gen.ConfigQuery) graphql.Marshaler {
 	return ec._ConfigQuery(ctx, sel, &v)
 }
@@ -22384,6 +22840,15 @@ func (ec *executionContext) marshalNSeason2ᚕgithubᚗcomᚋbitmagnetᚑioᚋbi
 	}
 
 	return ret
+}
+
+func (ec *executionContext) unmarshalNSetConfigSectionInput2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐSetConfigSectionInput(ctx context.Context, v any) (gen.SetConfigSectionInput, error) {
+	res, err := ec.unmarshalInputSetConfigSectionInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalNSetConfigSectionResult2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐSetConfigSectionResult(ctx context.Context, sel ast.SelectionSet, v gen.SetConfigSectionResult) graphql.Marshaler {
+	return ec._SetConfigSectionResult(ctx, sel, &v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {

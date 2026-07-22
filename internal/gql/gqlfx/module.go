@@ -94,6 +94,7 @@ func New() fx.Option {
 							ClientConfig:         p.ClientConfig,
 							ResolvedConfig:       p.ResolvedConfig,
 							Changeability:        p.Changeability,
+							Applier:              p.Applier,
 						}, nil
 					}),
 				}
@@ -125,6 +126,7 @@ type Params struct {
 	ClientConfig         *concurrency.AtomicValue[client.Config]
 	ResolvedConfig       *concurrency.AtomicValue[rootconfig.ResolvedConfig]
 	Changeability        configapply.Changeability
+	Applier              *configapply.Applier
 }
 
 type Result struct {

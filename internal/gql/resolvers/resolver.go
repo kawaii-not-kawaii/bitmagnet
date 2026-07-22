@@ -33,4 +33,5 @@ type Resolver struct {
 	ClientConfig         *concurrency.AtomicValue[client.Config]
 	ResolvedConfig       *concurrency.AtomicValue[config.ResolvedConfig]
 	Changeability        configapply.Changeability
+	Applier              *configapply.Applier
 }
