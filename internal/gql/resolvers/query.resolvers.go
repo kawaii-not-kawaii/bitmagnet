@@ -107,9 +107,13 @@ func (r *queryResolver) TorrentContent(ctx context.Context) (gqlmodel.TorrentCon
 
 // SendToConfig is the resolver for the sendToConfig field.
 func (r *queryResolver) SendToConfig(ctx context.Context) (gen.ClientSendToConfigQuery, error) {
+	// Snapshot the live client config at query time so a runtime update is
+	// reflected without a restart.
+	cfg := r.ClientConfig.Get()
+
 	return gen.ClientSendToConfigQuery{
-		Enabled: r.ClientConfig.Enabled,
-		SendTo:  r.ClientConfig.All(),
+		Enabled: cfg.Enabled,
+		SendTo:  cfg.All(),
 	}, nil
 }
 
