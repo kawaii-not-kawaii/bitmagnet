@@ -20,6 +20,7 @@ func llmEvents(recorder *llmobs.Recorder, limit *int) []gen.LlmClassificationEve
 
 	events := recorder.Events(requested)
 	result := make([]gen.LlmClassificationEvent, len(events))
+
 	for i, event := range events {
 		result[i] = gen.LlmClassificationEvent{
 			Timestamp:   event.Timestamp,

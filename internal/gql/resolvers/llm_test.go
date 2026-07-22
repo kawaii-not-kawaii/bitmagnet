@@ -70,6 +70,7 @@ func TestLlmQuery_Events(t *testing.T) {
 	if err != nil {
 		t.Fatalf("marshal Events payload: %v", err)
 	}
+
 	for _, credentialField := range []string{"apiKey", "api_key", "password", "token"} {
 		if strings.Contains(string(payload), credentialField) {
 			t.Errorf("Events payload contains credential field %q: %s", credentialField, payload)
@@ -94,6 +95,7 @@ func TestLlmQuery_Stats(t *testing.T) {
 		Duration:  300 * time.Millisecond,
 		Outcome:   llmobs.OutcomeError,
 	})
+
 	finish := recorder.Begin()
 	defer finish()
 
@@ -121,6 +123,7 @@ func TestLlmQuery_Stats(t *testing.T) {
 	if stats.SuccessRate != 0.5 {
 		t.Errorf("successRate = %v, want 0.5", stats.SuccessRate)
 	}
+
 	if stats.WindowAttempted != 2 || stats.LatencyP50Ms != 100 || stats.LatencyP95Ms != 300 {
 		t.Errorf(
 			"window stats = attempted %d, p50 %dms, p95 %dms",
@@ -129,6 +132,7 @@ func TestLlmQuery_Stats(t *testing.T) {
 			stats.LatencyP95Ms,
 		)
 	}
+
 	if stats.InFlight != 1 || stats.Concurrency != 8 || stats.QueuePending != 7 {
 		t.Errorf(
 			"utilization = inFlight %d, concurrency %d, queuePending %d",
@@ -137,6 +141,7 @@ func TestLlmQuery_Stats(t *testing.T) {
 			stats.QueuePending,
 		)
 	}
+
 	if stats.WindowStart.IsZero() || stats.ThroughputPerMinute <= 0 {
 		t.Errorf("window fields = start %v, throughput %v", stats.WindowStart, stats.ThroughputPerMinute)
 	}

@@ -215,7 +215,7 @@ type llmActionTestProvider struct {
 	err    error
 }
 
-func (p llmActionTestProvider) Name() string {
+func (_ llmActionTestProvider) Name() string {
 	return "test"
 }
 

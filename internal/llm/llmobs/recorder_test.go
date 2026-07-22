@@ -23,6 +23,7 @@ func TestRecorder_ConcurrentAccess(t *testing.T) {
 
 	r := New()
 	start := make(chan struct{})
+
 	var workers sync.WaitGroup
 
 	for range writers {
@@ -297,6 +298,7 @@ func TestRecorder_NilSafe(t *testing.T) {
 	t.Parallel()
 
 	var r *Recorder
+
 	r.Record(Event{})
 	done := r.Begin()
 	done()

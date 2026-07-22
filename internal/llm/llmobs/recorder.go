@@ -61,6 +61,7 @@ func (r *Recorder) Record(e Event) {
 	}
 
 	r.attempted++
+
 	switch e.Outcome {
 	case OutcomeMatched:
 		r.matched++
@@ -130,7 +131,11 @@ func (r *Recorder) Events(limit int) []Event {
 		limit = r.count
 	}
 
+	// r.count never exceeds eventCapacity; explicit bound for static analysis.
+	limit = min(limit, eventCapacity)
+
 	events := make([]Event, limit)
+
 	for i := range limit {
 		index := (r.next - 1 - i + eventCapacity) % eventCapacity
 		events[i] = r.events[index]
@@ -164,6 +169,7 @@ func (r *Recorder) Stats(window time.Duration) Stats {
 		WindowStart: windowStart,
 		PerProvider: make([]ProviderStats, 0, len(r.perProvider)),
 	}
+
 	for _, provider := range r.perProvider {
 		stats.PerProvider = append(stats.PerProvider, provider)
 	}
@@ -186,18 +192,21 @@ func (r *Recorder) Stats(window time.Duration) Stats {
 	})
 
 	effectiveStart := windowStart
+
 	if len(buffered) == eventCapacity && buffered[0].Timestamp.After(windowStart) {
 		stats.OldestBuffered = buffered[0].Timestamp
 		effectiveStart = stats.OldestBuffered
 	}
 
 	durations := make([]time.Duration, 0, len(buffered))
+
 	for _, event := range buffered {
 		if event.Timestamp.Before(windowStart) {
 			continue
 		}
 
 		stats.WindowAttempted++
+
 		durations = append(durations, event.Duration)
 	}
 
