@@ -39,8 +39,6 @@ func TestSetSection_RejectsBeforeSideEffects(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
-
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -64,6 +62,7 @@ func TestSetSection_RejectsBeforeSideEffects(t *testing.T) {
 			if _, err := applier.SetSection("sample", tt.raw); err == nil {
 				t.Fatal("SetSection unexpectedly succeeded")
 			}
+
 			if calls != 0 {
 				t.Fatalf("live applier called %d times, want 0", calls)
 			}
@@ -72,9 +71,11 @@ func TestSetSection_RejectsBeforeSideEffects(t *testing.T) {
 			if err != nil {
 				t.Fatalf("read config: %v", err)
 			}
+
 			if string(contents) != originalFile {
 				t.Fatalf("config changed on rejection:\n%s", contents)
 			}
+
 			if got := resolved.Get().NodeMap["sample"].Value; !reflect.DeepEqual(got, initial) {
 				t.Fatalf("resolved value changed: %#v", got)
 			}
@@ -94,8 +95,6 @@ func TestSetSection_OutcomesAndVisibility(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
-
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
@@ -131,12 +130,15 @@ func TestSetSection_OutcomesAndVisibility(t *testing.T) {
 				!reflect.DeepEqual(outcome.Value, want) {
 				t.Fatalf("unexpected outcome: %#v", outcome)
 			}
+
 			if applier.IsLive("sample") != tt.live {
 				t.Fatalf("IsLive = %v, want %v", applier.IsLive("sample"), tt.live)
 			}
+
 			if tt.live && !reflect.DeepEqual(applied, want) {
 				t.Fatalf("live applier received %#v, want %#v", applied, want)
 			}
+
 			if got := resolved.Get().NodeMap["sample"].Value; !reflect.DeepEqual(got, want) {
 				t.Fatalf("resolved value = %#v, want %#v", got, want)
 			}
@@ -179,8 +181,6 @@ func TestSetSection_SectionErrors(t *testing.T) {
 	}
 
 	for _, tt := range tests {
-		tt := tt
-
 		t.Run(tt.key, func(t *testing.T) {
 			t.Parallel()
 
@@ -214,15 +214,19 @@ func TestSetSection_PersistenceFailureLeavesLiveApply(t *testing.T) {
 	if err == nil {
 		t.Fatal("SetSection unexpectedly succeeded")
 	}
+
 	if !strings.Contains(err.Error(), "persist section") {
 		t.Fatalf("unexpected error: %v", err)
 	}
+
 	if !reflect.DeepEqual(liveValue, want) {
 		t.Fatalf("live value = %#v, want %#v", liveValue, want)
 	}
+
 	if afterCalls != 1 {
 		t.Fatalf("after called %d times, want 1", afterCalls)
 	}
+
 	if got := resolved.Get().NodeMap["sample"].Value; !reflect.DeepEqual(got, initial) {
 		t.Fatalf("resolved value changed despite persistence failure: %#v", got)
 	}
@@ -235,8 +239,11 @@ func TestSetSection_AfterRunsOutsideMutex(t *testing.T) {
 	secondary := testSection{Count: 3, Timeout: 3 * time.Second}
 	path := filepath.Join(t.TempDir(), "config.yml")
 
-	var applier *Applier
-	var afterErr error
+	var (
+		applier  *Applier
+		afterErr error
+	)
+
 	afterCalls := 0
 	applier, resolved := newTestApplier(path, map[string]any{
 		"primary":   initial,
@@ -246,6 +253,7 @@ func TestSetSection_AfterRunsOutsideMutex(t *testing.T) {
 		Apply: func(any) (func(), error) {
 			return func() {
 				afterCalls++
+
 				_, afterErr = applier.SetSection("secondary", map[string]any{
 					"Count":   float64(3),
 					"Timeout": "3s",
@@ -257,6 +265,7 @@ func TestSetSection_AfterRunsOutsideMutex(t *testing.T) {
 	done := make(chan error, 1)
 	go func() {
 		_, err := applier.SetSection("primary", map[string]any{"Count": float64(2), "Timeout": "2s"})
+
 		done <- err
 	}()
 
@@ -272,9 +281,11 @@ func TestSetSection_AfterRunsOutsideMutex(t *testing.T) {
 	if afterErr != nil {
 		t.Fatalf("after SetSection: %v", afterErr)
 	}
+
 	if afterCalls != 1 {
 		t.Fatalf("after called %d times, want 1", afterCalls)
 	}
+
 	if got := resolved.Get().NodeMap["secondary"].Value; !reflect.DeepEqual(got, secondary) {
 		t.Fatalf("secondary resolved value = %#v, want %#v", got, secondary)
 	}
@@ -317,6 +328,7 @@ func newTestApplier(
 
 	resolved := &concurrency.AtomicValue[config.ResolvedConfig]{}
 	resolved.Set(config.ResolvedConfig{NodeMap: nodeMap})
+
 	result := New(Params{
 		Appliers: liveAppliers,
 		Resolved: resolved,

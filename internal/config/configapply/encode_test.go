@@ -38,6 +38,7 @@ func TestEncodeSection_RoundTripsThroughResolver(t *testing.T) {
 		},
 		Tags: []string{"one", "two"},
 	}
+
 	path := filepath.Join(t.TempDir(), "config.yml")
 	if err := configwrite.WriteSection(path, []string{"sample"}, encodeSection(want)); err != nil {
 		t.Fatalf("WriteSection: %v", err)
@@ -47,7 +48,9 @@ func TestEncodeSection_RoundTripsThroughResolver(t *testing.T) {
 	if err != nil {
 		t.Fatalf("read config: %v", err)
 	}
+
 	var document map[string]any
+
 	if err = yaml.Unmarshal(contents, &document); err != nil {
 		t.Fatalf("parse config: %v", err)
 	}
@@ -56,25 +59,31 @@ func TestEncodeSection_RoundTripsThroughResolver(t *testing.T) {
 	if !ok {
 		t.Fatalf("sample section has type %T", document["sample"])
 	}
+
 	if section["base_url"] != want.BaseURL || section["timeout"] != "1m30s" {
 		t.Fatalf("unexpected scalar encoding: %#v", section)
 	}
+
 	nested, ok := section["nested"].(map[string]any)
 	if !ok || nested["retry_delay"] != "250ms" || nested["label"] != "fast" {
 		t.Fatalf("unexpected nested encoding: %#v", section["nested"])
 	}
+
 	if _, exists := section["baseurl"]; exists {
 		t.Fatalf("non-snake-case key written: %#v", section)
 	}
+
 	if tags, ok := section["tags"].([]any); !ok || !reflect.DeepEqual(tags, []any{"one", "two"}) {
 		t.Fatalf("unexpected slice encoding: %#v", section["tags"])
 	}
 
 	validate := validator.New()
+
 	resolver, err := configresolver.NewFromYamlFile(path, false, validate)
 	if err != nil {
 		t.Fatalf("NewFromYamlFile: %v", err)
 	}
+
 	resolved, err := config.New(config.Params{
 		Specs:     []config.Spec{{Key: "sample", DefaultValue: encodeFixture{}}},
 		Resolvers: []configresolver.Resolver{resolver},
@@ -83,6 +92,7 @@ func TestEncodeSection_RoundTripsThroughResolver(t *testing.T) {
 	if err != nil {
 		t.Fatalf("resolve config: %v", err)
 	}
+
 	if got := resolved.Resolved.NodeMap["sample"].Value; !reflect.DeepEqual(got, want) {
 		t.Fatalf("round-trip value = %#v, want %#v", got, want)
 	}
@@ -105,6 +115,7 @@ func TestEncodeSection_RecursesCollections(t *testing.T) {
 	if !reflect.DeepEqual(encoded["backoffs"], []any{"1s", "2s"}) {
 		t.Fatalf("backoffs = %#v", encoded["backoffs"])
 	}
+
 	if !reflect.DeepEqual(encoded["by_name"], map[string]any{"fast": "1ms"}) {
 		t.Fatalf("by_name = %#v", encoded["by_name"])
 	}

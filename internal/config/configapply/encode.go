@@ -48,6 +48,7 @@ func encodeValue(v reflect.Value) any {
 		if v.IsNil() {
 			return nil
 		}
+
 		if v.Type().Key().Kind() == reflect.String {
 			encoded := make(map[string]any, v.Len())
 
