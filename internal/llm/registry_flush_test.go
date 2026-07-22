@@ -10,6 +10,18 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// parsedConfig mirrors the slice of a bitmagnet config file that Flush
+// touches, for asserting the write round-trips losslessly. Named (rather than
+// an inline anonymous struct) to satisfy revive's nested-structs rule.
+type classifierSection struct {
+	Llm RegistryConfig `yaml:"llm"`
+}
+
+type parsedConfig struct {
+	Classifier classifierSection `yaml:"classifier"`
+	Other      map[string]string `yaml:"other"`
+}
+
 // noopFactory builds providers that do nothing; Flush never touches providers.
 func noopFactory(name string, _ ProviderConfig) Provider {
 	return &mockProvider{name: name}
@@ -58,8 +70,8 @@ classifier:
       old:
         base_url: https://stale
 `
-	path := writeFile(t, "config.yml", original)
 
+	path := writeFile(t, "config.yml", original)
 	if err := testRegistry(t, path).Flush(); err != nil {
 		t.Fatalf("Flush: %v", err)
 	}
@@ -97,8 +109,8 @@ dht:
 http_server:
   local_address: ":3333"
 `
-	path := writeFile(t, "config.yml", original)
 
+	path := writeFile(t, "config.yml", original)
 	if err := testRegistry(t, path).Flush(); err != nil {
 		t.Fatalf("Flush: %v", err)
 	}
@@ -236,13 +248,7 @@ func TestFlush_RewrittenConfigStillParses(t *testing.T) {
 		t.Fatalf("Flush: %v", err)
 	}
 
-	var doc struct {
-		Classifier struct {
-			Llm RegistryConfig `yaml:"llm"`
-		} `yaml:"classifier"`
-		Other map[string]string `yaml:"other"`
-	}
-
+	var doc parsedConfig
 	if err := yaml.Unmarshal([]byte(readBack(t, path)), &doc); err != nil {
 		t.Fatalf("re-parse: %v", err)
 	}
