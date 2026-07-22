@@ -1,7 +1,9 @@
 <ng-container *transloco="let t">
   <div class="paginator">
     <p>
-      @if (hasTotalLength) {
+      @if (itemName && hasTotalLength) {
+        {{ totalLength ?? 0 | number }} {{ itemName }}
+      } @else if (hasTotalLength) {
         {{
           t("paginator.x_to_y_of_z", {
             x: (firstItemIndex | number),
@@ -22,38 +24,35 @@
       <button
         type="button"
         [disabled]="!hasPreviousPage"
-        [title]="t('paginator.first_page')"
-        (click)="page = 1; emitChange()"
-      >
-        «
-      </button>
-      <button
-        type="button"
-        [disabled]="!hasPreviousPage"
         [title]="t('paginator.previous_page')"
-        (click)="page = page - 1; emitChange()"
+        (click)="goToPage(page - 1)"
       >
         ‹
       </button>
-      <span>{{ page }}</span>
+      @for (item of visiblePages; track $index) {
+        @if (item === "ellipsis") {
+          <span class="ellipsis" aria-hidden="true">…</span>
+        } @else {
+          <button
+            type="button"
+            class="page-number"
+            [class.current]="item === page"
+            [attr.aria-current]="item === page ? 'page' : null"
+            [disabled]="item === page"
+            (click)="goToPage(item)"
+          >
+            {{ item }}
+          </button>
+        }
+      }
       <button
         type="button"
         [disabled]="!actuallyHasNextPage"
         [title]="t('paginator.next_page')"
-        (click)="page = page + 1; emitChange()"
+        (click)="goToPage(page + 1)"
       >
         ›
       </button>
-      @if (showLastPage && pageCount && pageCount !== page) {
-        <button
-          type="button"
-          [disabled]="pageCount === page"
-          [title]="t('paginator.last_page')"
-          (click)="page = pageCount; emitChange()"
-        >
-          {{ pageCount }}
-        </button>
-      }
     </nav>
   </div>
 </ng-container>

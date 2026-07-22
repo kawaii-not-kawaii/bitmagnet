@@ -21,7 +21,7 @@
   }
 
   button,
-  nav span {
+  .ellipsis {
     min-width: 32px;
     height: 32px;
     padding: 0 8px;
@@ -47,12 +47,19 @@
       cursor: not-allowed;
       opacity: 0.4;
     }
+
+    &.page-number.current {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 15%, transparent);
+      color: var(--accent);
+      font-weight: 600;
+      opacity: 1;
+    }
   }
 
-  nav span {
-    border-color: var(--accent);
-    background: color-mix(in srgb, var(--accent) 15%, transparent);
-    color: var(--accent);
-    font-weight: 600;
+  .ellipsis {
+    border-color: transparent;
+    background: transparent;
+    color: var(--faint);
   }
 }
