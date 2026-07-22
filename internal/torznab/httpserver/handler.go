@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
+	"github.com/bitmagnet-io/bitmagnet/internal/gql/auth"
 	"github.com/bitmagnet-io/bitmagnet/internal/model"
 	"github.com/bitmagnet-io/bitmagnet/internal/torznab"
 	"github.com/gin-gonic/gin"
@@ -16,9 +17,18 @@ import (
 type handler struct {
 	config *concurrency.AtomicValue[torznab.Config]
 	client torznab.Client
+	auth   *auth.Authenticator
 }
 
 func (h handler) handleRequest(ctx *gin.Context) {
+	if !h.authorized(ctx) {
+		h.writeXMLStatus(ctx, http.StatusUnauthorized, torznab.Error{
+			Code:        100,
+			Description: "Incorrect user credentials",
+		})
+		return
+	}
+
 	profile, err := h.getProfile(ctx)
 	if err != nil {
 		h.writeError(ctx, err)
@@ -114,14 +124,24 @@ func (h handler) handleSearch(ctx *gin.Context, profile torznab.Profile, tp stri
 	h.writeXML(ctx, result)
 }
 
+func (h handler) authorized(ctx *gin.Context) bool {
+	return h.auth.Disabled() ||
+		h.auth.ValidateAPIKey(ctx.Query("apikey")) ||
+		h.auth.ValidateAPIKey(ctx.GetHeader("X-Api-Key"))
+}
+
 func (h handler) writeXML(ctx *gin.Context, obj torznab.XMLer) {
+	h.writeXMLStatus(ctx, http.StatusOK, obj)
+}
+
+func (h handler) writeXMLStatus(ctx *gin.Context, status int, obj torznab.XMLer) {
 	body, err := obj.XML()
 	if err != nil {
 		h.writeHTTPError(ctx, fmt.Errorf("failed to encode xml: %w", err))
 		return
 	}
 
-	ctx.Status(http.StatusOK)
+	ctx.Status(status)
 	ctx.Header("Content-Type", "application/xml; charset=utf-8")
 	_, _ = ctx.Writer.Write(body)
 }
