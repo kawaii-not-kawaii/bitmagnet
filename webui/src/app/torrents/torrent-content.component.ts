@@ -1,21 +1,13 @@
 import { Component, EventEmitter, inject, Input, Output } from "@angular/core";
 import { catchError, EMPTY, tap } from "rxjs";
 import { NgOptimizedImage } from "@angular/common";
-import { TranslocoService } from "@jsverse/transloco";
-import { FilesizePipe } from "../pipes/filesize.pipe";
 import * as generated from "../graphql/generated";
 import { GraphQLService } from "../graphql/graphql.service";
 import { ErrorsService } from "../errors/errors.service";
-import { BreakpointsService } from "../layout/breakpoints.service";
-import { TimeAgoPipe } from "../pipes/time-ago.pipe";
 import { AppModule } from "../app.module";
 import { TorrentFilesTableComponent } from "./torrent-files-table.component";
 import { TorrentEditTagsComponent } from "./torrent-edit-tags.component";
-import {
-  TorrentTab,
-  torrentTabNames,
-  TorrentTabSelection,
-} from "./torrents-search.controller";
+import { TorrentTab, TorrentTabSelection } from "./torrents-search.controller";
 import { TorrentReprocessComponent } from "./torrent-reprocess.component";
 
 @Component({
@@ -25,68 +17,70 @@ import { TorrentReprocessComponent } from "./torrent-reprocess.component";
   standalone: true,
   imports: [
     AppModule,
-    FilesizePipe,
     NgOptimizedImage,
-    TimeAgoPipe,
     TorrentEditTagsComponent,
     TorrentFilesTableComponent,
     TorrentReprocessComponent,
   ],
 })
 export class TorrentContentComponent {
-  breakpoints = inject(BreakpointsService);
-
   @Input() torrentContent: generated.TorrentContent;
   @Input() heading = true;
   @Input() size = true;
   @Input() peers = true;
   @Input() published = true;
+  @Input() selectedTab: TorrentTabSelection = undefined;
 
   @Output() updated = new EventEmitter<null>();
   @Output() tabSelected = new EventEmitter<TorrentTabSelection>();
 
-  @Input() selectedTab: TorrentTabSelection = undefined;
-
-  transloco = inject(TranslocoService);
-  grapql = inject(GraphQLService);
+  graphQL = inject(GraphQLService);
   errors = inject(ErrorsService);
+  copied = false;
 
-  get selectedTabIndex(): number {
-    return torrentTabNames.indexOf(this.selectedTab as TorrentTab) + 1;
+  get activeTab(): TorrentTab {
+    return this.selectedTab ?? "files";
   }
 
-  selectTabIndex(index: number): void {
-    this.selectedTab = torrentTabNames[index - 1];
-    this.tabSelected.emit(this.selectedTab);
+  selectTab(tab: TorrentTab) {
+    this.selectedTab = tab;
+    this.tabSelected.emit(tab);
+  }
+
+  copyMagnet(event: Event) {
+    event.stopPropagation();
+    void navigator.clipboard?.writeText(this.torrentContent.torrent.magnetUri);
+    this.copied = true;
+    window.setTimeout(() => {
+      this.copied = false;
+    }, 1400);
   }
 
   delete() {
-    this.grapql
+    this.graphQL
       .torrentDelete({ infoHashes: [this.torrentContent.infoHash] })
       .pipe(
-        catchError((err: Error) => {
-          this.errors.addError(`Error deleting torrent: ${err.message}`);
+        catchError((error: Error) => {
+          this.errors.addError(`Error deleting torrent: ${error.message}`);
           return EMPTY;
         }),
-      )
-      .pipe(
-        tap(() => {
-          this.updated.emit(null);
-        }),
+        tap(() => this.updated.emit(null)),
       )
       .subscribe();
   }
 
   getAttribute(key: string, source?: string): string | undefined {
     return this.torrentContent.content?.attributes?.find(
-      (a) => a.key === key && (source === undefined || a.source === source),
+      (attribute) =>
+        attribute.key === key &&
+        (source === undefined || attribute.source === source),
     )?.value;
   }
 
   getCollections(type: string): string[] | undefined {
     const collections = this.torrentContent.content?.collections
-      ?.filter((a) => a.type === type)
-      .map((a) => a.name);
+      ?.filter((collection) => collection.type === type)
+      .map((collection) => collection.name);
     return collections?.length ? collections.sort() : undefined;
   }
 

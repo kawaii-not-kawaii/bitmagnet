@@ -8,9 +8,7 @@ import {
 } from "@angular/core";
 import { FormControl } from "@angular/forms";
 import { catchError, EMPTY, Observable, tap } from "rxjs";
-import { COMMA, ENTER } from "@angular/cdk/keycodes";
 import * as generated from "../graphql/generated";
-import { BreakpointsService } from "../layout/breakpoints.service";
 import { ErrorsService } from "../errors/errors.service";
 import { GraphQLService } from "../graphql/graphql.service";
 import { AppModule } from "../app.module";
@@ -26,18 +24,18 @@ import { TorrentReprocessComponent } from "./torrent-reprocess.component";
 export class TorrentsBulkActionsComponent implements OnInit {
   private graphQLService = inject(GraphQLService);
   private errorsService = inject(ErrorsService);
-  breakpoints = inject(BreakpointsService);
 
   @Input() selectedItems$: Observable<generated.TorrentContent[]> =
     new Observable();
   @Output() updated = new EventEmitter<null>();
+  @Output() cleared = new EventEmitter<void>();
 
-  readonly separatorKeysCodes = [ENTER, COMMA] as const;
   selectedTabIndex = 0;
   newTagCtrl = new FormControl<string>("");
   editedTags = Array<string>();
   suggestedTags = Array<string>();
   selectedItems = new Array<generated.TorrentContent>();
+  copied = false;
   selectedInfoHashes = new Array<string>();
 
   sendToEnabled = false;
@@ -63,6 +61,18 @@ export class TorrentsBulkActionsComponent implements OnInit {
 
   getSelectedMagnetLinks(): string {
     return this.selectedItems.map((i) => i.torrent.magnetUri).join("\n");
+  }
+  copySelected() {
+    void navigator.clipboard?.writeText(this.getSelectedMagnetLinks());
+    this.copied = true;
+    window.setTimeout(() => {
+      this.copied = false;
+    }, 1400);
+  }
+
+  clearSelection() {
+    this.selectedTabIndex = 0;
+    this.cleared.emit();
   }
 
   getSelectedInfoHashesLines(): string {

@@ -20,7 +20,7 @@ import { Apollo } from "apollo-angular";
 import { ErrorsService } from "../errors/errors.service";
 import { GraphQLModule } from "../graphql/graphql.module";
 import { PaginatorComponent } from "../paginator/paginator.component";
-import { BreakpointsService } from "../layout/breakpoints.service";
+import { UiPreferences } from "../layout/ui-preferences.service";
 import * as generated from "../graphql/generated";
 import { intParam, stringListParam, stringParam } from "../util/query-string";
 import { AppModule } from "../app.module";
@@ -28,11 +28,7 @@ import { DocumentTitleComponent } from "../layout/document-title.component";
 import { IntEstimatePipe } from "../pipes/int-estimate.pipe";
 import { TorrentsBulkActionsComponent } from "./torrents-bulk-actions.component";
 import { contentTypeList, contentTypeMap } from "./content-types";
-import {
-  allColumns,
-  compactColumns,
-  TorrentsTableComponent,
-} from "./torrents-table.component";
+import { TorrentsTableComponent } from "./torrents-table.component";
 import {
   emptyResult,
   TorrentsSearchDatasource,
@@ -76,12 +72,15 @@ export class TorrentsSearchComponent implements OnInit, OnDestroy {
   private apollo = inject(Apollo);
   private errorsService = inject(ErrorsService);
   private transloco = inject(TranslocoService);
-  breakpoints = inject(BreakpointsService);
 
   dataSource: TorrentsSearchDatasource;
 
   controller: TorrentsSearchController;
 
+  preferences = inject(UiPreferences);
+  filtersOpen = false;
+  sortOpen = false;
+  selectMode = false;
   controls = initControls;
 
   contentTypes = contentTypeList;
@@ -90,8 +89,8 @@ export class TorrentsSearchComponent implements OnInit, OnDestroy {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   facets$: Observable<FacetInfo<any, any>[]>;
 
-  allColumns = allColumns;
-  compactColumns = compactColumns;
+  // Result list layout is handled by the redesigned component.
+  activeFilters = Array<{ facet: SearchFacet; value: string }>();
 
   queryString = new FormControl("");
 
@@ -116,6 +115,14 @@ export class TorrentsSearchComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.controller.controls$.subscribe((ctrl) => {
         this.controls = ctrl;
+        this.activeFilters = facets.flatMap((facet) =>
+          (facet.extractInput(ctrl.facets).filter ?? [])
+            .filter((value): value is string => value !== null)
+            .map((value) => ({
+              facet,
+              value,
+            })),
+        );
       }),
     );
     this.facets$ = this.controller.controls$.pipe(
@@ -159,7 +166,9 @@ export class TorrentsSearchComponent implements OnInit, OnDestroy {
     this.subscriptions.push(
       this.route.queryParams.subscribe((params) => {
         this.queryString.setValue(stringParam(params, "query") ?? null);
-        this.controller.update(() => paramsToControls(params));
+        this.controller.update(() =>
+          paramsToControls(params, this.preferences.pageSize()),
+        );
       }),
       this.controller.controls$.subscribe((ctrl) => {
         void this.router.navigate([], {
@@ -181,9 +190,41 @@ export class TorrentsSearchComponent implements OnInit, OnDestroy {
     this.subscriptions.forEach((subscription) => subscription.unsubscribe());
     this.subscriptions = new Array<Subscription>();
   }
+  showContentType(key: string) {
+    return (
+      key !== "null" &&
+      (!this.preferences.safeMode() || key !== "xxx") &&
+      (this.dataSource.result.aggregations.contentType?.some(
+        (aggregation) => aggregation.value === key,
+      ) ??
+        true)
+    );
+  }
+
+  removeFilter(filter: { facet: SearchFacet; value: string }) {
+    this.controller.deactivateFilter(filter.facet, filter.value);
+  }
+
+  toggleFilters() {
+    this.filtersOpen = !this.filtersOpen;
+    this.sortOpen = false;
+  }
+
+  toggleSort() {
+    this.sortOpen = !this.sortOpen;
+    this.filtersOpen = false;
+  }
+
+  clearFilters() {
+    for (const facet of facets) {
+      this.controller.deactivateFacet(facet);
+    }
+  }
 }
 
-const defaultLimit = 20;
+type SearchFacet = (typeof facets)[number];
+
+const defaultLimit = 50;
 
 const initControls: TorrentSearchControls = {
   page: 1,
@@ -201,7 +242,10 @@ const initControls: TorrentSearchControls = {
   },
 };
 
-const paramsToControls = (params: Params): TorrentSearchControls => {
+const paramsToControls = (
+  params: Params,
+  defaultPageSize = defaultLimit,
+): TorrentSearchControls => {
   const queryString = stringParam(params, "query");
   const activeFacets = stringListParam(params, "facets");
   let selectedTorrent: TorrentSelection | undefined;
@@ -221,7 +265,7 @@ const paramsToControls = (params: Params): TorrentSearchControls => {
     queryString,
     orderBy: orderByParam(params, !!queryString),
     contentType: contentTypeParam(params),
-    limit: intParam(params, "limit") ?? defaultLimit,
+    limit: intParam(params, "limit") ?? defaultPageSize,
     page: intParam(params, "page") ?? 1,
     selectedTorrent,
     facets: facets.reduce<TorrentSearchControls["facets"]>((acc, facet) => {

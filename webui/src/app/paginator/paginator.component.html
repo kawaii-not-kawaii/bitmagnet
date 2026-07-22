@@ -1,19 +1,6 @@
 <ng-container *transloco="let t">
   <div class="paginator">
-    <mat-form-field class="field-items-per-page" subscriptSizing="dynamic">
-      <mat-label>Items per page</mat-label>
-      <mat-select
-        [value]="pageSize"
-        (valueChange)="pageSize = $event; page = 1; emitChange()"
-      >
-        @for (size of pageSizes; track size) {
-          <mat-option [value]="size">
-            {{ size }}
-          </mat-option>
-        }
-      </mat-select>
-    </mat-form-field>
-    <p class="paginator-description">
+    <p>
       @if (hasTotalLength) {
         {{
           t("paginator.x_to_y_of_z", {
@@ -31,41 +18,42 @@
         }}
       }
     </p>
-    <div class="paginator-navigation">
+    <nav aria-label="Pagination">
       <button
-        mat-icon-button
+        type="button"
         [disabled]="!hasPreviousPage"
+        [title]="t('paginator.first_page')"
         (click)="page = 1; emitChange()"
-        [matTooltip]="t('paginator.first_page')"
       >
-        <mat-icon>first_page</mat-icon>
+        «
       </button>
       <button
-        mat-icon-button
+        type="button"
         [disabled]="!hasPreviousPage"
+        [title]="t('paginator.previous_page')"
         (click)="page = page - 1; emitChange()"
-        [matTooltip]="t('paginator.previous_page')"
       >
-        <mat-icon>navigate_before</mat-icon>
+        ‹
       </button>
+      <span>{{ page }}</span>
       <button
-        mat-icon-button
+        type="button"
         [disabled]="!actuallyHasNextPage"
+        [title]="t('paginator.next_page')"
         (click)="page = page + 1; emitChange()"
-        [matTooltip]="t('paginator.next_page')"
       >
-        <mat-icon>navigate_next</mat-icon>
+        ›
       </button>
-      @if (showLastPage) {
+      @if (showLastPage && pageCount && pageCount !== page) {
         <button
-          mat-icon-button
-          [disabled]="[null, page].includes(pageCount)"
-          (click)="page = pageCount ?? 1; emitChange()"
-          [matTooltip]="t('paginator.last_page')"
+          type="button"
+          [disabled]="pageCount === page"
+          [title]="t('paginator.last_page')"
+          (click)="page = pageCount; emitChange()"
         >
-          <mat-icon>last_page</mat-icon>
+          {{ pageCount }}
         </button>
       }
-    </div>
+    </nav>
   </div>
 </ng-container>

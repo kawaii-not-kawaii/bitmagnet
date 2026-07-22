@@ -1,12 +1,58 @@
 .paginator {
-  > * {
-    display: inline-block;
-    vertical-align: middle;
-  }
+  padding: 16px 4px 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+
   p {
-    margin: 0 20px;
+    margin: 0;
+    color: var(--faint);
+    font:
+      500 12px "JetBrains Mono",
+      monospace;
   }
-  .field-items-per-page {
-    width: 140px;
+
+  nav {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  button,
+  nav span {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--dim);
+    font:
+      500 12.5px "JetBrains Mono",
+      monospace;
+  }
+
+  button {
+    cursor: pointer;
+
+    &:hover:not(:disabled) {
+      border-color: var(--faint);
+    }
+
+    &:disabled {
+      cursor: not-allowed;
+      opacity: 0.4;
+    }
+  }
+
+  nav span {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    color: var(--accent);
+    font-weight: 600;
   }
 }
