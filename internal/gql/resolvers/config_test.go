@@ -24,10 +24,17 @@ func liveResolved(r config.ResolvedConfig) *concurrency.AtomicValue[config.Resol
 
 // Test section keys extracted to satisfy goconst (3+ repeated literals).
 const (
-	testSectionKeyPostgres = "postgres"
-	testSectionKeyTmdb     = "tmdb"
-	testSectionKeyMadeUp   = "made_up_section"
+	testSectionKeyPostgres   = "postgres"
+	testSectionKeyClassifier = "classifier"
+	testSectionKeyTmdb       = "tmdb"
+	testSectionKeyMadeUp     = "made_up_section"
 )
+
+type classifierChangeability struct{}
+
+func (classifierChangeability) IsLive(key string) bool {
+	return key == testSectionKeyClassifier
+}
 
 // TestConfig_Resolver_GenericEnumeration_RedactsAllSections exercises the
 // resolver's generic enumeration: it feeds a hand-built ResolvedConfig with
@@ -65,8 +72,8 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 					APIKey:  "tmdb-leak-me-please",
 				},
 			},
-			sectionKeyClassifier: {
-				Spec: config.Spec{Key: sectionKeyClassifier},
+			testSectionKeyClassifier: {
+				Spec: config.Spec{Key: testSectionKeyClassifier},
 				Value: classifier.Config{
 					Workflow:    "default",
 					Concurrency: 10,
@@ -81,7 +88,10 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 			},
 		},
 	}
-	r := &Resolver{ResolvedConfig: liveResolved(resolved)}
+	r := &Resolver{
+		ResolvedConfig: liveResolved(resolved),
+		Changeability:  classifierChangeability{},
+	}
 	qr := &queryResolver{r}
 
 	out, err := qr.Config(context.Background())
@@ -103,7 +113,7 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 		keys = append(keys, s.Key)
 	}
 
-	if keys[0] != sectionKeyClassifier || keys[1] != testSectionKeyPostgres || keys[2] != testSectionKeyTmdb {
+	if keys[0] != testSectionKeyClassifier || keys[1] != testSectionKeyPostgres || keys[2] != testSectionKeyTmdb {
 		t.Errorf("sections not sorted by key: got %v", keys)
 	}
 	// postgres: Password redacted, others preserved, RESTART_REQUIRED.
@@ -152,7 +162,7 @@ func TestConfig_Resolver_GenericEnumeration_RedactsAllSections(t *testing.T) {
 	}
 	// classifier: nested Llm.ProviderAPIKey redacted, workflow preserved,
 	// LIVE_APPLY_AVAILABLE.
-	cl, ok := byKey[sectionKeyClassifier]
+	cl, ok := byKey[testSectionKeyClassifier]
 	if !ok {
 		t.Fatal("classifier section missing")
 	}

@@ -6,6 +6,7 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/client"
 	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
 	rootconfig "github.com/bitmagnet-io/bitmagnet/internal/config"
+	"github.com/bitmagnet-io/bitmagnet/internal/config/configapply"
 	"github.com/bitmagnet-io/bitmagnet/internal/config/configfx"
 	"github.com/bitmagnet-io/bitmagnet/internal/database/dao"
 	"github.com/bitmagnet-io/bitmagnet/internal/database/search"
@@ -92,6 +93,7 @@ func New() fx.Option {
 							BlockingManager:      bm,
 							ClientConfig:         p.ClientConfig,
 							ResolvedConfig:       p.ResolvedConfig,
+							Changeability:        p.Changeability,
 						}, nil
 					}),
 				}
@@ -122,6 +124,7 @@ type Params struct {
 	BlockingManager      lazy.Lazy[blocking.Manager]
 	ClientConfig         *concurrency.AtomicValue[client.Config]
 	ResolvedConfig       *concurrency.AtomicValue[rootconfig.ResolvedConfig]
+	Changeability        configapply.Changeability
 }
 
 type Result struct {

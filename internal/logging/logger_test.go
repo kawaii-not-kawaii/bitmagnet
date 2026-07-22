@@ -6,15 +6,14 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-// TestLogLevel_ChangeableAtRuntime is the log live-apply guarantee: the primary
-// core's enabler is a zap.AtomicLevel shared with the Result, so raising or
-// lowering the level through it takes effect on the running logger with no
-// restart. A bare zapcore.Level enabler (the previous implementation) fixed the
-// threshold for the process lifetime.
+// TestLogLevel_ChangeableAtRuntime is the log live-apply guarantee: applying a
+// new logging Config updates the primary core's shared zap.AtomicLevel without
+// a restart.
 func TestLogLevel_ChangeableAtRuntime(t *testing.T) {
 	t.Parallel()
 
 	res := New(Params{Config: Config{Level: "info"}})
+	applier := NewLiveApplier(res.Level)
 
 	core := res.Logger.Core()
 
@@ -27,14 +26,18 @@ func TestLogLevel_ChangeableAtRuntime(t *testing.T) {
 	}
 
 	// Raise verbosity at runtime: debug becomes visible immediately.
-	res.Level.SetLevel(zapcore.DebugLevel)
+	if _, err := applier.Apply(Config{Level: "debug"}); err != nil {
+		t.Fatalf("apply debug level: %v", err)
+	}
 
 	if !core.Enabled(zapcore.DebugLevel) {
 		t.Error("debug should be emitted after SetLevel(debug), without restart")
 	}
 
 	// Lower it: info and debug are suppressed immediately.
-	res.Level.SetLevel(zapcore.WarnLevel)
+	if _, err := applier.Apply(Config{Level: "warn"}); err != nil {
+		t.Fatalf("apply warn level: %v", err)
+	}
 
 	if core.Enabled(zapcore.InfoLevel) || core.Enabled(zapcore.DebugLevel) {
 		t.Error("info/debug should be suppressed after SetLevel(warn)")

@@ -5,6 +5,7 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/client"
 	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
 	"github.com/bitmagnet-io/bitmagnet/internal/config"
+	"github.com/bitmagnet-io/bitmagnet/internal/config/configapply"
 	"github.com/bitmagnet-io/bitmagnet/internal/database/dao"
 	"github.com/bitmagnet-io/bitmagnet/internal/database/search"
 	"github.com/bitmagnet-io/bitmagnet/internal/health"
@@ -31,4 +32,5 @@ type Resolver struct {
 	BlockingManager      blocking.Manager
 	ClientConfig         *concurrency.AtomicValue[client.Config]
 	ResolvedConfig       *concurrency.AtomicValue[config.ResolvedConfig]
+	Changeability        configapply.Changeability
 }
