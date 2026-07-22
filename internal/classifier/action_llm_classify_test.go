@@ -119,6 +119,7 @@ func TestApplyLLMResult_Language(t *testing.T) {
 					LanguageMulti: tc.preExistingMulti,
 				},
 			}
+
 			if len(tc.preExistingLangs) > 0 {
 				cl.Languages = make(model.Languages)
 				for _, l := range tc.preExistingLangs {

@@ -62,9 +62,11 @@ func TestLlmQuery_Events(t *testing.T) {
 		event.Outcome != gen.LlmClassificationOutcomeMatched {
 		t.Errorf("event classification fields = %#v", event)
 	}
+
 	if event.ContentType != "movie" || event.Title != "New" || event.Year != 2026 {
 		t.Errorf("event parsed fields = %#v", event)
 	}
+
 	if len(event.Languages) != 1 || event.Languages[0] != "en" {
 		t.Errorf("event languages = %v, want [en]", event.Languages)
 	}
@@ -150,6 +152,7 @@ func TestLlmQuery_Stats(t *testing.T) {
 	if stats.WindowStart.IsZero() || stats.ThroughputPerMinute <= 0 {
 		t.Errorf("window fields = start %v, throughput %v", stats.WindowStart, stats.ThroughputPerMinute)
 	}
+
 	if len(stats.PerProvider) != 1 || stats.PerProvider[0].Provider != "gemma" ||
 		stats.PerProvider[0].Attempted != 2 {
 		t.Errorf("perProvider = %#v", stats.PerProvider)
@@ -158,9 +161,11 @@ func TestLlmQuery_Stats(t *testing.T) {
 	if len(queueMetrics.request.Statuses) != 1 || queueMetrics.request.Statuses[0] != model.QueueJobStatusPending {
 		t.Errorf("queue status filter = %v", queueMetrics.request.Statuses)
 	}
+
 	if len(queueMetrics.request.Queues) != 1 || queueMetrics.request.Queues[0] != processor.MessageName {
 		t.Errorf("queue filter = %v", queueMetrics.request.Queues)
 	}
+
 	if queueMetrics.request.BucketDuration != "minute" {
 		t.Errorf("bucket duration = %q, want minute", queueMetrics.request.BucketDuration)
 	}

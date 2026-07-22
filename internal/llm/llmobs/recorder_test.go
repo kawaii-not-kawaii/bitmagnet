@@ -113,6 +113,7 @@ func TestRecorder_EventsLimitsAndCopies(t *testing.T) {
 			InfoHash:  strconv.Itoa(i),
 			Outcome:   OutcomeMatched,
 		}
+
 		if i == 3 {
 			event.Languages = languages
 		}
@@ -221,6 +222,7 @@ func TestRecorder_Stats(t *testing.T) {
 		{Provider: "alpha", Attempted: 3, Matched: 2, Unmatched: 1},
 		{Provider: "beta", Attempted: 1, Errored: 1},
 	}
+
 	if !reflect.DeepEqual(stats.PerProvider, wantProviders) {
 		t.Errorf("per provider = %#v, want %#v", stats.PerProvider, wantProviders)
 	}
@@ -386,6 +388,7 @@ func TestRecorder_Prometheus(t *testing.T) {
 		"alpha/error":    1,
 		"beta/unmatched": 1,
 	}
+
 	if !reflect.DeepEqual(counters, wantCounters) {
 		t.Errorf("counters = %v, want %v", counters, wantCounters)
 	}
