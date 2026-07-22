@@ -1,0 +1,43 @@
+type DashboardQuery {
+  summary: DashboardSummary!
+}
+
+type DashboardSummary {
+  totalTorrents: Int!
+  torrentsToday: Int!
+  indexedLastHour: Int!
+  indexedPreviousHour: Int!
+  classifiedPercent: Float!
+  queueProcessed: Int!
+  queuePending: Int!
+  queueFailed: Int!
+}
+
+type DashboardMutation {
+  testLlmConnection: DashboardLlmConnectionResult!
+  runLlmBenchmark(sampleSize: Int!): DashboardLlmBenchmark!
+}
+
+type DashboardLlmConnectionResult {
+  ok: Boolean!
+  error: String
+  connected: Boolean!
+  latencySeconds: Float!
+}
+
+type DashboardLlmBenchmark {
+  sampleSize: Int!
+  successes: Int!
+  failures: Int!
+  matched: Int!
+  unmatched: Int!
+  errored: Int!
+  averageLatencySeconds: Float!
+  throughputPerSecond: Float!
+  distribution: [DashboardLlmBenchmarkDistribution!]!
+}
+
+type DashboardLlmBenchmarkDistribution {
+  contentType: String!
+  count: Int!
+}

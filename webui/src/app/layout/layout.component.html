@@ -1,150 +1,270 @@
 <ng-container *transloco="let t">
-  <mat-toolbar class="toolbar-header">
-    @if (breakpoints.sizeAtLeast("Medium")) {
-      <h1>
-        <a routerLink="torrents">
-          <mat-icon svgIcon="magnet"></mat-icon>
-          <span class="name">bitmagnet</span>
-          <app-version />
-        </a>
-      </h1>
-      <nav>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <a class="brand" routerLink="/torrents" aria-label="bitmagnet torrents">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="brand-name">bitmagnet</span>
+        <app-version />
+      </a>
+
+      <form
+        class="global-search"
+        role="search"
+        (submit)="$event.preventDefault(); search()"
+      >
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input
+          #globalSearch
+          type="search"
+          name="query"
+          [value]="searchQuery"
+          (input)="searchQuery = $any($event.target).value"
+          [placeholder]="t('torrents.search') + '…'"
+          autocapitalize="none"
+          autocomplete="off"
+        />
+        <kbd aria-label="Keyboard shortcut">/</kbd>
+      </form>
+
+      <nav class="primary-nav" aria-label="Primary navigation">
+        <a routerLink="/torrents" routerLinkActive="active">{{
+          t("routes.torrents")
+        }}</a>
         <a
-          mat-button
-          routerLink="torrents"
-          #linkTorrents="routerLinkActive"
-          routerLinkActive
-          [class]="linkTorrents.isActive ? 'active' : ''"
+          routerLink="/dashboard"
+          [class.active]="router.url.startsWith('/dashboard')"
+          >{{ t("routes.dashboard") }}</a
         >
-          <mat-icon svgIcon="magnet" />
-          {{ t("routes.torrents") }}
-        </a>
-        <a
-          mat-button
-          routerLink="dashboard"
-          #linkDashboard="routerLinkActive"
-          routerLinkActive
-          [class]="linkDashboard.isActive ? 'active' : ''"
-        >
-          <mat-icon>dashboard</mat-icon>
-          {{ t("routes.dashboard") }}
-        </a>
+        <a routerLink="/queues" routerLinkActive="active">{{
+          t("routes.queues")
+        }}</a>
       </nav>
-    } @else {
-      <h1>
-        <a routerLink="/torrents">
-          <mat-icon svgIcon="magnet"></mat-icon>
-        </a>
-      </h1>
+
       <button
-        mat-icon-button
-        routerLink="dashboard"
-        #linkDashboard="routerLinkActive"
-        routerLinkActive
-        [class]="linkDashboard.isActive ? 'active' : ''"
-        [matTooltip]="t('routes.dashboard')"
+        class="icon-button settings-button"
+        type="button"
+        [attr.aria-label]="t('layout.change_theme')"
+        (click)="preferences.settingsOpen.set(true)"
       >
-        <mat-icon>dashboard</mat-icon>
+        <span aria-hidden="true">⚙︎</span>
       </button>
-    }
-    <span class="spacer"></span>
-    <app-health-widget />
-    <button
-      mat-icon-button
-      aria-label="Theme"
-      [matMenuTriggerFor]="themesMenu"
-      [matTooltip]="t('layout.change_theme')"
+    </div>
+  </header>
+
+  <main class="app-content">
+    <ng-content />
+  </main>
+
+  <nav class="bottom-nav" aria-label="Primary navigation">
+    <a routerLink="/torrents" routerLinkActive="active"
+      ><span aria-hidden="true">⌕</span>{{ t("routes.torrents") }}</a
     >
-      <mat-icon>apparel</mat-icon>
-    </button>
-    <mat-menu #themesMenu="matMenu" class="layout-header-menu">
-      @for (th of themeManager.themes; track th.key) {
-        <a
-          mat-menu-item
-          (click)="themeManager.setTheme(th.key)"
-          [class]="th.key === themeManager.selectedTheme ? 'active' : ''"
-          ><mat-icon>{{ th.dark ? "dark_mode" : "light_mode" }}</mat-icon
-          >{{ th.label }}</a
+    <a
+      routerLink="/dashboard"
+      [class.active]="router.url.startsWith('/dashboard')"
+      ><span aria-hidden="true">▦</span>{{ t("routes.dashboard") }}</a
+    >
+    <a routerLink="/queues" routerLinkActive="active"
+      ><span aria-hidden="true">≣</span>{{ t("routes.queues") }}</a
+    >
+  </nav>
+
+  @if (preferences.settingsOpen()) {
+    <button
+      class="settings-backdrop"
+      type="button"
+      aria-label="Close settings"
+      (click)="preferences.settingsOpen.set(false)"
+    ></button>
+    <aside class="settings-drawer" aria-labelledby="settings-title">
+      <header>
+        <h2 id="settings-title">Settings</h2>
+        <button
+          class="icon-button"
+          type="button"
+          aria-label="Close settings"
+          (click)="preferences.settingsOpen.set(false)"
         >
-      }
-    </mat-menu>
-    <button
-      mat-icon-button
-      [matMenuTriggerFor]="languagesMenu"
-      [matTooltip]="t('layout.translate')"
-    >
-      <mat-icon>translate</mat-icon>
-    </button>
-    <mat-menu #languagesMenu="matMenu" class="layout-header-menu">
-      @for (l of translateManager.availableLanguages; track l.id) {
-        <a
-          mat-menu-item
-          (click)="translateManager.setLanguage(l.id)"
-          [matTooltip]="
-            l.id === translateManager.getPreferredLanguage()
-              ? undefined
-              : t('languages.' + l.id)
-          "
-          matTooltipPosition="right"
-          matTooltipShowDelay="500"
-          [class]="
-            l.id === translateManager.getPreferredLanguage() ? 'active' : ''
-          "
-          >{{ l.label }}</a
-        >
-      }
-    </mat-menu>
-    <button
-      mat-icon-button
-      [matTooltip]="t('layout.external_links')"
-      [matMenuTriggerFor]="externalLinksMenu"
-    >
-      <mat-icon svgIcon="external-link" />
-    </button>
-    <mat-menu #externalLinksMenu="matMenu" class="layout-header-menu">
-      <a mat-menu-item href="https://bitmagnet.io" target="_blank"
-        >bitmagnet.io</a
-      >
-      <a mat-menu-item href="https://discord.gg/6mFNszX8qM" target="_blank">{{
-        t("layout.bitmagnet_on_service", { service: "Discord" })
-      }}</a>
-      <a
-        mat-menu-item
-        href="https://github.com/bitmagnet-io/bitmagnet"
-        target="_blank"
-        >{{ t("layout.bitmagnet_on_service", { service: "GitHub" }) }}</a
-      >
-      <a
-        mat-menu-item
-        href="https://opencollective.com/bitmagnet"
-        target="_blank"
-        >{{
-          t("layout.bitmagnet_on_service", { service: "OpenCollective" })
-        }}</a
-      >
-    </mat-menu>
-    @if (!breakpoints.sizeAtLeast("Medium")) {
-      <a
-        mat-icon-button
-        class="button-sponsor"
-        href="https://opencollective.com/bitmagnet"
-        target="_blank"
-        [matTooltip]="t('layout.sponsor')"
-        ><mat-icon>favorite</mat-icon></a
-      >
-    } @else {
-      <a
-        mat-button
-        class="button-sponsor"
-        href="https://opencollective.com/bitmagnet"
-        target="_blank"
-        [matTooltip]="t('layout.support_bitmagnet')"
-        ><mat-icon>favorite</mat-icon>{{ t("layout.sponsor") }}</a
-      >
-    }
-  </mat-toolbar>
-  <div class="app-content">
-    <ng-content></ng-content>
-  </div>
-  <app-theme-emitter />
+          ✕
+        </button>
+      </header>
+      <div class="settings-content">
+        <section>
+          <h3>Appearance</h3>
+          <p class="setting-label">Theme · Dark</p>
+          <div class="theme-grid">
+            @for (theme of darkThemes; track theme.key) {
+              <button
+                type="button"
+                class="theme-pill"
+                [class.active]="theme.key === themeManager.selectedTheme"
+                (click)="themeManager.setTheme(theme.key)"
+              >
+                <span class="theme-swatch" [style.background]="theme.colors.bg"
+                  ><span [style.background]="theme.colors.accent"></span
+                ></span>
+                {{ theme.label }}
+                @if (theme.key === themeManager.selectedTheme) {
+                  <b>✓</b>
+                }
+              </button>
+            }
+          </div>
+          <p class="setting-label">Theme · Light</p>
+          <div class="theme-grid">
+            @for (theme of lightThemes; track theme.key) {
+              <button
+                type="button"
+                class="theme-pill"
+                [class.active]="theme.key === themeManager.selectedTheme"
+                (click)="themeManager.setTheme(theme.key)"
+              >
+                <span class="theme-swatch" [style.background]="theme.colors.bg"
+                  ><span [style.background]="theme.colors.accent"></span
+                ></span>
+                {{ theme.label }}
+                @if (theme.key === themeManager.selectedTheme) {
+                  <b>✓</b>
+                }
+              </button>
+            }
+          </div>
+          <div class="setting-columns">
+            <div>
+              <p class="setting-label">Density</p>
+              <div class="segments">
+                <button
+                  type="button"
+                  [class.active]="preferences.density() === 'comfortable'"
+                  (click)="preferences.setDensity('comfortable')"
+                >
+                  Comfortable
+                </button>
+                <button
+                  type="button"
+                  [class.active]="preferences.density() === 'compact'"
+                  (click)="preferences.setDensity('compact')"
+                >
+                  Compact
+                </button>
+              </div>
+            </div>
+            <div>
+              <p class="setting-label">Row style</p>
+              <div class="segments">
+                <button
+                  type="button"
+                  [class.active]="preferences.rowStyle() === 'divided'"
+                  (click)="preferences.setRowStyle('divided')"
+                >
+                  Divided
+                </button>
+                <button
+                  type="button"
+                  [class.active]="preferences.rowStyle() === 'zebra'"
+                  (click)="preferences.setRowStyle('zebra')"
+                >
+                  Zebra
+                </button>
+                <button
+                  type="button"
+                  [class.active]="preferences.rowStyle() === 'cards'"
+                  (click)="preferences.setRowStyle('cards')"
+                >
+                  Cards
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h3>Search defaults</h3>
+          <p class="setting-label">Results per page</p>
+          <div class="segments page-size">
+            @for (size of [25, 50, 100]; track size) {
+              <button
+                type="button"
+                [class.active]="preferences.pageSize() === size"
+                (click)="setPageSize(size)"
+              >
+                {{ size }}
+              </button>
+            }
+          </div>
+          <label class="toggle-row">
+            <button
+              type="button"
+              role="switch"
+              [attr.aria-checked]="preferences.safeMode()"
+              [class.active]="preferences.safeMode()"
+              (click)="toggleSafeMode()"
+            >
+              <span></span>
+            </button>
+            <span>Hide adult content <small>(XXX)</small></span>
+          </label>
+        </section>
+
+        <section>
+          <h3>{{ t("facets.language") }}</h3>
+          <div class="language-grid">
+            @for (
+              language of translateManager.availableLanguages;
+              track language.id
+            ) {
+              <button
+                type="button"
+                [class.active]="
+                  language.id === translateManager.getPreferredLanguage()
+                "
+                (click)="translateManager.setLanguage(language.id)"
+              >
+                {{ language.label }}
+              </button>
+            }
+          </div>
+        </section>
+
+        <section>
+          <h3>Links</h3>
+          <div class="link-list">
+            <a href="https://bitmagnet.io" target="_blank"
+              >bitmagnet.io <span>↗</span></a
+            >
+            <a href="https://github.com/bitmagnet-io/bitmagnet" target="_blank"
+              >GitHub <span>↗</span></a
+            >
+            <a href="https://discord.gg/6mFNszX8qM" target="_blank"
+              >Discord <span>↗</span></a
+            >
+            <a href="https://opencollective.com/bitmagnet" target="_blank"
+              >OpenCollective <span>↗</span></a
+            >
+          </div>
+        </section>
+
+        <section class="about">
+          <h3>About</h3>
+          <div>
+            <span>bitmagnet <app-version /></span
+            ><span
+              class="api-status"
+              [class.down]="
+                health.result.status === 'error' ||
+                health.result.status === 'down'
+              "
+              ><i></i>API
+              {{
+                health.result.status === "error" ||
+                health.result.status === "down"
+                  ? "disconnected"
+                  : "connected"
+              }}</span
+            >
+          </div>
+        </section>
+      </div>
+    </aside>
+  }
 </ng-container>

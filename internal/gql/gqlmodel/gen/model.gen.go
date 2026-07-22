@@ -47,6 +47,50 @@ type ContentTypeFacetInput struct {
 	Filter    graphql.Omittable[[]*model1.ContentType] `json:"filter,omitempty"`
 }
 
+type DashboardLlmBenchmark struct {
+	SampleSize            int                                 `json:"sampleSize"`
+	Successes             int                                 `json:"successes"`
+	Failures              int                                 `json:"failures"`
+	Matched               int                                 `json:"matched"`
+	Unmatched             int                                 `json:"unmatched"`
+	Errored               int                                 `json:"errored"`
+	AverageLatencySeconds float64                             `json:"averageLatencySeconds"`
+	ThroughputPerSecond   float64                             `json:"throughputPerSecond"`
+	Distribution          []DashboardLlmBenchmarkDistribution `json:"distribution"`
+}
+
+type DashboardLlmBenchmarkDistribution struct {
+	ContentType string `json:"contentType"`
+	Count       int    `json:"count"`
+}
+
+type DashboardLlmConnectionResult struct {
+	Ok             bool    `json:"ok"`
+	Error          *string `json:"error,omitempty"`
+	Connected      bool    `json:"connected"`
+	LatencySeconds float64 `json:"latencySeconds"`
+}
+
+type DashboardMutation struct {
+	TestLlmConnection DashboardLlmConnectionResult `json:"testLlmConnection"`
+	RunLlmBenchmark   DashboardLlmBenchmark        `json:"runLlmBenchmark"`
+}
+
+type DashboardQuery struct {
+	Summary DashboardSummary `json:"summary"`
+}
+
+type DashboardSummary struct {
+	TotalTorrents       int     `json:"totalTorrents"`
+	TorrentsToday       int     `json:"torrentsToday"`
+	IndexedLastHour     int     `json:"indexedLastHour"`
+	IndexedPreviousHour int     `json:"indexedPreviousHour"`
+	ClassifiedPercent   float64 `json:"classifiedPercent"`
+	QueueProcessed      int     `json:"queueProcessed"`
+	QueuePending        int     `json:"queuePending"`
+	QueueFailed         int     `json:"queueFailed"`
+}
+
 type GenreAgg struct {
 	Value      string `json:"value"`
 	Label      string `json:"label"`
@@ -85,19 +129,21 @@ type LanguageFacetInput struct {
 }
 
 type LlmClassificationEvent struct {
-	Timestamp   time.Time                `json:"timestamp"`
-	InfoHash    string                   `json:"infoHash"`
-	TorrentName string                   `json:"torrentName"`
-	Provider    string                   `json:"provider"`
-	DurationMs  int                      `json:"durationMs"`
-	Outcome     LlmClassificationOutcome `json:"outcome"`
-	ContentType string                   `json:"contentType"`
-	Title       string                   `json:"title"`
-	Year        int                      `json:"year"`
-	Season      int                      `json:"season"`
-	Episode     int                      `json:"episode"`
-	Languages   []string                 `json:"languages"`
-	Error       string                   `json:"error"`
+	Timestamp        time.Time                `json:"timestamp"`
+	InfoHash         string                   `json:"infoHash"`
+	TorrentName      string                   `json:"torrentName"`
+	Provider         string                   `json:"provider"`
+	DurationMs       int                      `json:"durationMs"`
+	Outcome          LlmClassificationOutcome `json:"outcome"`
+	PromptTokens     int                      `json:"promptTokens"`
+	CompletionTokens int                      `json:"completionTokens"`
+	ContentType      string                   `json:"contentType"`
+	Title            string                   `json:"title"`
+	Year             int                      `json:"year"`
+	Season           int                      `json:"season"`
+	Episode          int                      `json:"episode"`
+	Languages        []string                 `json:"languages"`
+	Error            string                   `json:"error"`
 }
 
 type LlmProviderStats struct {
@@ -119,6 +165,8 @@ type LlmStats struct {
 	Unmatched           int                `json:"unmatched"`
 	Errored             int                `json:"errored"`
 	Skipped             int                `json:"skipped"`
+	PromptTokens        int                `json:"promptTokens"`
+	CompletionTokens    int                `json:"completionTokens"`
 	SuccessRate         float64            `json:"successRate"`
 	PerProvider         []LlmProviderStats `json:"perProvider"`
 	InFlight            int                `json:"inFlight"`

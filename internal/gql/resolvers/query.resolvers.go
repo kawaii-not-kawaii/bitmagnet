@@ -143,6 +143,11 @@ func (r *queryResolver) Config(ctx context.Context) (gen.ConfigQuery, error) {
 	return gen.ConfigQuery{Sections: sections}, nil
 }
 
+// Dashboard is the resolver for the dashboard field.
+func (r *queryResolver) Dashboard(ctx context.Context) (gen.DashboardQuery, error) {
+	return r.dashboardQuery(ctx)
+}
+
 // Llm is the resolver for the llm field.
 func (r *queryResolver) Llm(ctx context.Context) (gen.LlmQuery, error) {
 	return gen.LlmQuery{}, nil

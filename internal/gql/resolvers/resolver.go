@@ -10,6 +10,7 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/database/dao"
 	"github.com/bitmagnet-io/bitmagnet/internal/database/search"
 	"github.com/bitmagnet-io/bitmagnet/internal/health"
+	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmobs"
 	"github.com/bitmagnet-io/bitmagnet/internal/metrics/queuemetrics"
 	"github.com/bitmagnet-io/bitmagnet/internal/metrics/torrentmetrics"
@@ -29,6 +30,7 @@ type Resolver struct {
 	Checker              health.Checker
 	QueueMetricsClient   queuemetrics.Client
 	QueueManager         manager.Manager
+	LlmRegistry          *llm.Registry
 	TorrentMetricsClient torrentmetrics.Client
 	Processor            processor.Processor
 	BlockingManager      blocking.Manager

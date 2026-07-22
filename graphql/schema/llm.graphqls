@@ -12,6 +12,8 @@ type LlmClassificationEvent {
   provider: String!
   durationMs: Int!
   outcome: LlmClassificationOutcome!
+  promptTokens: Int!
+  completionTokens: Int!
   contentType: String!
   title: String!
   year: Int!
@@ -35,6 +37,8 @@ type LlmStats {
   unmatched: Int!
   errored: Int!
   skipped: Int!
+  promptTokens: Int!
+  completionTokens: Int!
   successRate: Float!
   perProvider: [LlmProviderStats!]!
   inFlight: Int!

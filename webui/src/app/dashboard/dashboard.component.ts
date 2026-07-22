@@ -1,22 +1,15 @@
 import { Component, inject } from "@angular/core";
-import { BreakpointsService } from "../layout/breakpoints.service";
-import { TorrentsTableComponent } from "../torrents/torrents-table.component";
-import { TorrentsBulkActionsComponent } from "../torrents/torrents-bulk-actions.component";
-import { PaginatorComponent } from "../paginator/paginator.component";
 import { AppModule } from "../app.module";
+import { HealthModule } from "../health/health.module";
+import { HealthService } from "../health/health.service";
 
 @Component({
   selector: "app-dashboard",
   standalone: true,
-  imports: [
-    AppModule,
-    PaginatorComponent,
-    TorrentsBulkActionsComponent,
-    TorrentsTableComponent,
-  ],
+  imports: [AppModule, HealthModule],
   templateUrl: "./dashboard.component.html",
   styleUrl: "./dashboard.component.scss",
 })
 export class DashboardComponent {
-  breakpoints = inject(BreakpointsService);
+  health = inject(HealthService);
 }

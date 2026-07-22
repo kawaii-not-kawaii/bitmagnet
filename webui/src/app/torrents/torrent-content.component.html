@@ -1,221 +1,145 @@
 <ng-container *transloco="let t">
-  @if (getAttribute("poster_path", "tmdb"); as posterPath) {
-    <img
-      [ngSrc]="'https://image.tmdb.org/t/p/w300/' + posterPath"
-      [alt]="t('torrents.poster')"
-      class="poster"
-      [width]="breakpoints.sizeAtLeast('Medium') ? 300 : 150"
-      [height]="breakpoints.sizeAtLeast('Medium') ? 450 : 225"
-    />
-  }
-  @if (heading) {
-    <h2>
-      <a
-        [routerLink]="'permalink/' + torrentContent.infoHash"
-        [matTooltip]="t('torrents.permalink')"
-        >{{ torrentContent.torrent.name }}</a
-      >
-    </h2>
-  }
-  @if (size) {
-    <p class="size">
-      <strong>{{ t("torrents.size") }}:</strong>&nbsp;
-      <span
-        class="filesize"
-        [matTooltip]="torrentContent.torrent.size | filesize: 10"
-        >{{ torrentContent.torrent.size | filesize }}</span
-      >
-    </p>
-  }
-  @if (published) {
-    <p class="published">
-      <strong>{{ t("torrents.published") }}</strong>
-      {{ torrentContent.publishedAt | timeAgo }}
-    </p>
-  }
-  @if (peers) {
-    <p class="peers">
-      <strong>{{ t("torrents.s_l") }}:</strong>
-      {{ torrentContent.seeders ?? "?" }} / {{ torrentContent.leechers ?? "?" }}
-    </p>
-  }
-  <p class="info-hash">
-    <strong>{{ t("torrents.info_hash") }}:</strong>
-    <span
-      [matTooltip]="t('torrents.copy_to_clipboard')"
-      [cdkCopyToClipboard]="torrentContent.infoHash"
-      >{{ torrentContent.infoHash }}</span
-    >
-  </p>
-  <p>
-    <strong>{{ t("torrents.source") }}:</strong>&nbsp;
-    @for (s of torrentContent.torrent.sources; let j = $index; track s.key) {
-      <span>{{ (j > 0 ? ", " : "") + s.name }}</span>
+  <div class="torrent-detail">
+    @if (getAttribute("poster_path", "tmdb"); as posterPath) {
+      <img
+        [ngSrc]="'https://image.tmdb.org/t/p/w300/' + posterPath"
+        [alt]="t('torrents.poster')"
+        class="poster"
+        width="96"
+        height="144"
+      />
     }
-  </p>
-  @if (torrentContent.content) {
-    <p>
-      <strong>{{ t("torrents.title") }}:</strong>
-      {{ torrentContent.content.title }}
-    </p>
-  }
-  @if (torrentContent.languages?.length) {
-    <p>
-      <strong>{{ t("torrents.languages") }}:</strong>&nbsp;
-      @for (l of torrentContent.languages; let j = $index; track l.id) {
-        {{
-          (j > 0 ? ", " : "") +
-            l.name +
-            (l.id === torrentContent.content?.originalLanguage?.id
-              ? " (original)"
-              : "")
-        }}
-      }
-    </p>
-  }
-  @if (torrentContent.content?.releaseYear) {
-    <p>
-      <strong>{{ t("torrents.original_release_date") }}:</strong>
-      {{
-        torrentContent.content?.releaseDate ??
-          torrentContent.content?.releaseYear
-      }}
-    </p>
-  }
-  @if (torrentContent.episodes) {
-    <p>
-      <strong>{{ t("torrents.episodes") }}:</strong>
-      {{ torrentContent.episodes!.label }}
-    </p>
-  }
-  @if (torrentContent.content?.overview) {
-    <p>
-      {{ torrentContent.content!.overview }}
-    </p>
-  }
-  @if (getCollections("genre"); as genres) {
-    <ng-container>
-      <p>
-        <strong>{{ t("torrents.genres") }}:</strong> {{ genres.join(", ") }}
-      </p>
-    </ng-container>
-  }
-  @if (torrentContent.content?.voteAverage != null) {
-    <p>
-      <strong>{{ t("torrents.rating") }}:</strong>
-      {{ torrentContent.content?.voteAverage }} / 10
-      @if (torrentContent.content?.voteCount != null) {
-        <ng-container
-          >({{
-            t("torrents.votes_count_n", {
-              count: torrentContent.content?.voteCount | number,
-            })
-          }})</ng-container
-        >
-      }
-    </p>
-  }
-  @if (torrentContent.content?.externalLinks; as externalLinks) {
-    <p>
-      <strong>{{ t("torrents.external_links") }}:</strong>&nbsp;
-      @for (l of externalLinks; let j = $index; track l.metadataSource.key) {
-        {{ j > 0 ? ", " : ""
-        }}<a [href]="l.url" target="_blank">{{ l.metadataSource.name }}</a>
-      }
-    </p>
-  }
 
-  <mat-divider style="clear: both"></mat-divider>
-
-  <mat-tab-group
-    animationDuration="0"
-    [selectedIndex]="selectedTabIndex"
-    (focusChange)="selectTabIndex($event.index)"
-    [mat-stretch-tabs]="false"
-  >
-    <mat-tab aria-labelledby="hidden"></mat-tab>
-
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <mat-icon>file_present</mat-icon>
-        @if (breakpoints.sizeAtLeast("Medium")) {
-          <span class="label">{{ t("torrents.files") }}</span>
-        }
-        @if (filesCount(); as filesCount) {
-          <span class="files-count">({{ filesCount | number }})</span>
-        }
-      </ng-template>
-
-      <ng-template matTabContent>
-        <mat-card class="torrent-files">
-          @if (torrentContent.torrent.filesStatus === "no_info") {
-            <p>{{ t("torrents.files_no_info") }}</p>
+    <div class="detail-content">
+      <h3>
+        {{ torrentContent.content?.title ?? torrentContent.title }}
+        <span>
+          @if (torrentContent.content?.releaseYear) {
+            · {{ torrentContent.content?.releaseYear }}
           }
-          <app-torrent-files-table [torrent]="torrentContent.torrent" />
-        </mat-card>
-      </ng-template>
-    </mat-tab>
+          @if (torrentContent.content?.voteAverage != null) {
+            · {{ torrentContent.content?.voteAverage }}/10
+          }
+          @if (getCollections("genre"); as genres) {
+            · {{ genres.join(", ") }}
+          }
+        </span>
+      </h3>
 
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <mat-icon>sell</mat-icon>
-        @if (breakpoints.sizeAtLeast("Medium")) {
-          <span class="label">{{ t("torrents.edit_tags") }}</span>
+      @if (torrentContent.content?.overview) {
+        <p class="overview">{{ torrentContent.content?.overview }}</p>
+      }
+
+      <div class="detail-meta">
+        @if (torrentContent.languages?.length) {
+          <span
+            ><small>{{ t("torrents.languages") }}</small>
+            @for (
+              language of torrentContent.languages;
+              let last = $last;
+              track language.id
+            ) {
+              {{ language.name }}{{ last ? "" : ", " }}
+            }
+          </span>
         }
-      </ng-template>
-      <ng-template matTabContent>
-        <app-torrent-edit-tags
-          [torrentContent]="torrentContent"
-          (updated)="updated.emit(null)"
-        ></app-torrent-edit-tags>
-      </ng-template>
-    </mat-tab>
+        <span
+          ><small>{{ t("torrents.files") }}</small>
+          {{ filesCount() ?? "—" }}</span
+        >
+        <span
+          ><small>{{ t("torrents.source") }}</small>
+          @for (
+            source of torrentContent.torrent.sources;
+            let last = $last;
+            track source.key
+          ) {
+            {{ source.name }}{{ last ? "" : ", " }}
+          }
+        </span>
+      </div>
 
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <mat-icon>category</mat-icon>
-        @if (breakpoints.sizeAtLeast("Medium")) {
-          <span class="label">{{ t("torrents.classification") }}</span>
+      <div class="info-hash">
+        <small>{{ t("torrents.info_hash") | lowercase }}</small>
+        <span>{{ torrentContent.infoHash }}</span>
+        <button type="button" (click)="copyMagnet($event)">
+          ↓
+          {{
+            copied
+              ? "copied ✓"
+              : t("torrents.copy") + " " + (t("torrents.magnet") | lowercase)
+          }}
+        </button>
+      </div>
+
+      <nav class="detail-tabs" aria-label="Torrent details">
+        <button
+          type="button"
+          [class.active]="activeTab === 'files'"
+          (click)="selectTab('files')"
+        >
+          {{ t("torrents.files") }}
+          @if (filesCount(); as count) {
+            ({{ count }})
+          }
+        </button>
+        <button
+          type="button"
+          [class.active]="activeTab === 'tags'"
+          (click)="selectTab('tags')"
+        >
+          {{ t("torrents.edit_tags") }}
+        </button>
+        <button
+          type="button"
+          [class.active]="activeTab === 'reprocess'"
+          (click)="selectTab('reprocess')"
+        >
+          {{ t("torrents.classification") }}
+        </button>
+        <button
+          type="button"
+          class="danger"
+          [class.active]="activeTab === 'delete'"
+          (click)="selectTab('delete')"
+        >
+          {{ t("torrents.delete") }}
+        </button>
+      </nav>
+
+      <div class="tab-content">
+        @switch (activeTab) {
+          @case ("files") {
+            @if (torrentContent.torrent.filesStatus === "no_info") {
+              <p>{{ t("torrents.files_no_info") }}</p>
+            }
+            <app-torrent-files-table [torrent]="torrentContent.torrent" />
+          }
+          @case ("tags") {
+            <app-torrent-edit-tags
+              [torrentContent]="torrentContent"
+              (updated)="updated.emit(null)"
+            />
+          }
+          @case ("reprocess") {
+            <app-torrent-reprocess
+              [infoHashes]="[torrentContent.infoHash]"
+              (updated)="updated.emit(null)"
+            />
+          }
+          @case ("delete") {
+            <div class="delete-panel">
+              <p>
+                <strong>{{ t("torrents.delete_are_you_sure") }}</strong
+                ><br />{{ t("torrents.delete_action_cannot_be_undone") }}
+              </p>
+              <button type="button" (click)="delete()">
+                ✕ {{ t("torrents.delete") }}
+              </button>
+            </div>
+          }
         }
-      </ng-template>
-      <ng-template matTabContent>
-        <app-torrent-reprocess
-          [infoHashes]="[torrentContent.infoHash]"
-          (updated)="updated.emit(null)"
-        ></app-torrent-reprocess>
-      </ng-template>
-    </mat-tab>
-
-    <mat-tab>
-      <ng-template mat-tab-label>
-        <mat-icon>delete_forever</mat-icon>
-        @if (breakpoints.sizeAtLeast("Medium")) {
-          <span class="label">{{ t("torrents.delete") }}</span>
-        }
-      </ng-template>
-
-      <ng-template matTabContent>
-        <mat-card>
-          <mat-card-content style="margin-top: 10px">
-            <p>
-              <strong>{{ t("torrents.delete_are_you_sure") }}</strong>
-              <br />{{ t("torrents.delete_action_cannot_be_undone") }}
-            </p>
-          </mat-card-content>
-          <mat-card-actions class="button-row">
-            <button mat-stroked-button color="warning" (click)="delete()">
-              <mat-icon>delete_forever</mat-icon>{{ t("torrents.delete") }}
-            </button>
-          </mat-card-actions>
-        </mat-card>
-      </ng-template>
-    </mat-tab>
-    @if (selectedTabIndex > 0) {
-      <mat-tab>
-        <ng-template mat-tab-label>
-          <mat-icon style="margin-right: 0">close</mat-icon>
-        </ng-template>
-      </mat-tab>
-    }
-  </mat-tab-group>
+      </div>
+    </div>
+  </div>
 </ng-container>

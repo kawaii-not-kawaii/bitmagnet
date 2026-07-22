@@ -232,12 +232,14 @@ func TestLLMClassifyRecordingPreservesBehavior(t *testing.T) {
 
 	providerErr := errors.New("provider unavailable")
 	matchedResult := &llm.ClassifyResult{
-		ContentType: "movie",
-		Title:       "Example",
-		Year:        2024,
-		Season:      1,
-		Episode:     2,
-		Language:    []string{"en", "es"},
+		ContentType:      "movie",
+		Title:            "Example",
+		Year:             2024,
+		Season:           1,
+		Episode:          2,
+		Language:         []string{"en", "es"},
+		PromptTokens:     100,
+		CompletionTokens: 20,
 	}
 	cases := []struct {
 		name        string
@@ -316,6 +318,15 @@ func TestLLMClassifyRecordingPreservesBehavior(t *testing.T) {
 			assert.Equal(t, torrent.InfoHash.String(), event.InfoHash)
 			assert.Equal(t, torrent.Name, event.TorrentName)
 			assert.Equal(t, tc.wantError, event.Error)
+
+			if tc.wantOutcome == llmobs.OutcomeMatched {
+				assert.Equal(t, matchedResult.PromptTokens, event.PromptTokens)
+				assert.Equal(t, matchedResult.CompletionTokens, event.CompletionTokens)
+			} else {
+				assert.Zero(t, event.PromptTokens)
+				assert.Zero(t, event.CompletionTokens)
+			}
+
 			assert.Zero(t, recorder.Stats(0).InFlight)
 
 			if tc.wantOutcome == llmobs.OutcomeSkipped {

@@ -28,7 +28,6 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes, withComponentInputBinding()),
     provideAnimationsAsync("animations"),
     provideHttpClient(withInterceptorsFromDi()),
-    provideHttpClient(),
     provideApollo(() => {
       const httpLink = inject(HttpLink);
       const auth = inject(AuthService);

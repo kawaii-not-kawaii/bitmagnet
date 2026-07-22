@@ -1,36 +1,24 @@
-<ng-container *transloco="let t">
-  <mat-card>
-    <mat-card-header>
-      <mat-card-title>
-        <h4>
-          <mat-icon
-            [matTooltip]="t('dashboard.metrics.toggle_legend')"
-            [class]="
-              'icon-toggle-legend ' +
-              (legend ? 'icon-toggle-legend-active' : '')
-            "
-            (click)="toggleLegend()"
-            >legend_toggle</mat-icon
-          >{{ title }}
-        </h4>
-      </mat-card-title>
-    </mat-card-header>
-    <mat-card-content>
-      <div
-        [class]="
-          breakpoints.sizeAtLeast('Large') ? 'app-chart' : 'app-chart-small'
-        "
-      >
-        <canvas
-          baseChart
-          [data]="chartConfig.data"
-          [options]="chartConfig.options"
-          [type]="chartConfig.type"
-          [height]="height"
-          [width]="width"
-        >
-        </canvas>
-      </div>
-    </mat-card-content>
-  </mat-card>
-</ng-container>
+@if (title) {
+  <header class="chart-heading">
+    <h4>{{ title }}</h4>
+    <button
+      type="button"
+      [class.active]="legend"
+      (click)="toggleLegend()"
+      aria-label="Toggle chart legend"
+      title="Toggle chart legend"
+    >
+      ≡
+    </button>
+  </header>
+}
+<div class="chart" [style.max-width.px]="width">
+  <canvas
+    baseChart
+    [data]="chartConfig.data"
+    [options]="chartConfig.options"
+    [type]="chartConfig.type"
+    [height]="height"
+    [width]="width"
+  ></canvas>
+</div>

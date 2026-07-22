@@ -1,24 +1,8 @@
-import {
-  Component,
-  EventEmitter,
-  inject,
-  Input,
-  OnInit,
-  Output,
-} from "@angular/core";
-import {
-  animate,
-  state,
-  style,
-  transition,
-  trigger,
-} from "@angular/animations";
+import { Component, EventEmitter, Input, OnInit, Output } from "@angular/core";
 import { SelectionModel } from "@angular/cdk/collections";
-import { ActivatedRoute, Router } from "@angular/router";
 import { FilesizePipe } from "../pipes/filesize.pipe";
 import { TimeAgoPipe } from "../pipes/time-ago.pipe";
 import * as generated from "../graphql/generated";
-import { BreakpointsService } from "../layout/breakpoints.service";
 import { AppModule } from "../app.module";
 import { TorrentsSearchDatasource } from "./torrents-search.datasource";
 import { contentTypeInfo } from "./content-types";
@@ -38,32 +22,18 @@ import { TorrentsSearchController } from "./torrents-search.controller";
   ],
   templateUrl: "./torrents-table.component.html",
   styleUrl: "./torrents-table.component.scss",
-  animations: [
-    trigger("detailExpand", [
-      state("collapsed,void", style({ height: "0px", minHeight: "0" })),
-      state("expanded", style({ height: "*" })),
-      transition(
-        "expanded <=> collapsed",
-        animate("225ms cubic-bezier(0.4, 0.0, 0.2, 1)"),
-      ),
-    ]),
-  ],
 })
 export class TorrentsTableComponent implements OnInit {
-  private route = inject(ActivatedRoute);
-  private router = inject(Router);
-  breakpoints = inject(BreakpointsService);
-
   contentTypeInfo = contentTypeInfo;
 
   @Input() dataSource: TorrentsSearchDatasource;
   @Input() controller: TorrentsSearchController;
   @Input() multiSelection: SelectionModel<string>;
-  @Input() displayedColumns: readonly Column[] = allColumns;
-
+  @Input() selectMode = false;
   @Output() updated = new EventEmitter<string>();
 
   items = Array<generated.TorrentContent>();
+  copiedHash?: string;
 
   ngOnInit() {
     this.dataSource.items$.subscribe((items) => {
@@ -71,50 +41,63 @@ export class TorrentsTableComponent implements OnInit {
     });
   }
 
-  /** Whether the number of selected elements matches the total number of rows. */
   isAllSelected() {
-    return this.items.every((i) => this.multiSelection.isSelected(i.infoHash));
+    return (
+      this.items.length > 0 &&
+      this.items.every((item) => this.multiSelection.isSelected(item.infoHash))
+    );
   }
 
-  /** Selects all rows if they are not all selected; otherwise clear selection. */
   toggleAllRows() {
     if (this.isAllSelected()) {
       this.multiSelection.clear();
-      return;
+    } else {
+      this.multiSelection.select(...this.items.map((item) => item.infoHash));
     }
-    this.multiSelection.select(...this.items.map((i) => i.infoHash));
   }
 
   toggleSelectedTorrent(infoHash: string) {
-    this.controller.update((ctrl) => ({
-      ...ctrl,
+    this.controller.update((controls) => ({
+      ...controls,
       selectedTorrent:
-        ctrl.selectedTorrent?.infoHash === infoHash
+        controls.selectedTorrent?.infoHash === infoHash
           ? undefined
-          : {
-              infoHash,
-              tab: ctrl.selectedTorrent?.tab,
-            },
+          : { infoHash, tab: controls.selectedTorrent?.tab },
     }));
   }
 
-  /**
-   * Workaround for untyped table cell definitions
-   */
-  item(item: generated.TorrentContent): generated.TorrentContent {
-    return item;
+  toggleSelection(event: Event, item: generated.TorrentContent) {
+    event.stopPropagation();
+    this.multiSelection.toggle(item.infoHash);
+  }
+
+  copyMagnet(event: Event, item: generated.TorrentContent) {
+    event.stopPropagation();
+    void navigator.clipboard?.writeText(item.torrent.magnetUri);
+    this.copiedHash = item.infoHash;
+    window.setTimeout(() => {
+      if (this.copiedHash === item.infoHash) {
+        this.copiedHash = undefined;
+      }
+    }, 1400);
+  }
+
+  typeAbbreviation(contentType?: generated.ContentType | null) {
+    const labels: Partial<Record<generated.ContentType, string>> = {
+      movie: "MOV",
+      tv_show: "TV",
+      music: "MUS",
+      game: "GAM",
+      software: "SW",
+      ebook: "BK",
+      audiobook: "AUD",
+      comic: "COM",
+      xxx: "XXX",
+    };
+    return contentType ? labels[contentType] : "?";
+  }
+
+  sourceNames(item: generated.TorrentContent) {
+    return item.torrent.sources.map((source) => source.name).join(", ") || "—";
   }
 }
-
-export const allColumns = [
-  "select",
-  "summary",
-  "size",
-  "publishedAt",
-  "peers",
-  "magnet",
-] as const;
-
-export const compactColumns = ["select", "summary", "size", "magnet"] as const;
-
-export type Column = (typeof allColumns)[number];

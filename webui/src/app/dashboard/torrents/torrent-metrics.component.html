@@ -1,451 +1,151 @@
-<ng-container *transloco="let t">
-  <mat-card>
-    <mat-card-content>
-      <mat-grid-list
-        [cols]="
-          breakpoints.sizeAtLeast('Large')
-            ? 5
-            : breakpoints.sizeAtLeast('Medium')
-              ? 3
-              : breakpoints.sizeAtLeast('Small')
-                ? 2
-                : 1
-        "
-        rowHeight="100px"
-      >
-        <mat-grid-tile [colspan]="1" [rowspan]="2">
-          <mat-card class="form-timeframe">
-            <mat-card-header>
-              <mat-card-title
-                ><h4>{{ t("dashboard.metrics.timeframe") }}</h4></mat-card-title
-              >
-            </mat-card-header>
-            <mat-card-content>
-              <mat-form-field subscriptSizing="dynamic">
-                <mat-select
-                  [value]="torrentMetricsController.params.buckets.timeframe"
-                  (valueChange)="torrentMetricsController.setTimeframe($event)"
-                >
-                  @for (name of timeframeNames; track name) {
-                    <mat-option [value]="name">{{
-                      t("dashboard.interval." + name)
-                    }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-              <div class="paginator actions">
-                <button
-                  mat-icon-button
-                  [disabled]="
-                    timeframeNames.indexOf(
-                      torrentMetricsController.params.buckets.timeframe
-                    ) <= 0
-                  "
-                  (click)="
-                    torrentMetricsController.setTimeframe(timeframeNames[0])
-                  "
-                >
-                  <mat-icon>first_page</mat-icon>
-                </button>
-                <button
-                  mat-icon-button
-                  [disabled]="
-                    timeframeNames.indexOf(
-                      torrentMetricsController.params.buckets.timeframe
-                    ) <= 0
-                  "
-                  (click)="
-                    torrentMetricsController.setTimeframe(
-                      timeframeNames[
-                        timeframeNames.indexOf(
-                          torrentMetricsController.params.buckets.timeframe
-                        ) - 1
-                      ]
-                    )
-                  "
-                >
-                  <mat-icon>navigate_before</mat-icon>
-                </button>
-                <button
-                  mat-icon-button
-                  [disabled]="
-                    timeframeNames.indexOf(
-                      torrentMetricsController.params.buckets.timeframe
-                    ) >=
-                    timeframeNames.length - 1
-                  "
-                  (click)="
-                    torrentMetricsController.setTimeframe(
-                      timeframeNames[
-                        timeframeNames.indexOf(
-                          torrentMetricsController.params.buckets.timeframe
-                        ) + 1
-                      ]
-                    )
-                  "
-                >
-                  <mat-icon>navigate_next</mat-icon>
-                </button>
-                <button
-                  mat-icon-button
-                  [disabled]="
-                    timeframeNames.indexOf(
-                      torrentMetricsController.params.buckets.timeframe
-                    ) >=
-                    timeframeNames.length - 1
-                  "
-                  (click)="
-                    torrentMetricsController.setTimeframe(
-                      timeframeNames[timeframeNames.length - 1]
-                    )
-                  "
-                >
-                  <mat-icon>last_page</mat-icon>
-                </button>
-              </div>
-            </mat-card-content>
-          </mat-card>
-        </mat-grid-tile>
-        <mat-grid-tile [colspan]="1" [rowspan]="2">
-          <mat-card class="form-resolution">
-            <mat-card-header>
-              <mat-card-title
-                ><h4>
-                  {{ t("dashboard.metrics.resolution") }}
-                </h4></mat-card-title
-              >
-            </mat-card-header>
-            <mat-card-content>
-              <mat-form-field
-                subscriptSizing="dynamic"
-                class="form-input-multiplier"
-              >
-                <input
-                  type="number"
-                  matInput
-                  min="1"
-                  step="1"
-                  [placeholder]="
-                    (
-                      torrentMetricsController.result$ | async
-                    )?.params?.buckets?.multiplier?.toString() ?? ''
-                  "
-                  [value]="torrentMetricsController.params.buckets.multiplier"
-                  (change)="handleMultiplierEvent($event)"
-                />
-              </mat-form-field>
-              <mat-form-field
-                subscriptSizing="dynamic"
-                class="form-select-duration"
-              >
-                <mat-select
-                  [value]="torrentMetricsController.bucketDuration"
-                  (valueChange)="
-                    torrentMetricsController.setBucketDuration($event)
-                  "
-                >
-                  @for (name of resolutionNames; track name) {
-                    <mat-option [value]="name">{{
-                      t("dashboard.interval." + name + "s")
-                    }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-              <div class="paginator actions">
-                <button
-                  mat-icon-button
-                  [disabled]="torrentMetricsController.bucketMultiplier === 1"
-                  (click)="
-                    torrentMetricsController.setBucketMultiplier(
-                      torrentMetricsController.bucketMultiplier - 1
-                    )
-                  "
-                >
-                  <mat-icon>remove</mat-icon>
-                </button>
-                <button
-                  mat-icon-button
-                  (click)="
-                    torrentMetricsController.setBucketMultiplier(
-                      torrentMetricsController.bucketMultiplier + 1
-                    )
-                  "
-                >
-                  <mat-icon>add</mat-icon>
-                </button>
-                <button
-                  mat-icon-button
-                  [disabled]="
-                    resolutionNames.indexOf(
-                      torrentMetricsController.bucketDuration
-                    ) <= 0
-                  "
-                  (click)="
-                    torrentMetricsController.setBucketDuration(
-                      resolutionNames[0]
-                    )
-                  "
-                >
-                  <mat-icon>first_page</mat-icon>
-                </button>
-                <button
-                  mat-icon-button
-                  [disabled]="
-                    resolutionNames.indexOf(
-                      torrentMetricsController.bucketDuration
-                    ) <= 0
-                  "
-                  (click)="
-                    torrentMetricsController.setBucketDuration(
-                      resolutionNames[
-                        resolutionNames.indexOf(
-                          torrentMetricsController.bucketDuration
-                        ) - 1
-                      ]
-                    )
-                  "
-                >
-                  <mat-icon>navigate_before</mat-icon>
-                </button>
-                <button
-                  mat-icon-button
-                  [disabled]="
-                    resolutionNames.indexOf(
-                      torrentMetricsController.bucketDuration
-                    ) >=
-                    resolutionNames.length - 1
-                  "
-                  (click)="
-                    torrentMetricsController.setBucketDuration(
-                      resolutionNames[
-                        resolutionNames.indexOf(
-                          torrentMetricsController.bucketDuration
-                        ) + 1
-                      ]
-                    )
-                  "
-                >
-                  <mat-icon>navigate_next</mat-icon>
-                </button>
-                <button
-                  mat-icon-button
-                  [disabled]="
-                    resolutionNames.indexOf(
-                      torrentMetricsController.bucketDuration
-                    ) >=
-                    resolutionNames.length - 1
-                  "
-                  (click)="
-                    torrentMetricsController.setBucketDuration(
-                      resolutionNames[resolutionNames.length - 1]
-                    )
-                  "
-                >
-                  <mat-icon>last_page</mat-icon>
-                </button>
-              </div>
-            </mat-card-content>
-          </mat-card>
-        </mat-grid-tile>
-        <mat-grid-tile [colspan]="1" [rowspan]="2">
-          <mat-card>
-            <mat-card-header>
-              <mat-card-title>
-                <h4>{{ t("torrents.source") }}</h4>
-              </mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-              <mat-form-field subscriptSizing="dynamic">
-                <mat-select
-                  [value]="torrentMetricsController.params.source ?? '_all'"
-                  (valueChange)="
-                    torrentMetricsController.setSource(
-                      $event === '_all' ? null : $event
-                    )
-                  "
-                >
-                  <mat-option value="_all">All</mat-option>
-                  @for (
-                    source of (torrentMetricsController.result$ | async)
-                      ?.availableSources;
-                    track source.key
-                  ) {
-                    <mat-option [value]="source.key">{{
-                      source.name
-                    }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-              <div class="actions">
-                <button
-                  mat-icon-button
-                  [matTooltip]="'all'"
-                  [class]="
-                    torrentMetricsController.params.source
-                      ? 'deselected'
-                      : 'selected'
-                  "
-                  (click)="torrentMetricsController.setSource(null)"
-                >
-                  <mat-icon fontSet="material-icons">workspaces</mat-icon>
-                </button>
-                @for (source of ["dht"]; track source) {
-                  <button
-                    mat-icon-button
-                    [class]="
-                      torrentMetricsController.params.source === source
-                        ? 'selected'
-                        : 'deselected'
-                    "
-                    [matTooltip]="source"
-                    (click)="
-                      torrentMetricsController.params.source === source ||
-                        torrentMetricsController.setSource(source)
-                    "
-                  >
-                    <mat-icon>{{
-                      torrentMetricsController.params.source === source
-                        ? "radio_button_checked"
-                        : "radio_button_unchecked"
-                    }}</mat-icon>
-                  </button>
-                }
-              </div>
-            </mat-card-content>
-          </mat-card>
-        </mat-grid-tile>
-        <mat-grid-tile [colspan]="1" [rowspan]="2">
-          <mat-card>
-            <mat-card-header>
-              <mat-card-title>
-                <h4>{{ t("dashboard.metrics.event") }}</h4>
-              </mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-              <mat-form-field subscriptSizing="dynamic">
-                <mat-select
-                  [value]="torrentMetricsController.params.event ?? '_all'"
-                  (valueChange)="
-                    torrentMetricsController.setEvent(
-                      $event === '_all' ? null : $event
-                    )
-                  "
-                >
-                  <mat-option value="_all">All</mat-option>
-                  @for (event of eventNames; track event) {
-                    <mat-option [value]="event">{{
-                      t("dashboard.event." + event)
-                    }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-              <div class="actions">
-                <button
-                  mat-icon-button
-                  [matTooltip]="'all'"
-                  [class]="
-                    !torrentMetricsController.params.event
-                      ? 'selected'
-                      : 'deselected'
-                  "
-                  (click)="torrentMetricsController.setEvent(null)"
-                >
-                  <mat-icon fontSet="material-icons"
-                    >radio_button_checked</mat-icon
-                  >
-                </button>
-                <button
-                  mat-icon-button
-                  [matTooltip]="'created'"
-                  [class]="
-                    torrentMetricsController.params.event === 'created'
-                      ? 'selected'
-                      : 'deselected'
-                  "
-                  (click)="
-                    torrentMetricsController.params.event === 'created' ||
-                      torrentMetricsController.setEvent('created')
-                  "
-                >
-                  <mat-icon>add_circle</mat-icon>
-                </button>
-                <button
-                  mat-icon-button
-                  [matTooltip]="'updated'"
-                  [class]="
-                    torrentMetricsController.params.event === 'updated'
-                      ? 'selected'
-                      : 'deselected'
-                  "
-                  (click)="
-                    torrentMetricsController.params.event === 'updated' ||
-                      torrentMetricsController.setEvent('updated')
-                  "
-                >
-                  <mat-icon>check_circle</mat-icon>
-                </button>
-              </div>
-            </mat-card-content>
-          </mat-card>
-        </mat-grid-tile>
-        <mat-grid-tile [colspan]="1" [rowspan]="2">
-          <mat-card class="form-refresh">
-            <mat-card-header>
-              <mat-card-title>
-                <h4>{{ t("general.refresh") }}</h4>
-              </mat-card-title>
-            </mat-card-header>
-            <mat-card-content>
-              <mat-form-field subscriptSizing="dynamic">
-                <mat-select
-                  [value]="torrentMetricsController.params.autoRefresh"
-                  (valueChange)="
-                    torrentMetricsController.setAutoRefreshInterval($event)
-                  "
-                >
-                  @for (name of autoRefreshIntervalNames; track name) {
-                    <mat-option [value]="name">{{
-                      t("dashboard.interval." + name)
-                    }}</mat-option>
-                  }
-                </mat-select>
-              </mat-form-field>
-              <div class="actions">
-                <button
-                  mat-icon-button
-                  [matTooltip]="'Refresh'"
-                  (click)="torrentMetricsController.refresh()"
-                >
-                  <mat-icon>sync</mat-icon>
-                </button>
-              </div>
-            </mat-card-content>
-          </mat-card>
-        </mat-grid-tile>
-      </mat-grid-list>
-      <div class="progress-bar-container">
-        <mat-progress-bar
-          [mode]="
-            torrentMetricsController.loading ? 'indeterminate' : 'determinate'
-          "
-          [value]="0"
-        ></mat-progress-bar>
+<section class="metrics" aria-label="Torrent metrics">
+  <div class="filter-bar">
+    <div class="filter-group timeframe">
+      <span>Timeframe</span>
+      <div class="pills">
+        @for (name of timeframeNames; track name) {
+          <button
+            type="button"
+            [class.active]="
+              torrentMetricsController.params.buckets.timeframe === name
+            "
+            (click)="torrentMetricsController.setTimeframe(name)"
+          >
+            {{ optionLabel(name) }}
+          </button>
+        }
       </div>
-      <mat-grid-list
-        [cols]="breakpoints.sizeAtLeast('Large') ? 2 : 1"
-        rowHeight="100px"
+    </div>
+
+    <label class="select-control">
+      <span>Resolution</span>
+      <mat-select
+        [value]="torrentMetricsController.bucketDuration"
+        (valueChange)="torrentMetricsController.setBucketDuration($event)"
       >
-        <mat-grid-tile [colspan]="1" [rowspan]="6">
-          <app-chart
-            [title]="t('dashboard.metrics.throughput')"
-            [adapter]="timeline"
-            [$data]="torrentMetricsController.result$"
-            [height]="400"
-            [width]="550"
-          />
-        </mat-grid-tile>
-        <mat-grid-tile [colspan]="1" [rowspan]="5"> </mat-grid-tile>
-      </mat-grid-list>
-    </mat-card-content>
-  </mat-card>
-</ng-container>
+        @for (name of resolutionNames; track name) {
+          <mat-option [value]="name">{{ name }}</mat-option>
+        }
+      </mat-select>
+    </label>
+
+    <label class="multiplier-control">
+      <span>Multiplier</span>
+      <input
+        type="number"
+        min="1"
+        step="1"
+        [placeholder]="
+          (
+            torrentMetricsController.result$ | async
+          )?.params?.buckets?.multiplier?.toString() ?? ''
+        "
+        [value]="torrentMetricsController.params.buckets.multiplier"
+        (change)="handleMultiplierEvent($event)"
+      />
+    </label>
+
+    <label class="select-control">
+      <span>Source</span>
+      <mat-select
+        [value]="torrentMetricsController.params.source ?? '_all'"
+        (valueChange)="
+          torrentMetricsController.setSource($event === '_all' ? null : $event)
+        "
+      >
+        <mat-option value="_all">All</mat-option>
+        @for (
+          source of (torrentMetricsController.result$ | async)
+            ?.availableSources;
+          track source.key
+        ) {
+          <mat-option [value]="source.key">{{ source.name }}</mat-option>
+        }
+      </mat-select>
+    </label>
+
+    <div class="filter-group events">
+      <span>Event</span>
+      <div class="pills">
+        <button
+          type="button"
+          [class.active]="!torrentMetricsController.params.event"
+          (click)="torrentMetricsController.setEvent(null)"
+        >
+          All
+        </button>
+        @for (event of eventNames; track event) {
+          <button
+            type="button"
+            [class.active]="torrentMetricsController.params.event === event"
+            (click)="torrentMetricsController.setEvent(event)"
+          >
+            {{ event }}
+          </button>
+        }
+      </div>
+    </div>
+
+    <label class="select-control refresh-control">
+      <span>Auto-refresh</span>
+      <mat-select
+        [value]="torrentMetricsController.params.autoRefresh"
+        (valueChange)="torrentMetricsController.setAutoRefreshInterval($event)"
+      >
+        @for (name of autoRefreshIntervalNames; track name) {
+          <mat-option [value]="name">{{ optionLabel(name) }}</mat-option>
+        }
+      </mat-select>
+    </label>
+
+    <button
+      class="refresh-button"
+      type="button"
+      [class.loading]="torrentMetricsController.loading"
+      (click)="torrentMetricsController.refresh()"
+      aria-label="Refresh torrent metrics"
+      title="Refresh"
+    >
+      ↻
+    </button>
+  </div>
+
+  @if (view$ | async; as view) {
+    <article class="chart-card">
+      <header>
+        <strong>
+          Throughput
+          <span>· source: {{ view.result.params.source ?? "all" }}</span>
+        </strong>
+        <div class="chart-legend">
+          @for (series of view.series; track series.label) {
+            <span [class.secondary]="series.tone === 'secondary'"
+              ><i></i>{{ series.label }}</span
+            >
+          }
+        </div>
+      </header>
+      <app-bar-chart
+        [buckets]="view.buckets"
+        [series]="view.series"
+        unit="torrents"
+        ariaLabel="Torrent throughput"
+      />
+    </article>
+
+    <div class="metric-summary">
+      <article>
+        <span>Total created</span>
+        <strong>{{ eventTotal(view.result, "created") | number }}</strong>
+      </article>
+      <article>
+        <span>Total updated</span>
+        <strong>{{ eventTotal(view.result, "updated") | number }}</strong>
+      </article>
+      <article>
+        <span>Peak throughput</span>
+        <strong>{{ view.peakThroughput | number }}</strong>
+      </article>
+    </div>
+  }
+</section>

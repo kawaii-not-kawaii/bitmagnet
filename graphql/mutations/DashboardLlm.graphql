@@ -1,0 +1,42 @@
+mutation DashboardLlmSetConfig($value: JSON!) {
+  config {
+    setSection(input: { key: "classifier", value: $value }) {
+      applied
+      section {
+        key
+        runtimeChangeable
+        value
+      }
+    }
+  }
+}
+
+mutation DashboardLlmTestConnection {
+  dashboard {
+    testLlmConnection {
+      ok
+      error
+      connected
+      latencySeconds
+    }
+  }
+}
+
+mutation DashboardLlmRunBenchmark($sampleSize: Int!) {
+  dashboard {
+    runLlmBenchmark(sampleSize: $sampleSize) {
+      sampleSize
+      successes
+      failures
+      matched
+      unmatched
+      errored
+      averageLatencySeconds
+      throughputPerSecond
+      distribution {
+        contentType
+        count
+      }
+    }
+  }
+}

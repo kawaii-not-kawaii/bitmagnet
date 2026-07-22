@@ -71,6 +71,11 @@ func (r *mutationResolver) Client(ctx context.Context) (gqlmodel.ClientMutation,
 	return gqlmodel.ClientMutation{}, nil
 }
 
+// Dashboard is the resolver for the dashboard field.
+func (r *mutationResolver) Dashboard(ctx context.Context) (gen.DashboardMutation, error) {
+	return gen.DashboardMutation{}, nil
+}
+
 // Config is the resolver for the config field.
 func (r *mutationResolver) Config(ctx context.Context) (gen.ConfigMutation, error) {
 	return gen.ConfigMutation{}, nil

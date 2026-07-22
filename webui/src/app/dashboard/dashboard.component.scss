@@ -1,30 +1,96 @@
-mat-drawer nav {
-  padding-top: 12px;
-  --mat-text-button-icon-spacing: 14px;
-  ul {
-    list-style-type: none;
-    padding-left: 0;
+:host {
+  display: block;
+}
+
+.dashboard-shell {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 26px 22px 44px;
+}
+
+.page-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+
+  h1 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+}
+
+.status-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--faint);
+  font:
+    500 12px "JetBrains Mono",
+    monospace;
+
+  .status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #3fb950;
+    box-shadow: 0 0 8px #3fb95088;
+  }
+
+  &.down .status-dot {
+    background: #e5484d;
+    box-shadow: 0 0 8px #e5484d88;
+  }
+}
+
+.dashboard-tabs {
+  display: flex;
+  gap: 4px;
+  margin: 18px 0 24px;
+  border-bottom: 1px solid var(--border);
+
+  a {
+    margin-bottom: -1px;
+    padding: 10px 14px;
+    border-bottom: 2px solid transparent;
+    color: var(--dim);
+    font-size: 13px;
+    text-decoration: none;
+
+    &:hover {
+      color: var(--text);
+    }
+
+    &.active {
+      border-bottom-color: var(--accent);
+      color: var(--text);
+      font-weight: 600;
+    }
+  }
+}
+
+@media (max-width: 600px) {
+  .dashboard-shell {
+    padding: 20px 13px 88px;
+  }
+
+  .page-heading {
+    align-items: flex-start;
+  }
+
+  .status-line {
+    font-size: 10px;
+  }
+
+  .dashboard-tabs {
+    overflow-x: auto;
+
     a {
-      width: 100%;
-      font-size: var(--mat-expansion-container-text-size);
-      justify-content: flex-start;
-      padding-left: 20px;
-    }
-    li {
-      margin-bottom: 6px;
+      flex: 0 0 auto;
+      padding-inline: 10px;
     }
   }
-}
-
-mat-drawer-content {
-  .button-container-toggle-drawer {
-    position: absolute;
-    left: 20px;
-    top: 28px;
-    z-index: 100;
-  }
-}
-
-.drawer {
-  width: 220px;
 }

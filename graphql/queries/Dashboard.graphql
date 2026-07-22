@@ -1,0 +1,66 @@
+query DashboardData($eventLimit: Int = 500, $windowMinutes: Int = 15) {
+  dashboard {
+    summary {
+      totalTorrents
+      torrentsToday
+      indexedLastHour
+      indexedPreviousHour
+      classifiedPercent
+      queueProcessed
+      queuePending
+      queueFailed
+    }
+  }
+  llm {
+    events(limit: $eventLimit) {
+      timestamp
+      infoHash
+      torrentName
+      provider
+      durationMs
+      outcome
+      promptTokens
+      completionTokens
+      contentType
+      title
+      year
+      season
+      episode
+      languages
+      error
+    }
+    stats(windowMinutes: $windowMinutes) {
+      attempted
+      matched
+      unmatched
+      errored
+      skipped
+      promptTokens
+      completionTokens
+      successRate
+      perProvider {
+        provider
+        attempted
+        matched
+        unmatched
+        errored
+      }
+      inFlight
+      concurrency
+      windowStart
+      oldestBuffered
+      windowAttempted
+      latencyP50Ms
+      latencyP95Ms
+      throughputPerMinute
+      queuePending
+    }
+  }
+  config {
+    sections {
+      key
+      runtimeChangeable
+      value
+    }
+  }
+}

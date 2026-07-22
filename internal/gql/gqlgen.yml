@@ -195,3 +195,9 @@ models:
   JSON:
     model:
       - github.com/99designs/gqlgen/graphql.Any
+  DashboardMutation:
+    fields:
+      testLlmConnection:
+        resolver: true
+      runLlmBenchmark:
+        resolver: true

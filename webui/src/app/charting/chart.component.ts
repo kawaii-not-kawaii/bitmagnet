@@ -8,32 +8,14 @@ import {
   LegendElement,
 } from "chart.js";
 import { Observable } from "rxjs";
-import { TranslocoDirective, TranslocoService } from "@jsverse/transloco";
-import {
-  MatCard,
-  MatCardContent,
-  MatCardHeader,
-  MatCardTitle,
-} from "@angular/material/card";
-import { MatIcon } from "@angular/material/icon";
-import { MatTooltip } from "@angular/material/tooltip";
+import { TranslocoService } from "@jsverse/transloco";
 import { ThemeInfoService } from "../themes/theme-info.service";
-import { BreakpointsService } from "../layout/breakpoints.service";
 import { ChartAdapter } from "./types";
 
 @Component({
   selector: "app-chart",
   standalone: true,
-  imports: [
-    BaseChartDirective,
-    MatCard,
-    MatCardContent,
-    MatCardHeader,
-    MatCardTitle,
-    TranslocoDirective,
-    MatIcon,
-    MatTooltip,
-  ],
+  imports: [BaseChartDirective],
   templateUrl: "./chart.component.html",
   styleUrl: "./chart.component.scss",
 })
@@ -43,19 +25,18 @@ export class ChartComponent<Data = unknown, Type extends ChartType = ChartType>
   private themeInfo = inject(ThemeInfoService);
   private transloco = inject(TranslocoService);
   private hiddenDatasets = new Map<string, boolean>();
-  breakpoints = inject(BreakpointsService);
 
   @Input() title: string;
   @Input() $data: Observable<Data> = new Observable();
   @Input() adapter: ChartAdapter<Data, Type>;
-  @Input() width: number = 500;
-  @Input() height: number = 500;
+  @Input() width = 500;
+  @Input() height = 500;
 
   chartConfig: ChartConfiguration;
 
   private data: Data;
 
-  protected legend = true;
+  @Input() legend = true;
 
   ngOnInit() {
     this.updateChart();

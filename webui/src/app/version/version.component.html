@@ -1,7 +1,7 @@
 <ng-container *transloco="let t">
   <span
     class="version"
-    [matTooltip]="
+    [title]="
       t('version.bitmagnet_version', {
         version: versionUnknown ? t('version.unknown') : version,
       })

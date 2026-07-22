@@ -1,55 +1,222 @@
-.actions {
-  width: 210px;
-  padding-top: 12px;
-  --mdc-icon-button-state-layer-size: 32px;
-  mat-icon {
-    font-size: 22px;
-  }
+:host {
+  display: block;
+}
+
+.visualize {
+  animation: bm-rise 0.2s ease;
+}
+
+.filter-groups {
+  margin-bottom: 22px;
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+fieldset {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+legend {
+  margin-bottom: 7px;
+  padding: 0;
+  color: var(--dim);
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.segments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
   button {
-    margin-right: 0;
-  }
-}
+    padding: 7px 12px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--dim);
+    cursor: pointer;
+    font-size: 12.5px;
+    font-weight: 500;
+    white-space: nowrap;
 
-.progress-bar-container {
-  width: 100%;
-  height: 10px;
-}
-
-mat-grid-tile mat-card {
-  width: 100%;
-  mat-card-content {
-    min-width: 190px;
-  }
-  h4 {
-    margin-bottom: 16px;
-    font-size: 18px;
-  }
-}
-
-mat-form-field {
-  width: 186px;
-}
-
-.form-resolution {
-  .actions {
-    margin-left: -2px;
-  }
-  .form-input-multiplier {
-    width: 60px;
-    margin-right: 10px;
-
-    input::-webkit-outer-spin-button,
-    input::-webkit-inner-spin-button {
-      /* display: none; <- Crashes Chrome on hover */
-      -webkit-appearance: none;
-      margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+    &:hover {
+      border-color: var(--faint);
+      color: var(--text);
     }
 
-    input[type="number"] {
-      -moz-appearance: textfield; /* Firefox */
+    &:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+
+    &.active {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 15%, transparent);
+      color: var(--accent);
+      font-weight: 600;
     }
   }
-  .form-select-duration {
-    width: 116px;
+}
+
+.loading-line {
+  height: 2px;
+  margin: -2px 0 20px;
+  overflow: hidden;
+
+  &.active::after {
+    content: "";
+    width: 32%;
+    height: 100%;
+    display: block;
+    background: var(--accent);
+    animation: loading-slide 1s ease-in-out infinite;
+  }
+}
+
+.visualization-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.3fr;
+  align-items: stretch;
+  gap: 16px;
+}
+
+.status-card,
+.throughput-card {
+  min-width: 0;
+  padding: 18px 20px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--surface);
+
+  h2 {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+  }
+}
+
+.status-card h2 {
+  margin-bottom: 16px;
+}
+
+.status-row {
+  --status-color: var(--accent);
+  margin-bottom: 15px;
+
+  &:last-child {
+    margin-bottom: 0;
+  }
+
+  &.processed {
+    --status-color: #3fb950;
+  }
+
+  &.retry {
+    --status-color: #d29922;
+  }
+
+  &.failed {
+    --status-color: #e5484d;
+  }
+}
+
+.status-heading {
+  margin-bottom: 6px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--dim);
+    font-size: 13px;
+  }
+
+  i {
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+    background: var(--status-color);
+  }
+
+  strong {
+    color: var(--text);
+    font:
+      600 13px "JetBrains Mono",
+      monospace;
+  }
+}
+
+.status-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--surface2);
+
+  span {
+    height: 100%;
+    display: block;
+    border-radius: inherit;
+    background: var(--status-color);
+    transition: width 0.3s ease;
+  }
+}
+
+.throughput-card {
+  padding-bottom: 14px;
+
+  > header {
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+
+    h2 span {
+      color: var(--faint);
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    > span {
+      color: var(--dim);
+      font:
+        500 12px "JetBrains Mono",
+        monospace;
+      white-space: nowrap;
+    }
+  }
+}
+
+app-bar-chart {
+  --bar-chart-height: 200px;
+}
+
+@keyframes loading-slide {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(315%);
+  }
+}
+
+@media (max-width: 760px) {
+  .visualization-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .filter-groups {
+    align-items: flex-start;
+    flex-direction: column;
   }
 }

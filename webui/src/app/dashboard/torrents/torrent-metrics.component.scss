@@ -1,55 +1,225 @@
-.actions {
-  width: 210px;
-  padding-top: 12px;
-  --mdc-icon-button-state-layer-size: 32px;
-  mat-icon {
-    font-size: 22px;
+:host {
+  display: block;
+}
+
+.metrics {
+  animation: bm-rise 0.2s ease;
+}
+
+.filter-bar {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding-bottom: 18px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+}
+
+.filter-group,
+.select-control,
+.multiplier-control {
+  flex: 0 0 auto;
+
+  > span {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--faint);
+    font:
+      600 10px/1 "JetBrains Mono",
+      monospace;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
   }
+}
+
+.pills {
+  display: flex;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+
   button {
-    margin-right: 0;
-  }
-}
+    min-width: 38px;
+    height: 34px;
+    padding: 0 10px;
+    border: 0;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--dim);
+    font:
+      500 11.5px "JetBrains Mono",
+      monospace;
+    cursor: pointer;
 
-.progress-bar-container {
-  width: 100%;
-  height: 10px;
-}
-
-mat-grid-tile mat-card {
-  width: 100%;
-  mat-card-content {
-    min-width: 190px;
-  }
-  h4 {
-    margin-bottom: 16px;
-    font-size: 18px;
-  }
-}
-
-mat-form-field {
-  width: 186px;
-}
-
-.form-resolution {
-  .actions {
-    margin-left: -2px;
-  }
-  .form-input-multiplier {
-    width: 60px;
-    margin-right: 10px;
-
-    input::-webkit-outer-spin-button,
-    input::-webkit-inner-spin-button {
-      /* display: none; <- Crashes Chrome on hover */
-      -webkit-appearance: none;
-      margin: 0; /* <-- Apparently some margin are still there even though it's hidden */
+    &:last-child {
+      border-right: 0;
     }
 
-    input[type="number"] {
-      -moz-appearance: textfield; /* Firefox */
+    &:hover {
+      color: var(--text);
+    }
+
+    &.active {
+      background: color-mix(in srgb, var(--accent) 16%, var(--surface));
+      color: var(--text);
+      box-shadow: inset 0 -2px var(--accent);
     }
   }
-  .form-select-duration {
-    width: 116px;
+}
+
+.events button {
+  min-width: 54px;
+  text-transform: capitalize;
+}
+
+.select-control mat-select,
+.multiplier-control input {
+  box-sizing: border-box;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font:
+    500 11.5px "JetBrains Mono",
+    monospace;
+}
+
+.select-control mat-select {
+  width: 92px;
+  padding: 8px 10px;
+  text-transform: capitalize;
+}
+
+.multiplier-control input {
+  width: 70px;
+  padding: 0 10px;
+  outline: none;
+
+  &:focus {
+    border-color: var(--accent);
+  }
+}
+
+.refresh-control mat-select {
+  width: 106px;
+  text-transform: none;
+}
+
+.refresh-button {
+  flex: 0 0 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 20px;
+  cursor: pointer;
+
+  &:hover {
+    border-color: var(--faint);
+  }
+
+  &.loading {
+    animation: metrics-spin 0.8s linear infinite;
+  }
+}
+
+.chart-card {
+  margin-bottom: 18px;
+  padding: 18px 20px 14px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--surface);
+
+  > header {
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+
+    strong {
+      font-size: 14px;
+
+      span {
+        color: var(--faint);
+        font-size: 12px;
+        font-weight: 500;
+      }
+    }
+  }
+}
+
+.chart-legend {
+  display: flex;
+  gap: 16px;
+  color: var(--dim);
+  font:
+    500 12px "JetBrains Mono",
+    monospace;
+
+  span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+  }
+
+  i {
+    width: 10px;
+    height: 10px;
+    border-radius: 2px;
+    background: var(--accent);
+  }
+
+  .secondary i {
+    background: color-mix(in srgb, var(--accent) 42%, var(--surface2));
+  }
+}
+
+.metric-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 14px;
+
+  article {
+    padding: 16px 18px;
+    border: 1px solid var(--border);
+    border-radius: 13px;
+    background: var(--surface);
+
+    span {
+      display: block;
+      color: var(--dim);
+      font-size: 11.5px;
+    }
+
+    strong {
+      display: block;
+      margin-top: 5px;
+      color: var(--text);
+      font:
+        600 22px/1 "JetBrains Mono",
+        monospace;
+    }
+  }
+}
+
+@keyframes metrics-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 760px) {
+  .filter-bar {
+    margin-inline: -14px;
+    padding-inline: 14px;
+  }
+
+  .metric-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }

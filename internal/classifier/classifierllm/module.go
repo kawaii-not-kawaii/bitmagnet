@@ -41,7 +41,7 @@ type Result struct {
 func RegistryConfig(cfg classifier.LlmConfig) llm.RegistryConfig {
 	providers := map[string]llm.ProviderConfig{}
 
-	if cfg.ProviderBaseURL != "" {
+	if cfg.Enabled && cfg.ProviderBaseURL != "" {
 		name := cfg.ProviderName
 		if name == "" {
 			name = "default"
@@ -56,6 +56,7 @@ func RegistryConfig(cfg classifier.LlmConfig) llm.RegistryConfig {
 	}
 
 	return llm.RegistryConfig{
+		Enabled:    cfg.Enabled,
 		Providers:  providers,
 		BatchSize:  cfg.BatchSize,
 		MaxContext: cfg.MaxContext,

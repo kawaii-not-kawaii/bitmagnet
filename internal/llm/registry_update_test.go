@@ -27,6 +27,7 @@ func (d *drainRecorder) Drain() {
 
 func twoProviderConfig(batchSize int) RegistryConfig {
 	return RegistryConfig{
+		Enabled: true,
 		Providers: map[string]ProviderConfig{
 			"alpha": {BaseURL: "https://a.internal", Model: "m"},
 			"beta":  {BaseURL: "https://b.internal", Model: "m"},
@@ -92,7 +93,7 @@ func TestRegistry_SwapDefersDrain(t *testing.T) {
 
 	r := NewRegistry(twoProviderConfig(1), factory, "")
 
-	drain := r.Swap(RegistryConfig{Providers: map[string]ProviderConfig{
+	drain := r.Swap(RegistryConfig{Enabled: true, Providers: map[string]ProviderConfig{
 		"gamma": {BaseURL: "https://c.internal", Model: "m"},
 	}})
 
@@ -134,5 +135,36 @@ func TestRegistry_UpdateStillDrains(t *testing.T) {
 
 	if len(log.order) != 2 {
 		t.Fatalf("Update drained %d providers, want 2", len(log.order))
+	}
+}
+
+func TestRegistry_DisabledSkipsProviderConstruction(t *testing.T) {
+	t.Parallel()
+
+	cfg := twoProviderConfig(1)
+	cfg.Enabled = false
+	factoryCalls := 0
+	registry := NewRegistry(cfg, func(name string, _ ProviderConfig, _ RegistryConfig) Provider {
+		factoryCalls++
+
+		return &mockProvider{name: name}
+	}, "")
+
+	if factoryCalls != 0 || len(registry.All()) != 0 {
+		t.Fatalf("disabled startup built %d providers: %v", factoryCalls, registry.All())
+	}
+
+	cfg.Enabled = true
+	registry.Update(cfg)
+
+	if factoryCalls != len(cfg.Providers) {
+		t.Fatalf("enabled update built %d providers, want %d", factoryCalls, len(cfg.Providers))
+	}
+
+	cfg.Enabled = false
+	registry.Update(cfg)
+
+	if len(registry.All()) != 0 {
+		t.Fatalf("disabled update left providers: %v", registry.All())
 	}
 }

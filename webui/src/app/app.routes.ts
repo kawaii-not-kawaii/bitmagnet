@@ -42,45 +42,52 @@ export const routes: Routes = [
           ),
       },
       {
-        path: "queues",
-        pathMatch: "full",
-        redirectTo: "queues/visualize",
-      },
-      {
-        path: "queues",
+        path: "metrics",
         loadComponent: () =>
-          import("./dashboard/queue/queue-dashboard.component").then(
-            (c) => c.QueueDashboardComponent,
+          import("./dashboard/torrents/torrent-metrics.component").then(
+            (c) => c.TorrentMetricsComponent,
           ),
-        children: [
-          {
-            path: "visualize",
-            loadComponent: () =>
-              import("./dashboard/queue/queue-visualize.component").then(
-                (c) => c.QueueVisualizeComponent,
-              ),
-          },
-          {
-            path: "jobs",
-            loadComponent: () =>
-              import("./dashboard/queue/queue-jobs.component").then(
-                (c) => c.QueueJobsComponent,
-              ),
-          },
-          {
-            path: "admin",
-            loadComponent: () =>
-              import("./dashboard/queue/queue-admin.component").then(
-                (c) => c.QueueAdminComponent,
-              ),
-          },
-        ],
       },
       {
-        path: "torrents",
+        path: "llm",
         loadComponent: () =>
-          import("./dashboard/torrents/torrents-dashboard.component").then(
-            (c) => c.TorrentsDashboardComponent,
+          import("./dashboard/llm/dashboard-llm.component").then(
+            (c) => c.DashboardLlmComponent,
+          ),
+      },
+    ],
+  },
+  {
+    path: "queues",
+    pathMatch: "full",
+    redirectTo: "queues/visualize",
+  },
+  {
+    path: "queues",
+    loadComponent: () =>
+      import("./dashboard/queue/queue-dashboard.component").then(
+        (c) => c.QueueDashboardComponent,
+      ),
+    children: [
+      {
+        path: "visualize",
+        loadComponent: () =>
+          import("./dashboard/queue/queue-visualize.component").then(
+            (c) => c.QueueVisualizeComponent,
+          ),
+      },
+      {
+        path: "jobs",
+        loadComponent: () =>
+          import("./dashboard/queue/queue-jobs.component").then(
+            (c) => c.QueueJobsComponent,
+          ),
+      },
+      {
+        path: "admin",
+        loadComponent: () =>
+          import("./dashboard/queue/queue-admin.component").then(
+            (c) => c.QueueAdminComponent,
           ),
       },
     ],

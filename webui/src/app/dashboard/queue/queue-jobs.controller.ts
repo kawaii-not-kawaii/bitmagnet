@@ -67,29 +67,20 @@ export class QueueJobsController {
     });
   }
 
-  selectOrderBy(field: generated.QueueJobsOrderByField) {
-    const orderBy = {
-      field,
-      descending:
-        orderByOptions.find((option) => option.field === field)?.descending ??
-        false,
-    };
-    this.update((ctrl) => ({
-      ...ctrl,
-      orderBy,
-      page: 1,
-    }));
-  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  clearFilters(def: FacetDefinition<any>) {
+    this.update((ctrl) => {
+      const input = def.extractInput(ctrl.facets);
 
-  toggleOrderByDirection() {
-    this.update((ctrl) => ({
-      ...ctrl,
-      orderBy: {
-        ...ctrl.orderBy,
-        descending: !ctrl.orderBy.descending,
-      },
-      page: 1,
-    }));
+      return {
+        ...ctrl,
+        page: 1,
+        facets: def.patchInput(ctrl.facets, {
+          ...input,
+          filter: undefined,
+        }),
+      };
+    });
   }
 
   handlePageEvent(event: PageEvent) {
@@ -138,21 +129,6 @@ type OrderBySelection = {
   field: generated.QueueJobsOrderByField;
   descending: boolean;
 };
-
-export const orderByOptions: OrderBySelection[] = [
-  {
-    field: "created_at",
-    descending: true,
-  },
-  {
-    field: "ran_at",
-    descending: true,
-  },
-  {
-    field: "priority",
-    descending: false,
-  },
-];
 
 export type QueueJobsControls = {
   limit: number;
@@ -223,7 +199,7 @@ export const statusFacet: FacetDefinition<generated.QueueJobStatus> = {
     status: i,
   }),
   extractAggregations: (aggs) => aggs.status ?? [],
-  resolveLabel: (agg, t) => t.translate("dashboard.queues." + agg.label),
+  resolveLabel: (agg, t) => t.translate("dashboard.queues." + agg.value),
 };
 
 export const facets = [queueFacet, statusFacet];

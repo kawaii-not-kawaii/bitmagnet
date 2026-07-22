@@ -31,6 +31,7 @@ type ProviderConfig struct {
 
 // RegistryConfig holds the full LLM configuration for persistence.
 type RegistryConfig struct {
+	Enabled    bool                      `json:"enabled"            yaml:"enabled"`
 	Providers  map[string]ProviderConfig `json:"providers"          yaml:"providers"`
 	BatchSize  int                       `json:"batch_size"         yaml:"batch_size"`
 	MaxContext int                       `json:"max_context_tokens" yaml:"max_context_tokens"`
@@ -64,8 +65,11 @@ func NewRegistry(cfg RegistryConfig, factory ProviderFactory, configPath string)
 		configPath: configPath,
 		providers:  make(map[string]Provider, len(cfg.Providers)),
 	}
-	for name, pCfg := range cfg.Providers {
-		r.providers[name] = factory(name, pCfg, cfg)
+
+	if cfg.Enabled {
+		for name, pCfg := range cfg.Providers {
+			r.providers[name] = factory(name, pCfg, cfg)
+		}
 	}
 
 	return r
@@ -119,8 +123,11 @@ func (r *Registry) Swap(cfg RegistryConfig) (drain func()) {
 	old := r.providers
 
 	newProviders := make(map[string]Provider, len(cfg.Providers))
-	for name, pCfg := range cfg.Providers {
-		newProviders[name] = r.factory(name, pCfg, cfg)
+
+	if cfg.Enabled {
+		for name, pCfg := range cfg.Providers {
+			newProviders[name] = r.factory(name, pCfg, cfg)
+		}
 	}
 
 	r.providers = newProviders

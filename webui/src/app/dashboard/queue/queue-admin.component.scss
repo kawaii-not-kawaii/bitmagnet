@@ -1,7 +1,233 @@
-ul {
-  list-style-type: none;
-  padding-left: 0;
-  li {
-    margin-bottom: 6px;
+:host {
+  display: block;
+}
+
+.admin-screen {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 16px;
+  animation: bm-rise 0.2s ease;
+}
+
+.action-card {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: var(--surface);
+
+  h2 {
+    margin: 0 0 6px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+
+  > p {
+    margin: 0 0 18px;
+    color: var(--dim);
+    font-size: 13px;
+    line-height: 1.55;
+  }
+}
+
+.toggle-row {
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--text);
+  cursor: pointer;
+  font-size: 13px;
+
+  input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+
+    &:checked + .toggle {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 52%, var(--surface2));
+
+      i {
+        transform: translateX(16px);
+      }
+    }
+
+    &:focus-visible + .toggle {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+  }
+}
+
+.toggle {
+  width: 38px;
+  height: 22px;
+  padding: 2px;
+  display: block;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface2);
+  transition: 0.15s ease;
+
+  i {
+    width: 16px;
+    height: 16px;
+    display: block;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.15s ease;
+  }
+}
+
+.priority-field {
+  margin-bottom: 20px;
+
+  span,
+  legend {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--dim);
+    font-size: 11px;
+  }
+
+  input {
+    box-sizing: border-box;
+    width: 120px;
+    padding: 8px 11px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    outline: none;
+    background: var(--bg);
+    color: var(--text);
+    font:
+      500 13px "JetBrains Mono",
+      monospace;
+
+    &:focus {
+      border-color: var(--accent);
+    }
+  }
+}
+
+fieldset {
+  margin: 0 0 20px;
+  padding: 0;
+  border: 0;
+
+  legend {
+    margin-bottom: 7px;
+    padding: 0;
+    color: var(--dim);
+    font-size: 11px;
+  }
+}
+
+.segments {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+
+  button {
+    padding: 7px 11px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--surface);
+    color: var(--dim);
+    cursor: pointer;
+    font-size: 12px;
+
+    &:hover {
+      border-color: var(--faint);
+      color: var(--text);
+    }
+
+    &.active {
+      border-color: var(--accent);
+      background: color-mix(in srgb, var(--accent) 15%, transparent);
+      color: var(--accent);
+      font-weight: 600;
+    }
+  }
+}
+
+.primary-action,
+.danger-action,
+.cancel {
+  min-height: 38px;
+  padding: 8px 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: flex-start;
+  border-radius: 9px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+
+  &:disabled {
+    cursor: default;
+    opacity: 0.65;
+  }
+}
+
+.primary-action {
+  margin-top: auto;
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+}
+
+.danger-action {
+  margin-top: auto;
+  border: 1px solid color-mix(in srgb, #e5484d 45%, transparent);
+  background: color-mix(in srgb, #e5484d 10%, transparent);
+  color: #e5484d;
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, #e5484d 20%, transparent);
+  }
+}
+
+.confirm-step {
+  margin-top: auto;
+  padding: 12px;
+  border: 1px solid color-mix(in srgb, #e5484d 35%, var(--border));
+  border-radius: 9px;
+  background: color-mix(in srgb, #e5484d 8%, var(--bg));
+  animation: bm-fade 0.15s ease;
+
+  strong {
+    display: block;
+    margin-bottom: 10px;
+    color: #e5484d;
+    font-size: 12.5px;
+  }
+
+  div {
+    display: flex;
+    gap: 8px;
+  }
+
+  .danger-action {
+    margin-top: 0;
+  }
+}
+
+.cancel {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--dim);
+}
+
+@media (max-width: 760px) {
+  .admin-screen {
+    grid-template-columns: 1fr;
   }
 }

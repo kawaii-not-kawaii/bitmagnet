@@ -31,6 +31,7 @@ func testRegistry(t *testing.T, configPath string) *Registry {
 	t.Helper()
 
 	return NewRegistry(RegistryConfig{
+		Enabled: true,
 		Providers: map[string]ProviderConfig{
 			"gemma": {BaseURL: "https://llm.internal", Model: "gemma-4"},
 		},

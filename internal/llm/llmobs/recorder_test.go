@@ -228,6 +228,29 @@ func TestRecorder_Stats(t *testing.T) {
 	}
 }
 
+func TestRecorder_TokenUsage(t *testing.T) {
+	t.Parallel()
+
+	r := New()
+	r.Record(Event{PromptTokens: 100, CompletionTokens: 20})
+	r.Record(Event{PromptTokens: 50, CompletionTokens: 10})
+	r.Record(Event{})
+
+	stats := r.Stats(time.Minute)
+	if stats.PromptTokens != 150 || stats.CompletionTokens != 30 {
+		t.Errorf(
+			"token totals = %d prompt/%d completion, want 150/30",
+			stats.PromptTokens,
+			stats.CompletionTokens,
+		)
+	}
+
+	event := r.Events(1)[0]
+	if event.PromptTokens != 0 || event.CompletionTokens != 0 {
+		t.Errorf("absent usage = %d/%d, want 0/0", event.PromptTokens, event.CompletionTokens)
+	}
+}
+
 func TestRecorder_StatsTruncation(t *testing.T) {
 	t.Parallel()
 
@@ -351,6 +374,7 @@ func TestRecorder_Prometheus(t *testing.T) {
 	r.Record(Event{Provider: "beta", Outcome: OutcomeUnmatched, Duration: 3 * time.Second})
 
 	registry := prometheus.NewPedanticRegistry()
+
 	for _, collector := range r.Collectors() {
 		if err := registry.Register(collector); err != nil {
 			t.Fatalf("register collector: %v", err)
@@ -369,6 +393,7 @@ func TestRecorder_Prometheus(t *testing.T) {
 	for _, family := range families {
 		for _, metric := range family.GetMetric() {
 			labels := make(map[string]string, len(metric.GetLabel()))
+
 			for _, label := range metric.GetLabel() {
 				labels[label.GetName()] = label.GetValue()
 			}

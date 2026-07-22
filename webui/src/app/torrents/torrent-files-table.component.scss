@@ -1,4 +1,50 @@
-span.filesize {
-  text-decoration: underline;
-  text-decoration-style: dotted;
+.files-note {
+  margin: 0 0 8px;
+  color: var(--faint);
+  font:
+    500 11px "JetBrains Mono",
+    monospace;
+}
+
+.file-list {
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+
+  &.loading {
+    opacity: 0.6;
+  }
+}
+
+.file-row {
+  padding: 8px 13px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 14px;
+  border-bottom: 1px solid var(--border);
+  font:
+    500 12px "JetBrains Mono",
+    monospace;
+
+  &:last-child {
+    border-bottom: 0;
+  }
+}
+
+.file-path {
+  overflow: hidden;
+  color: var(--dim);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-type,
+.file-size {
+  color: var(--faint);
+}
+
+@media (max-width: 540px) {
+  .file-type {
+    display: none;
+  }
 }

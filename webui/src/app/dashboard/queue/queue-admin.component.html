@@ -1,21 +1,97 @@
 <ng-container *transloco="let t">
-  <app-document-title
-    [parts]="[t('routes.admin'), t('routes.queues'), t('routes.dashboard')]"
-  />
-  <mat-card>
-    <mat-card-content>
-      <ul>
-        <li>
-          <a mat-button (click)="openDialogPurgeJobs()">{{
-            t("dashboard.queues.purge_queue_jobs")
-          }}</a>
-        </li>
-        <li>
-          <a mat-button (click)="openDialogEnqueueReprocessTorrentsBatch()">{{
-            t("dashboard.queues.enqueue_torrent_processing_batch")
-          }}</a>
-        </li>
-      </ul>
-    </mat-card-content>
-  </mat-card>
+  <app-document-title [parts]="[t('routes.admin'), t('routes.queues')]" />
+
+  <section class="admin-screen" aria-label="Queue administration">
+    <article class="action-card">
+      <h2>Enqueue torrent processing batch</h2>
+      <p>Queue a batch job to (re)classify torrents in the database.</p>
+
+      <label class="toggle-row">
+        <input type="checkbox" [(ngModel)]="orphans" />
+        <span class="toggle"><i></i></span>
+        <span>Process orphaned torrents only</span>
+      </label>
+
+      <label class="priority-field">
+        <span>Priority</span>
+        <input
+          type="number"
+          value="0"
+          readonly
+          title="Batch job priority is fixed at 0 by the backend"
+        />
+      </label>
+
+      <button
+        type="button"
+        class="primary-action"
+        [disabled]="enqueueStage !== 'PENDING'"
+        (click)="handleEnqueue()"
+      >
+        {{
+          enqueueStage === "REQUESTING"
+            ? "Enqueuing…"
+            : enqueueStage === "DONE"
+              ? "✓ Jobs enqueued"
+              : "＋ Enqueue jobs"
+        }}
+      </button>
+    </article>
+
+    <article class="action-card">
+      <h2>Purge queue jobs</h2>
+      <p>
+        Permanently delete completed or failed jobs from a queue. This cannot be
+        undone.
+      </p>
+
+      <fieldset>
+        <legend>Queue</legend>
+        <div class="segments">
+          @for (queue of availableQueueNames; track queue) {
+            <button
+              type="button"
+              [class.active]="purgeQueue === queue"
+              (click)="purgeQueue = queue; purgeStage = 'PENDING'"
+            >
+              {{ queue }}
+            </button>
+          }
+        </div>
+      </fieldset>
+
+      @if (purgeStage === "CONFIRMING") {
+        <div class="confirm-step">
+          <strong>Confirm permanent purge?</strong>
+          <div>
+            <button
+              type="button"
+              class="cancel"
+              (click)="purgeStage = 'PENDING'"
+            >
+              Cancel
+            </button>
+            <button type="button" class="danger-action" (click)="handlePurge()">
+              Confirm purge
+            </button>
+          </div>
+        </div>
+      } @else {
+        <button
+          type="button"
+          class="danger-action"
+          [disabled]="purgeStage !== 'PENDING'"
+          (click)="purgeStage = 'CONFIRMING'"
+        >
+          {{
+            purgeStage === "REQUESTING"
+              ? "Purging…"
+              : purgeStage === "DONE"
+                ? "✓ Jobs purged"
+                : "✕ Purge jobs"
+          }}
+        </button>
+      }
+    </article>
+  </section>
 </ng-container>

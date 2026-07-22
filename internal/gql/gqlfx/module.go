@@ -18,6 +18,7 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/resolvers"
 	"github.com/bitmagnet-io/bitmagnet/internal/health"
 	"github.com/bitmagnet-io/bitmagnet/internal/lazy"
+	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmobs"
 	"github.com/bitmagnet-io/bitmagnet/internal/metrics/queuemetrics"
 	"github.com/bitmagnet-io/bitmagnet/internal/metrics/torrentmetrics"
@@ -96,6 +97,7 @@ func New() fx.Option {
 							ClientConfig:         p.ClientConfig,
 							ResolvedConfig:       p.ResolvedConfig,
 							Changeability:        p.Changeability,
+							LlmRegistry:          p.LlmRegistry,
 							Applier:              p.Applier,
 							LlmRecorder:          p.LlmRecorder,
 							ClassifierConfig:     p.ClassifierConfig,
@@ -130,6 +132,7 @@ type Params struct {
 	ClientConfig         *concurrency.AtomicValue[client.Config]
 	ResolvedConfig       *concurrency.AtomicValue[rootconfig.ResolvedConfig]
 	Changeability        configapply.Changeability
+	LlmRegistry          *llm.Registry
 	Applier              *configapply.Applier
 	LlmRecorder          *llmobs.Recorder
 	ClassifierConfig     classifier.Config

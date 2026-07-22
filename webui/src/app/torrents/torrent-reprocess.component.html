@@ -1,40 +1,42 @@
 <ng-container *transloco="let t">
-  <mat-card>
-    <mat-card-content>
-      <mat-checkbox
+  <div class="reprocess-form">
+    <label>
+      <input
+        type="checkbox"
         [checked]="!localSearchDisabled"
         (change)="
-          localSearchDisabled = !$event.checked;
-          apisDisabled = !$event.checked ? true : apisDisabled
+          localSearchDisabled = !$any($event.target).checked;
+          apisDisabled = !$any($event.target).checked ? true : apisDisabled
         "
-        >{{
-          t("torrents.reprocess.match_content_by_local_search")
-        }}</mat-checkbox
-      >
-      <mat-checkbox
+      />
+      <span class="checkbox">{{ !localSearchDisabled ? "✓" : "" }}</span>
+      {{ t("torrents.reprocess.match_content_by_local_search") }}
+    </label>
+    <label>
+      <input
+        type="checkbox"
         [checked]="!apisDisabled"
         (change)="
-          apisDisabled = !$event.checked;
-          localSearchDisabled = $event.checked ? false : localSearchDisabled
+          apisDisabled = !$any($event.target).checked;
+          localSearchDisabled = $any($event.target).checked
+            ? false
+            : localSearchDisabled
         "
-        >{{
-          t("torrents.reprocess.match_content_by_external_api_search")
-        }}</mat-checkbox
-      >
-      <mat-checkbox
+      />
+      <span class="checkbox">{{ !apisDisabled ? "✓" : "" }}</span>
+      {{ t("torrents.reprocess.match_content_by_external_api_search") }}
+    </label>
+    <label>
+      <input
+        type="checkbox"
         [checked]="classifierRematch"
-        (change)="classifierRematch = $event.checked"
-        >{{ t("torrents.reprocess.force_rematch") }}</mat-checkbox
-      >
-    </mat-card-content>
-    <mat-card-actions class="button-row">
-      <button
-        mat-stroked-button
-        [disabled]="!infoHashes.length"
-        (click)="reprocess()"
-      >
-        <mat-icon>cycle</mat-icon>{{ t("torrents.reprocess.reprocess") }}
-      </button>
-    </mat-card-actions>
-  </mat-card>
+        (change)="classifierRematch = $any($event.target).checked"
+      />
+      <span class="checkbox">{{ classifierRematch ? "✓" : "" }}</span>
+      {{ t("torrents.reprocess.force_rematch") }}
+    </label>
+    <button type="button" [disabled]="!infoHashes.length" (click)="reprocess()">
+      ↻ {{ t("torrents.reprocess.reprocess") }}
+    </button>
+  </div>
 </ng-container>

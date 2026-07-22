@@ -152,6 +152,13 @@ export class QueueChartAdapterTimeline implements ChartAdapter<Result, "line"> {
           },
         },
         scales: {
+          x: {
+            ticks: {
+              autoSkip: true,
+              maxRotation: 0,
+              maxTicksLimit: 6,
+            },
+          },
           yCount: {
             position: "left",
             ticks: {

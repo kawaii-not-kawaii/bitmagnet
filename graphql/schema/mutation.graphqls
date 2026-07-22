@@ -2,6 +2,7 @@ type Mutation {
   torrent: TorrentMutation!
   queue: QueueMutation!
   client: ClientMutation!
+  dashboard: DashboardMutation!
   config: ConfigMutation!
 }
 

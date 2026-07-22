@@ -23,19 +23,21 @@ func llmEvents(recorder *llmobs.Recorder, limit *int) []gen.LlmClassificationEve
 
 	for i, event := range events {
 		result[i] = gen.LlmClassificationEvent{
-			Timestamp:   event.Timestamp,
-			InfoHash:    event.InfoHash,
-			TorrentName: event.TorrentName,
-			Provider:    event.Provider,
-			DurationMs:  int(event.Duration.Milliseconds()),
-			Outcome:     gen.LlmClassificationOutcome(event.Outcome),
-			ContentType: event.ContentType,
-			Title:       event.Title,
-			Year:        event.Year,
-			Season:      event.Season,
-			Episode:     event.Episode,
-			Languages:   event.Languages,
-			Error:       event.Error,
+			Timestamp:        event.Timestamp,
+			InfoHash:         event.InfoHash,
+			TorrentName:      event.TorrentName,
+			Provider:         event.Provider,
+			DurationMs:       int(event.Duration.Milliseconds()),
+			Outcome:          gen.LlmClassificationOutcome(event.Outcome),
+			PromptTokens:     event.PromptTokens,
+			CompletionTokens: event.CompletionTokens,
+			ContentType:      event.ContentType,
+			Title:            event.Title,
+			Year:             event.Year,
+			Season:           event.Season,
+			Episode:          event.Episode,
+			Languages:        event.Languages,
+			Error:            event.Error,
 		}
 	}
 
@@ -97,6 +99,8 @@ func llmStats(
 		Unmatched:           int(stats.Unmatched),
 		Errored:             int(stats.Errored),
 		Skipped:             int(stats.Skipped),
+		PromptTokens:        int(stats.PromptTokens),
+		CompletionTokens:    int(stats.CompletionTokens),
 		SuccessRate:         successRate,
 		PerProvider:         perProvider,
 		InFlight:            int(stats.InFlight),

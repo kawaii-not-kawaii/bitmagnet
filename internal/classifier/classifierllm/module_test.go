@@ -17,6 +17,7 @@ func TestRegistryConfig_MapsSectionOntoRegistry(t *testing.T) {
 	t.Parallel()
 
 	got := RegistryConfig(classifier.LlmConfig{
+		Enabled:         true,
 		ProviderName:    "gemma4",
 		ProviderBaseURL: "https://llm.internal",
 		ProviderModel:   "gemma-4",
@@ -45,7 +46,7 @@ func TestRegistryConfig_MapsSectionOntoRegistry(t *testing.T) {
 func TestRegistryConfig_DefaultsProviderName(t *testing.T) {
 	t.Parallel()
 
-	got := RegistryConfig(classifier.LlmConfig{ProviderBaseURL: "https://llm.internal"})
+	got := RegistryConfig(classifier.LlmConfig{Enabled: true, ProviderBaseURL: "https://llm.internal"})
 	if _, ok := got.Providers["default"]; !ok {
 		t.Fatalf("unnamed provider should register as 'default': %v", got.Providers)
 	}
@@ -60,10 +61,9 @@ func TestRegistryConfig_NoBaseURLYieldsZeroProviders(t *testing.T) {
 	}
 }
 
-// TestNew_RegistryAlwaysConstructed_LiveEnable: with no LLM configured at
-// startup the registry and live applier must still support enabling the first
-// provider without a restart.
-func TestNew_RegistryAlwaysConstructed_LiveEnable(t *testing.T) {
+// TestNew_RegistryAlwaysConstructed_LiveToggle verifies runtime config can
+// enable and disable providers without a restart.
+func TestNew_RegistryAlwaysConstructed_LiveToggle(t *testing.T) {
 	t.Parallel()
 
 	lc := fxtest.NewLifecycle(t)
@@ -82,6 +82,7 @@ func TestNew_RegistryAlwaysConstructed_LiveEnable(t *testing.T) {
 	}
 
 	after, err := res.LiveApplier.Apply(classifier.Config{Llm: classifier.LlmConfig{
+		Enabled:         true,
 		ProviderName:    "late",
 		ProviderBaseURL: "https://llm.internal",
 		ProviderModel:   "m",
@@ -95,6 +96,22 @@ func TestNew_RegistryAlwaysConstructed_LiveEnable(t *testing.T) {
 	if res.Registry.Get("late") == nil {
 		t.Fatal("provider enabled at runtime not present in registry")
 	}
+
+	after, err = res.LiveApplier.Apply(classifier.Config{Llm: classifier.LlmConfig{
+		Enabled:         false,
+		ProviderName:    "late",
+		ProviderBaseURL: "https://llm.internal",
+		ProviderModel:   "m",
+	}})
+	if err != nil {
+		t.Fatalf("disable runtime classifier config: %v", err)
+	}
+
+	after()
+
+	if len(res.Registry.All()) != 0 {
+		t.Fatalf("disabled registry still has providers: %v", res.Registry.All())
+	}
 }
 
 // TestNew_WiresConfigPath: the registry must be constructed with the real
@@ -105,6 +122,7 @@ func TestNew_WiresConfigPath(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "config.yml")
 	res := New(Params{
 		Config: classifier.Config{Llm: classifier.LlmConfig{
+			Enabled:         true,
 			ProviderName:    "gemma4",
 			ProviderBaseURL: "https://llm.internal",
 			ProviderModel:   "gemma-4",

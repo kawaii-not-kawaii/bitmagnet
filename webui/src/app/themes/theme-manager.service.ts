@@ -60,7 +60,7 @@ export class ThemeManager {
     } else {
       this.selectedTheme = theme as ThemeKey;
     }
-    this.document.documentElement.setAttribute("data-bitmagnet-theme", theme);
+    this.document.documentElement.setAttribute("data-theme", theme);
     this.selectedThemeSubject.next(this.selectedTheme);
   };
 

@@ -50,7 +50,6 @@ func (llmClassifyAction) compileAction(ctx compilerContext) (action, error) {
 			if ctx.llmProviders != nil {
 				providers = ctx.llmProviders()
 			}
-
 			if len(providers) == 0 {
 				event.Outcome = llmobs.OutcomeSkipped
 				ctx.recorder.Record(event)
@@ -92,6 +91,10 @@ func (llmClassifyAction) compileAction(ctx compilerContext) (action, error) {
 			done := ctx.recorder.Begin()
 			started := time.Now()
 			result, err := provider.Classify(ctx, input)
+			if result != nil {
+				event.PromptTokens = result.PromptTokens
+				event.CompletionTokens = result.CompletionTokens
+			}
 			event.Duration = time.Since(started)
 			done()
 
