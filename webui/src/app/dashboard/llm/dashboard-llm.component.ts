@@ -255,5 +255,4 @@ export class DashboardLlmComponent implements OnDestroy {
       timeoutSeconds: config.timeoutSeconds,
     });
   }
-
 }
