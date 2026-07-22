@@ -130,7 +130,7 @@ func (r *queryResolver) Config(ctx context.Context) (gen.ConfigQuery, error) {
 	for key, node := range resolved.NodeMap {
 		sections = append(sections, gen.ConfigSection{
 			Key:               key,
-			RuntimeChangeable: configRuntimeChangeability(key),
+			RuntimeChangeable: configRuntimeChangeability(r.Changeability, key),
 			Value:             gqlmodel.Redact(node.Value),
 		})
 	}

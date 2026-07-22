@@ -1,6 +1,7 @@
 package loggingfx
 
 import (
+	"github.com/bitmagnet-io/bitmagnet/internal/config/configapply"
 	"github.com/bitmagnet-io/bitmagnet/internal/config/configfx"
 	"github.com/bitmagnet-io/bitmagnet/internal/logging"
 	"go.uber.org/fx"
@@ -13,7 +14,13 @@ func New() fx.Option {
 	return fx.Module(
 		"logging",
 		configfx.NewConfigModule[logging.Config]("log", logging.NewDefaultConfig()),
-		fx.Provide(logging.New),
+		fx.Provide(
+			logging.New,
+			fx.Annotated{
+				Group:  configapply.Group,
+				Target: logging.NewLiveApplier,
+			},
+		),
 	)
 }
 

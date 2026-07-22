@@ -2,10 +2,12 @@ package classifierllm
 
 import (
 	"context"
+	"fmt"
 	"sort"
 	"time"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
+	"github.com/bitmagnet-io/bitmagnet/internal/config/configapply"
 	"github.com/bitmagnet-io/bitmagnet/internal/config/configwrite"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm/openai"
@@ -23,7 +25,8 @@ type Params struct {
 
 type Result struct {
 	fx.Out
-	Registry *llm.Registry `optional:"true"`
+	Registry    *llm.Registry           `optional:"true"`
+	LiveApplier configapply.LiveApplier `                group:"config_live_appliers"`
 	// LlmProviders is a static snapshot of the providers built at startup,
 	// kept for one-shot CLI consumers (llm-bench). The live path — anything
 	// that must observe runtime config updates — reads Registry.All() at
@@ -131,7 +134,23 @@ func New(p Params) Result {
 	})
 
 	return Result{
-		Registry:     registry,
+		Registry: registry,
+		LiveApplier: configapply.LiveApplier{
+			Key: "classifier",
+			Apply: func(value any) (func(), error) {
+				cfg, ok := value.(classifier.Config)
+				if !ok {
+					return nil, fmt.Errorf(
+						"configapply: section %q: expected %T, got %T",
+						"classifier",
+						cfg,
+						value,
+					)
+				}
+
+				return registry.Swap(RegistryConfig(cfg.Llm)), nil
+			},
+		},
 		LlmProviders: registry.All(),
 	}
 }

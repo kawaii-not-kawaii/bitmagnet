@@ -14,6 +14,7 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier/classifierfx"
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier/classifierllm"
 	"github.com/bitmagnet-io/bitmagnet/internal/client/clientfx"
+	"github.com/bitmagnet-io/bitmagnet/internal/config/configapply"
 	"github.com/bitmagnet-io/bitmagnet/internal/config/configfx"
 	"github.com/bitmagnet-io/bitmagnet/internal/database/databasefx"
 	"github.com/bitmagnet-io/bitmagnet/internal/database/migrations"
@@ -45,6 +46,7 @@ func New() fx.Option {
 		classifierfx.New(),
 		fx.Provide(classifierllm.New),
 		configfx.New(),
+		fx.Provide(configapply.New),
 		dhtcrawlerfx.New(),
 		dhtfx.New(),
 		databasefx.New(),

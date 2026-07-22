@@ -61,8 +61,8 @@ func TestRegistryConfig_NoBaseURLYieldsZeroProviders(t *testing.T) {
 }
 
 // TestNew_RegistryAlwaysConstructed_LiveEnable: with no LLM configured at
-// startup the registry must still exist (with zero providers), so a runtime
-// config update can bring the first provider up without a restart.
+// startup the registry and live applier must still support enabling the first
+// provider without a restart.
 func TestNew_RegistryAlwaysConstructed_LiveEnable(t *testing.T) {
 	t.Parallel()
 
@@ -81,11 +81,15 @@ func TestNew_RegistryAlwaysConstructed_LiveEnable(t *testing.T) {
 		t.Fatalf("expected zero providers at startup, got %v", res.Registry.All())
 	}
 
-	res.Registry.Update(RegistryConfig(classifier.LlmConfig{
+	after, err := res.LiveApplier.Apply(classifier.Config{Llm: classifier.LlmConfig{
 		ProviderName:    "late",
 		ProviderBaseURL: "https://llm.internal",
 		ProviderModel:   "m",
-	}))
+	}})
+	if err != nil {
+		t.Fatalf("apply runtime classifier config: %v", err)
+	}
+	after()
 
 	if res.Registry.Get("late") == nil {
 		t.Fatal("provider enabled at runtime not present in registry")
