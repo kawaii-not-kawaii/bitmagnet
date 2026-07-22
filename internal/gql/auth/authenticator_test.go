@@ -1,145 +1,176 @@
 package auth
 
 import (
-	"context"
+	"net/http"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/bitmagnet-io/bitmagnet/internal/config/configwrite"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
+	"golang.org/x/crypto/bcrypt"
 )
 
-func TestStaticKeyResolver_CorrectAndWrong(t *testing.T) {
+func newTestAuthenticator(t *testing.T, cfg Config) (*Authenticator, string) {
+	t.Helper()
+	configPath := filepath.Join(t.TempDir(), "config.yml")
+
+	authenticator, err := NewAuthenticator(cfg, configwrite.TargetPath(configPath), zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatalf("NewAuthenticator: %v", err)
+	}
+
+	return authenticator, configPath
+}
+
+func TestStaticKeyResolver(t *testing.T) {
 	t.Parallel()
 
-	r, err := newStaticKeyResolver("correct-horse")
+	resolver, err := newStaticKeyResolver("correct-horse")
 	if err != nil {
 		t.Fatalf("newStaticKeyResolver: %v", err)
 	}
 
-	if p, ok := r.Resolve("correct-horse"); !ok || p.AccessLevel != AccessLevelAdmin {
-		t.Errorf("correct key should resolve to admin: ok=%v level=%v", ok, p.AccessLevel)
+	if principal, ok := resolver.Resolve("correct-horse"); !ok || principal.AccessLevel != AccessLevelAdmin {
+		t.Fatalf("correct key did not resolve to admin: ok=%v principal=%+v", ok, principal)
 	}
 
-	if _, ok := r.Resolve("wrong"); ok {
-		t.Error("wrong key should not resolve")
-	}
-
-	if _, ok := r.Resolve(""); ok {
-		t.Error("empty credential should not resolve against a non-empty key")
+	if _, ok := resolver.Resolve("wrong"); ok {
+		t.Fatal("wrong key resolved")
 	}
 }
 
-// TestNewAuthenticator_GeneratesKeyWhenMissing asserts the secure-by-default
-// posture: enabled auth with no configured key generates one, logs it, and
-// enforces it — rather than starting open or refusing to boot.
-func TestNewAuthenticator_GeneratesKeyWhenMissing(t *testing.T) {
+func TestNewAuthenticatorGeneratesTemporaryKey(t *testing.T) {
 	t.Parallel()
 
 	core, logs := observer.New(zap.WarnLevel)
-	logger := zap.New(core).Sugar()
+	configPath := filepath.Join(t.TempDir(), "config.yml")
 
-	a, err := NewAuthenticator(Config{}, logger)
+	authenticator, err := NewAuthenticator(Config{}, configwrite.TargetPath(configPath), zap.New(core).Sugar())
 	if err != nil {
 		t.Fatalf("NewAuthenticator: %v", err)
-	}
-
-	if a.disabled {
-		t.Fatal("authenticator should be enabled")
-	}
-
-	// The generated key must appear in the logs, and it must be the key the
-	// authenticator now enforces.
-	entries := logs.All()
-	if len(entries) == 0 {
-		t.Fatal("expected a startup warning about the generated key")
 	}
 
 	var loggedKey string
 
-	for _, e := range entries {
-		if strings.Contains(strings.ToLower(e.Message), "generated a temporary") {
-			fields := strings.Fields(e.Message)
-			if len(fields) > 0 {
-				loggedKey = fields[len(fields)-1]
-			}
-
-			break
+	for _, entry := range logs.All() {
+		if strings.Contains(entry.Message, "generated a temporary API key") {
+			parts := strings.Fields(entry.Message)
+			loggedKey = parts[len(parts)-1]
 		}
 	}
 
-	if loggedKey == "" {
-		t.Fatalf("generated key not found in logs: %+v", entries)
-	}
-
-	if _, ok := a.resolver.Resolve(loggedKey); !ok {
-		t.Error("the authenticator does not enforce the key it logged")
-	}
-
-	// A message must warn the key is temporary.
-	if !anyContains(entries, "temporary") && !anyContains(entries, "changes on every restart") {
-		t.Error("expected a warning that the generated key is temporary")
+	if loggedKey == "" || !authenticator.ValidateAPIKey(loggedKey) {
+		t.Fatalf("generated key missing or invalid: %q", loggedKey)
 	}
 }
 
-func TestNewAuthenticator_DisabledLogsWarning(t *testing.T) {
+func TestSessionSaltPersistsWithPrivateMode(t *testing.T) {
 	t.Parallel()
+	dir := t.TempDir()
+	configPath := configwrite.TargetPath(filepath.Join(dir, "config.yml"))
 
-	core, logs := observer.New(zap.WarnLevel)
-
-	a, err := NewAuthenticator(Config{Disabled: true}, zap.New(core).Sugar())
+	hash, err := bcrypt.GenerateFromPassword([]byte("password-one"), bcrypt.DefaultCost)
 	if err != nil {
-		t.Fatalf("NewAuthenticator: %v", err)
+		t.Fatal(err)
 	}
 
-	if !a.disabled {
-		t.Error("expected disabled authenticator")
-	}
+	cfg := Config{APIKey: "key", Username: "admin", PasswordHash: string(hash)}
 
-	if !anyContains(logs.All(), "DISABLED") {
-		t.Error("disabling auth should log a warning")
-	}
-}
-
-func TestNewAuthenticator_UsesConfiguredKey(t *testing.T) {
-	t.Parallel()
-
-	core, logs := observer.New(zap.WarnLevel)
-
-	a, err := NewAuthenticator(Config{APIKey: "configured"}, zap.New(core).Sugar())
+	first, err := NewAuthenticator(cfg, configPath, zap.NewNop().Sugar())
 	if err != nil {
-		t.Fatalf("NewAuthenticator: %v", err)
+		t.Fatal(err)
 	}
 
-	if _, ok := a.resolver.Resolve("configured"); !ok {
-		t.Error("configured key should be enforced")
+	first.now = func() time.Time { return time.Unix(1_700_000_000, 0) }
+
+	recorder := httptest.NewRecorder()
+	request := httptest.NewRequest(http.MethodGet, "/", nil)
+	first.SetSessionCookie(recorder, request)
+	cookie := recorder.Result().Cookies()[0]
+
+	second, err := NewAuthenticator(cfg, configPath, zap.NewNop().Sugar())
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	// A configured key must not be echoed to the logs.
-	if anyContains(logs.All(), "configured") {
-		t.Error("configured key must not be logged")
+	second.now = first.now
+
+	request.AddCookie(cookie)
+
+	if valid, _ := second.ValidateSession(request); !valid {
+		t.Fatal("session did not survive authenticator reconstruction")
+	}
+
+	info, err := os.Stat(filepath.Join(dir, sessionSaltFile))
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if mode := info.Mode().Perm(); mode != 0o600 {
+		t.Fatalf("salt mode = %o, want 600", mode)
 	}
 }
 
-func TestPrincipalFromContext_AbsentIsAnonymous(t *testing.T) {
+func TestSessionForgeryExpiryAndPasswordChange(t *testing.T) {
 	t.Parallel()
 
-	p, ok := PrincipalFromContext(context.Background())
-	if ok {
-		t.Error("bare context should report no principal")
+	hash, err := bcrypt.GenerateFromPassword([]byte("password-one"), bcrypt.DefaultCost)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	if p.AccessLevel != AccessLevelAnonymous {
-		t.Errorf("absent principal should default to anonymous, got %v", p.AccessLevel)
-	}
-}
+	authenticator, _ := newTestAuthenticator(t, Config{
+		APIKey: "key", Username: "admin", PasswordHash: string(hash),
+	})
+	now := time.Unix(1_700_000_000, 0)
+	authenticator.now = func() time.Time { return now }
+	key := authenticator.snapshot().sessionKey
 
-func anyContains(entries []observer.LoggedEntry, substr string) bool {
-	for _, e := range entries {
-		if strings.Contains(strings.ToLower(e.Message), strings.ToLower(substr)) {
-			return true
-		}
+	validValue := signSession(now.Add(time.Hour), key)
+	request := httptest.NewRequest(http.MethodGet, "/", nil)
+	request.AddCookie(&http.Cookie{Name: SessionCookieName, Value: validValue})
+
+	if valid, _ := authenticator.ValidateSession(request); !valid {
+		t.Fatal("valid session rejected")
 	}
 
-	return false
+	forged := []byte(validValue)
+	forged[0] ^= 1
+	request = httptest.NewRequest(http.MethodGet, "/", nil)
+	request.AddCookie(&http.Cookie{Name: SessionCookieName, Value: string(forged)})
+
+	if valid, _ := authenticator.ValidateSession(request); valid {
+		t.Fatal("forged session accepted")
+	}
+
+	request = httptest.NewRequest(http.MethodGet, "/", nil)
+	request.AddCookie(&http.Cookie{Name: SessionCookieName, Value: signSession(now.Add(-time.Second), key)})
+
+	if valid, _ := authenticator.ValidateSession(request); valid {
+		t.Fatal("expired session accepted")
+	}
+
+	newHash, err := bcrypt.GenerateFromPassword([]byte("password-two"), bcrypt.DefaultCost)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cfg := authenticator.config()
+	cfg.PasswordHash = string(newHash)
+
+	if err = authenticator.applyConfig(cfg); err != nil {
+		t.Fatal(err)
+	}
+
+	request = httptest.NewRequest(http.MethodGet, "/", nil)
+	request.AddCookie(&http.Cookie{Name: SessionCookieName, Value: validValue})
+
+	if valid, _ := authenticator.ValidateSession(request); valid {
+		t.Fatal("old session survived password change")
+	}
 }

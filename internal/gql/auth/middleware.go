@@ -9,35 +9,33 @@ import (
 
 const bearerPrefix = "Bearer "
 
-// Middleware returns a gin handler that enforces authentication for the routes
-// it is attached to.
-//
-// It MUST be attached per-route (or per-group), NOT via engine-wide gin.Use:
-// the GraphQL routes share their gin.Engine with torznab, telemetry, and the
-// importer, and torznab is consumed by external tools (Prowlarr, the *arr
-// stack) that authenticate with their own scheme. Gating the whole engine would
-// break them. See gql/httpserver.builder.Apply.
+// Middleware accepts a valid session, machine key, or trusted client address.
 func (a *Authenticator) Middleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if a.disabled {
+		if a.Disabled() {
 			setPrincipal(c, Principal{AccessLevel: AccessLevelAdmin})
 			c.Next()
 
 			return
 		}
 
-		principal, ok := a.resolver.Resolve(extractCredential(c.Request))
-		if !ok {
-			// Identical response for missing, malformed, and wrong credentials:
-			// the client learns only that it is unauthenticated, never why.
-			c.AbortWithStatus(http.StatusUnauthorized)
+		validSession, refresh := a.ValidateSession(c.Request)
 
+		authenticated := validSession ||
+			a.ValidateAPIKey(extractCredential(c.Request)) ||
+			a.TrustedBypass(c.Request)
+		if !authenticated {
+			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
+		if refresh {
+			a.SetSessionCookie(c.Writer, c.Request)
+		}
+
+		principal := Principal{AccessLevel: AccessLevelAdmin}
 		if principal.AccessLevel < a.required {
 			c.AbortWithStatus(http.StatusForbidden)
-
 			return
 		}
 

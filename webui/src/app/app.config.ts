@@ -1,7 +1,8 @@
 import {
+  APP_INITIALIZER,
   ApplicationConfig,
-  provideZoneChangeDetection,
   inject,
+  provideZoneChangeDetection,
 } from "@angular/core";
 import { provideRouter, withComponentInputBinding } from "@angular/router";
 
@@ -15,41 +16,34 @@ import { provideCharts, withDefaultRegisterables } from "ng2-charts";
 import { provideApollo } from "apollo-angular";
 import { HttpLink } from "apollo-angular/http";
 import { ApolloLink, InMemoryCache } from "@apollo/client/core";
-import { setContext } from "@apollo/client/link/context";
 import { onError } from "@apollo/client/link/error";
 import { graphqlEndpoint } from "../environments/environment";
 import { TranslocoImportLoader } from "./i18n/transloco.loader";
 import { routes } from "./app.routes";
-import { API_KEY_HEADER, AuthService } from "./auth/auth.service";
+import { AuthService } from "./auth/auth.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
     provideRouter(routes, withComponentInputBinding()),
+    {
+      provide: APP_INITIALIZER,
+      multi: true,
+      useFactory: () => {
+        const auth = inject(AuthService);
+        return () => auth.bootstrap();
+      },
+    },
     provideAnimationsAsync("animations"),
     provideHttpClient(withInterceptorsFromDi()),
     provideApollo(() => {
       const httpLink = inject(HttpLink);
       const auth = inject(AuthService);
 
-      // Attach the stored API key to every request. When no key is stored the
-      // header is omitted, so a server with auth disabled works unchanged.
-      const authLink = setContext((_, prevContext) => {
-        const headers = (prevContext["headers"] ?? {}) as Record<
-          string,
-          string
-        >;
-        const apiKey = auth.getApiKey();
-        return {
-          headers: apiKey ? { ...headers, [API_KEY_HEADER]: apiKey } : headers,
-        };
-      });
+      // Session authentication is carried only by the HttpOnly cookie.
 
-      // On a 401 the credential is missing or rejected: flag it so the shell
-      // can prompt for a key, rather than failing silently or with an opaque
-      // network error. apollo-angular surfaces HTTP errors as Angular's
-      // HttpErrorResponse (`status`), while Apollo's own ServerError carries
-      // `statusCode` — accept either.
+      // Route to login on a 401 rather than failing with an opaque network
+      // error. Apollo can surface either Angular's `status` or `statusCode`.
       const errorLink = onError(({ networkError }) => {
         const status = networkError
           ? ((networkError as { status?: number }).status ??
@@ -62,9 +56,8 @@ export const appConfig: ApplicationConfig = {
 
       return {
         link: ApolloLink.from([
-          authLink,
           errorLink,
-          httpLink.create({ uri: graphqlEndpoint }),
+          httpLink.create({ uri: graphqlEndpoint, withCredentials: true }),
         ]),
         cache: new InMemoryCache({
           typePolicies: {

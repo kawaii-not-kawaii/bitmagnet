@@ -2,6 +2,7 @@ package httpserver
 
 import (
 	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
+	"github.com/bitmagnet-io/bitmagnet/internal/gql/auth"
 	"github.com/bitmagnet-io/bitmagnet/internal/httpserver"
 	"github.com/bitmagnet-io/bitmagnet/internal/lazy"
 	"github.com/bitmagnet-io/bitmagnet/internal/torznab"
@@ -15,16 +16,19 @@ import (
 func New(
 	lazyClient lazy.Lazy[torznab.Client],
 	config *concurrency.AtomicValue[torznab.Config],
+	authenticator *auth.Authenticator,
 ) httpserver.Option {
 	return builder{
 		lazyClient: lazyClient,
 		config:     config,
+		auth:       authenticator,
 	}
 }
 
 type builder struct {
 	lazyClient lazy.Lazy[torznab.Client]
 	config     *concurrency.AtomicValue[torznab.Config]
+	auth       *auth.Authenticator
 }
 
 func (builder) Key() string {
@@ -40,6 +44,7 @@ func (b builder) Apply(e *gin.Engine) error {
 	h := handler{
 		config: b.config,
 		client: client,
+		auth:   b.auth,
 	}
 	e.GET("/torznab/*any", h.handleRequest)
 

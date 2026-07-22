@@ -36,6 +36,14 @@ func New() fx.Option {
 			config.New,
 			httpserver.New,
 			auth.NewAuthenticator,
+			fx.Annotate(
+				auth.NewHTTPServer,
+				fx.ResultTags(`group:"http_server_options"`),
+			),
+			fx.Annotated{
+				Group:  configapply.Group,
+				Target: auth.NewLiveApplier,
+			},
 			func(
 				lcfg lazy.Lazy[gql.Config],
 			) lazy.Lazy[graphql.ExecutableSchema] {

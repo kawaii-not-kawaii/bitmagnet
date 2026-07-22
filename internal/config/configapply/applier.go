@@ -78,6 +78,24 @@ func (a *Applier) SetSection(key string, raw any) (Outcome, error) {
 		return Outcome{}, fmt.Errorf("configapply: section %q: %w", key, ErrSectionNotMutable)
 	}
 
+	return a.setSection(key, raw, nil)
+}
+
+// SetSectionPrivileged applies a normally immutable section after checking its
+// current value under the same lock as the live apply and persistence.
+func (a *Applier) SetSectionPrivileged(
+	key string,
+	raw any,
+	check func(current any) error,
+) (Outcome, error) {
+	return a.setSection(key, raw, check)
+}
+
+func (a *Applier) setSection(
+	key string,
+	raw any,
+	check func(current any) error,
+) (Outcome, error) {
 	node, ok := a.resolved.Get().NodeMap[key]
 	if !ok {
 		return Outcome{}, fmt.Errorf("configapply: section %q: %w", key, ErrUnknownSection)
@@ -97,10 +115,6 @@ func (a *Applier) SetSection(key string, raw any) (Outcome, error) {
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		Result:      decodedValue.Interface(),
 		ErrorUnused: true,
-		// Accept both the Go field name (what the settings read query
-		// returns) and its snake_case form (what config.yml uses) — an
-		// operator will reach for either shape, and the superset stays
-		// unambiguous while ErrorUnused still rejects unknown fields.
 		MatchName: func(mapKey, fieldName string) bool {
 			return mapKey == fieldName || mapKey == strcase.ToSnake(fieldName)
 		},
@@ -115,6 +129,7 @@ func (a *Applier) SetSection(key string, raw any) (Outcome, error) {
 	}
 
 	decoded := decodedValue.Elem().Interface()
+
 	if decodedValue.Elem().Kind() == reflect.Struct {
 		if err = a.validate.Struct(decoded); err != nil {
 			return Outcome{}, fmt.Errorf("configapply: validate section %q: %w", key, err)
@@ -122,7 +137,23 @@ func (a *Applier) SetSection(key string, raw any) (Outcome, error) {
 	}
 
 	liveApplier, isLive := a.live[key]
+
 	a.mutex.Lock()
+
+	resolved := a.resolved.Get()
+
+	node, ok = resolved.NodeMap[key]
+	if !ok {
+		a.mutex.Unlock()
+		return Outcome{}, fmt.Errorf("configapply: section %q: %w", key, ErrUnknownSection)
+	}
+
+	if check != nil {
+		if err = check(node.Value); err != nil {
+			a.mutex.Unlock()
+			return Outcome{}, fmt.Errorf("configapply: check section %q: %w", key, err)
+		}
+	}
 
 	var after func()
 	if isLive {
@@ -135,14 +166,11 @@ func (a *Applier) SetSection(key string, raw any) (Outcome, error) {
 
 	writeErr := configwrite.WriteSection(string(a.path), []string{key}, encodeSection(decoded))
 	if writeErr == nil {
-		resolved := a.resolved.Get()
-
 		nodeMap := make(map[string]config.ResolvedNode, len(resolved.NodeMap))
 		for nodeKey, resolvedNode := range resolved.NodeMap {
 			nodeMap[nodeKey] = resolvedNode
 		}
 
-		node = nodeMap[key]
 		node.Value = decoded
 		node.ValueRaw = raw
 		nodeMap[key] = node
@@ -156,8 +184,6 @@ func (a *Applier) SetSection(key string, raw any) (Outcome, error) {
 		after()
 	}
 
-	// A successful live apply cannot be rolled back if persistence fails. Surface
-	// the error while leaving the running subsystem on the validated value.
 	if writeErr != nil {
 		return Outcome{}, fmt.Errorf("configapply: persist section %q: %w", key, writeErr)
 	}

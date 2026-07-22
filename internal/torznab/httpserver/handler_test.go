@@ -6,10 +6,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
+	"github.com/bitmagnet-io/bitmagnet/internal/config/configwrite"
+	"github.com/bitmagnet-io/bitmagnet/internal/gql/auth"
 	"github.com/bitmagnet-io/bitmagnet/internal/lazy"
 	"github.com/bitmagnet-io/bitmagnet/internal/model"
 	"github.com/bitmagnet-io/bitmagnet/internal/torznab"
@@ -19,6 +22,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 var testCfg = torznab.Config{
@@ -43,6 +47,11 @@ type testHarness struct {
 
 func newTestHarness(t *testing.T) *testHarness {
 	t.Helper()
+	return newTestHarnessWithAuth(t, auth.Config{Disabled: true})
+}
+
+func newTestHarnessWithAuth(t *testing.T, authConfig auth.Config) *testHarness {
+	t.Helper()
 
 	clientMock := torznab_mocks.NewClient(t)
 	lazyClient := lazy.New[torznab.Client](func() (torznab.Client, error) {
@@ -52,9 +61,15 @@ func newTestHarness(t *testing.T) *testHarness {
 	cfg := &concurrency.AtomicValue[torznab.Config]{}
 	cfg.Set(testCfg)
 
-	engine := gin.New()
-	err := httpserver.New(lazyClient, cfg).Apply(engine)
+	authenticator, err := auth.NewAuthenticator(
+		authConfig,
+		configwrite.TargetPath(filepath.Join(t.TempDir(), "config.yml")),
+		zap.NewNop().Sugar(),
+	)
+	require.NoError(t, err)
 
+	engine := gin.New()
+	err = httpserver.New(lazyClient, cfg, authenticator).Apply(engine)
 	require.NoError(t, err)
 
 	return &testHarness{

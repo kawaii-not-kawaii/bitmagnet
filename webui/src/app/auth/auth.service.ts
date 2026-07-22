@@ -1,60 +1,115 @@
+import { HttpClient } from "@angular/common/http";
 import { Injectable, inject, signal } from "@angular/core";
+import { Router } from "@angular/router";
+import { Observable, firstValueFrom } from "rxjs";
 import { BrowserStorageService } from "../browser-storage/browser-storage.service";
 
-// Storage key for the persisted API key. Namespaced to avoid clashing with
-// other localStorage entries.
-const API_KEY_STORAGE_KEY = "bitmagnet.apiKey";
+const LEGACY_API_KEY_STORAGE_KEY = "bitmagnet.apiKey";
 
-// Header the backend expects (canonical). The server also accepts
-// Authorization: Bearer, but the web UI uses the X-Api-Key form to match the
-// *arr ecosystem convention and to avoid implying OAuth2 semantics.
-export const API_KEY_HEADER = "X-Api-Key";
+export interface AuthState {
+  authDisabled: boolean;
+  needsSetup: boolean;
+  trustedBypass: boolean;
+}
 
-/**
- * AuthService holds the API key the web UI presents on every GraphQL request,
- * and tracks whether the server has rejected the current key (or the lack of
- * one) with a 401.
- *
- * The key is stored in localStorage so it survives reloads. `authRequired` is a
- * signal the shell watches to prompt for a key; it is set by the Apollo error
- * link on a 401 and cleared once a key is (re)entered.
- */
+export type LoginRequest =
+  | { username: string; password: string }
+  | { apiKey: string };
+
+export interface AuthResponse {
+  ok: boolean;
+  authDisabled?: boolean;
+}
+
 @Injectable({ providedIn: "root" })
 export class AuthService {
+  private readonly http = inject(HttpClient);
+  private readonly router = inject(Router);
   private readonly storage = inject(BrowserStorageService);
+  private readonly currentState = signal<AuthState | null>(null);
 
-  // Whether the server has signalled that authentication is required and the
-  // current credential is missing or rejected. Read by the shell to show the
-  // key prompt.
-  readonly authRequired = signal(false);
+  readonly state = this.currentState.asReadonly();
 
-  getApiKey(): string | null {
-    return this.storage.get(API_KEY_STORAGE_KEY);
+  loadState(): Observable<AuthState> {
+    return this.http.get<AuthState>("/auth/state", { withCredentials: true });
   }
 
-  setApiKey(key: string): void {
-    const trimmed = key.trim();
-    if (trimmed.length === 0) {
-      this.clearApiKey();
+  setup(username: string, password: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(
+      "/auth/setup",
+      { username, password },
+      { withCredentials: true },
+    );
+  }
+
+  login(credentials: LoginRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>("/auth/login", credentials, {
+      withCredentials: true,
+    });
+  }
+
+  logout(): Observable<void> {
+    return this.http.post<void>("/auth/logout", null, {
+      withCredentials: true,
+    });
+  }
+
+  async bootstrap(): Promise<void> {
+    const legacyKey = this.storage.get(LEGACY_API_KEY_STORAGE_KEY);
+    let legacyLogin: "none" | "succeeded" | "failed" = "none";
+
+    if (legacyKey !== null) {
+      try {
+        await firstValueFrom(this.login({ apiKey: legacyKey }));
+        legacyLogin = "succeeded";
+      } catch {
+        legacyLogin = "failed";
+      } finally {
+        this.storage.remove(LEGACY_API_KEY_STORAGE_KEY);
+      }
+    }
+
+    let state: AuthState;
+    try {
+      state = await firstValueFrom(this.loadState());
+    } catch {
       return;
     }
-    this.storage.set(API_KEY_STORAGE_KEY, trimmed);
-    // A freshly entered key clears the prompt; if it is still wrong the next
-    // request's 401 will set it again.
-    this.authRequired.set(false);
+    this.currentState.set(state);
+
+    if (state.needsSetup) {
+      await this.router.navigate(["/setup"]);
+      return;
+    }
+    if (legacyLogin === "failed") {
+      await this.routeToLogin();
+      return;
+    }
+    if (
+      this.isAuthRoute(this.router.url) &&
+      (legacyLogin === "succeeded" ||
+        state.authDisabled ||
+        state.trustedBypass ||
+        this.router.url.startsWith("/setup"))
+    ) {
+      await this.router.navigateByUrl("/torrents");
+    }
   }
 
-  clearApiKey(): void {
-    this.storage.remove(API_KEY_STORAGE_KEY);
-  }
-
-  /**
-   * Called by the Apollo error link when a request comes back 401. Records that
-   * a credential is needed so the shell can prompt. Deliberately does NOT clear
-   * the stored key: the operator may have simply mistyped, and clearing would
-   * lose a possibly-correct key on a transient failure.
-   */
   notifyAuthRequired(): void {
-    this.authRequired.set(true);
+    void this.routeToLogin();
+  }
+
+  private routeToLogin(): Promise<boolean> {
+    if (this.isAuthRoute(this.router.url)) {
+      return Promise.resolve(false);
+    }
+    return this.router.navigate(["/login"], {
+      queryParams: { returnUrl: this.router.url },
+    });
+  }
+
+  private isAuthRoute(url: string): boolean {
+    return url.startsWith("/login") || url.startsWith("/setup");
   }
 }

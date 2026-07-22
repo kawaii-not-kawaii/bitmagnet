@@ -7,6 +7,16 @@ export const routes: Routes = [
     redirectTo: "torrents",
   },
   {
+    path: "setup",
+    loadComponent: () =>
+      import("./auth/setup.component").then((c) => c.SetupComponent),
+  },
+  {
+    path: "login",
+    loadComponent: () =>
+      import("./auth/login.component").then((c) => c.LoginComponent),
+  },
+  {
     path: "torrents",
     loadComponent: () =>
       import("./torrents/torrents.component").then((c) => c.TorrentsComponent),
