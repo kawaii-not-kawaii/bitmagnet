@@ -64,6 +64,10 @@ type ClassifyResult struct {
 	ReleaseGroup string `json:"release_group,omitempty"`
 	// Tags are freeform labels derived from the torrent, e.g. ["multilingual", "remux"].
 	Tags []string `json:"tags,omitempty"`
+	// PromptTokens and CompletionTokens are provider-reported usage metadata.
+	// They are not part of the model's JSON classification payload.
+	PromptTokens     int `json:"-"`
+	CompletionTokens int `json:"-"`
 }
 
 // flexInt is an int that tolerates the real-world type variations LLMs emit

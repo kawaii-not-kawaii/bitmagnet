@@ -31,9 +31,11 @@ type Event struct {
 	InfoHash    string
 	TorrentName string
 	// Provider is empty for OutcomeSkipped.
-	Provider string
-	Duration time.Duration
-	Outcome  Outcome
+	Provider         string
+	Duration         time.Duration
+	PromptTokens     int
+	CompletionTokens int
+	Outcome          Outcome
 	// Parsed fields, populated when Outcome is OutcomeMatched.
 	ContentType string
 	Title       string
@@ -57,11 +59,13 @@ type ProviderStats struct {
 // Stats is the aggregate payload served to the stats query.
 type Stats struct {
 	// Lifetime counters since process start.
-	Attempted int64
-	Matched   int64
-	Unmatched int64
-	Errored   int64
-	Skipped   int64
+	Attempted        int64
+	Matched          int64
+	Unmatched        int64
+	Errored          int64
+	Skipped          int64
+	PromptTokens     int64
+	CompletionTokens int64
 	// PerProvider is sorted by provider name for deterministic output.
 	PerProvider []ProviderStats
 	// InFlight is the number of classifications currently executing.

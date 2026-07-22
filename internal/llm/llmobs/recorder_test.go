@@ -227,6 +227,28 @@ func TestRecorder_Stats(t *testing.T) {
 		t.Errorf("per provider = %#v, want %#v", stats.PerProvider, wantProviders)
 	}
 }
+func TestRecorder_TokenUsage(t *testing.T) {
+	t.Parallel()
+
+	r := New()
+	r.Record(Event{PromptTokens: 100, CompletionTokens: 20})
+	r.Record(Event{PromptTokens: 50, CompletionTokens: 10})
+	r.Record(Event{})
+
+	stats := r.Stats(time.Minute)
+	if stats.PromptTokens != 150 || stats.CompletionTokens != 30 {
+		t.Errorf(
+			"token totals = %d prompt/%d completion, want 150/30",
+			stats.PromptTokens,
+			stats.CompletionTokens,
+		)
+	}
+
+	event := r.Events(1)[0]
+	if event.PromptTokens != 0 || event.CompletionTokens != 0 {
+		t.Errorf("absent usage = %d/%d, want 0/0", event.PromptTokens, event.CompletionTokens)
+	}
+}
 
 func TestRecorder_StatsTruncation(t *testing.T) {
 	t.Parallel()

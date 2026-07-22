@@ -88,6 +88,7 @@ func TestClassify_Success(t *testing.T) {
 			fmt.Sprintf(`{"content_type": %q, "title": "Test Movie", "year": 2024}`, testContentTypeMovie),
 		)
 		resp.Choices[0].FinishReason = "stop"
+		resp.Usage = chatResponseUsage{PromptTokens: 100, CompletionTokens: 20, TotalTokens: 120}
 
 		w.Header().Set("Content-Type", "application/json")
 
@@ -118,6 +119,14 @@ func TestClassify_Success(t *testing.T) {
 	if result.Year != 2024 {
 		t.Errorf("expected 2024, got %d", result.Year)
 	}
+
+	if result.PromptTokens != 100 || result.CompletionTokens != 20 {
+		t.Errorf(
+			"usage = %d prompt/%d completion, want 100/20",
+			result.PromptTokens,
+			result.CompletionTokens,
+		)
+	}
 }
 
 func TestClassify_EmptyContent(t *testing.T) {
@@ -134,9 +143,13 @@ func TestClassify_EmptyContent(t *testing.T) {
 
 	p := New(Config{Name: "test", BaseURL: srv.URL, Model: "test"})
 
-	_, err := p.Classify(context.Background(), llm.ClassifyInput{Name: "Test"})
+	result, err := p.Classify(context.Background(), llm.ClassifyInput{Name: "Test"})
 	if err == nil {
 		t.Fatal("expected error for empty content_type")
+	}
+
+	if result == nil || result.PromptTokens != 0 || result.CompletionTokens != 0 {
+		t.Fatalf("absent usage = %#v, want zero-valued result", result)
 	}
 }
 

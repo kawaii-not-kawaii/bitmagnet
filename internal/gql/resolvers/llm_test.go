@@ -26,16 +26,18 @@ func TestLlmQuery_Events(t *testing.T) {
 		Outcome:     llmobs.OutcomeUnmatched,
 	})
 	recorder.Record(llmobs.Event{
-		Timestamp:   time.Unix(2, 0),
-		InfoHash:    "new-hash",
-		TorrentName: "New torrent",
-		Provider:    "gemma",
-		Duration:    1250 * time.Millisecond,
-		Outcome:     llmobs.OutcomeMatched,
-		ContentType: "movie",
-		Title:       "New",
-		Year:        2026,
-		Languages:   []string{"en"},
+		Timestamp:        time.Unix(2, 0),
+		InfoHash:         "new-hash",
+		TorrentName:      "New torrent",
+		Provider:         "gemma",
+		Duration:         1250 * time.Millisecond,
+		Outcome:          llmobs.OutcomeMatched,
+		ContentType:      "movie",
+		Title:            "New",
+		Year:             2026,
+		Languages:        []string{"en"},
+		PromptTokens:     100,
+		CompletionTokens: 20,
 	})
 
 	limit := 1
@@ -67,6 +69,14 @@ func TestLlmQuery_Events(t *testing.T) {
 		t.Errorf("event parsed fields = %#v", event)
 	}
 
+	if event.PromptTokens != 100 || event.CompletionTokens != 20 {
+		t.Errorf(
+			"event tokens = %d prompt/%d completion, want 100/20",
+			event.PromptTokens,
+			event.CompletionTokens,
+		)
+	}
+
 	if len(event.Languages) != 1 || event.Languages[0] != "en" {
 		t.Errorf("event languages = %v, want [en]", event.Languages)
 	}
@@ -89,16 +99,20 @@ func TestLlmQuery_Stats(t *testing.T) {
 	recorder := llmobs.New()
 	now := time.Now()
 	recorder.Record(llmobs.Event{
-		Timestamp: now.Add(-time.Minute),
-		Provider:  "gemma",
-		Duration:  100 * time.Millisecond,
-		Outcome:   llmobs.OutcomeMatched,
+		Timestamp:        now.Add(-time.Minute),
+		Provider:         "gemma",
+		Duration:         100 * time.Millisecond,
+		Outcome:          llmobs.OutcomeMatched,
+		PromptTokens:     100,
+		CompletionTokens: 20,
 	})
 	recorder.Record(llmobs.Event{
-		Timestamp: now.Add(-30 * time.Second),
-		Provider:  "gemma",
-		Duration:  300 * time.Millisecond,
-		Outcome:   llmobs.OutcomeError,
+		Timestamp:        now.Add(-30 * time.Second),
+		Provider:         "gemma",
+		Duration:         300 * time.Millisecond,
+		Outcome:          llmobs.OutcomeError,
+		PromptTokens:     50,
+		CompletionTokens: 10,
 	})
 
 	finish := recorder.Begin()
@@ -124,6 +138,14 @@ func TestLlmQuery_Stats(t *testing.T) {
 			stats.Attempted,
 			stats.Matched,
 			stats.Errored,
+		)
+	}
+
+	if stats.PromptTokens != 150 || stats.CompletionTokens != 30 {
+		t.Errorf(
+			"token totals = %d prompt/%d completion, want 150/30",
+			stats.PromptTokens,
+			stats.CompletionTokens,
 		)
 	}
 

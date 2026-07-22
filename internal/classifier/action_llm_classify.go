@@ -91,6 +91,10 @@ func (llmClassifyAction) compileAction(ctx compilerContext) (action, error) {
 			done := ctx.recorder.Begin()
 			started := time.Now()
 			result, err := provider.Classify(ctx, input)
+			if result != nil {
+				event.PromptTokens = result.PromptTokens
+				event.CompletionTokens = result.CompletionTokens
+			}
 			event.Duration = time.Since(started)
 			done()
 

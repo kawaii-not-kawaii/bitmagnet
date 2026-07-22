@@ -20,12 +20,14 @@ type Recorder struct {
 	next   int
 	count  int
 
-	attempted int64
-	matched   int64
-	unmatched int64
-	errored   int64
-	skipped   int64
-	inFlight  int64
+	attempted        int64
+	matched          int64
+	unmatched        int64
+	errored          int64
+	skipped          int64
+	promptTokens     int64
+	completionTokens int64
+	inFlight         int64
 
 	perProvider map[string]ProviderStats
 	metrics     recorderMetrics
@@ -61,6 +63,8 @@ func (r *Recorder) Record(e Event) {
 	}
 
 	r.attempted++
+	r.promptTokens += int64(e.PromptTokens)
+	r.completionTokens += int64(e.CompletionTokens)
 
 	switch e.Outcome {
 	case OutcomeMatched:
@@ -162,14 +166,16 @@ func (r *Recorder) Stats(window time.Duration) Stats {
 
 	r.mu.RLock()
 	stats := Stats{
-		Attempted:   r.attempted,
-		Matched:     r.matched,
-		Unmatched:   r.unmatched,
-		Errored:     r.errored,
-		Skipped:     r.skipped,
-		InFlight:    r.inFlight,
-		WindowStart: windowStart,
-		PerProvider: make([]ProviderStats, 0, len(r.perProvider)),
+		Attempted:        r.attempted,
+		Matched:          r.matched,
+		Unmatched:        r.unmatched,
+		Errored:          r.errored,
+		Skipped:          r.skipped,
+		PromptTokens:     r.promptTokens,
+		CompletionTokens: r.completionTokens,
+		InFlight:         r.inFlight,
+		WindowStart:      windowStart,
+		PerProvider:      make([]ProviderStats, 0, len(r.perProvider)),
 	}
 
 	for _, provider := range r.perProvider {

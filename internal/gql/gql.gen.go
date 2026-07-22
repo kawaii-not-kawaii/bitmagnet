@@ -220,19 +220,21 @@ type ComplexityRoot struct {
 	}
 
 	LlmClassificationEvent struct {
-		ContentType func(childComplexity int) int
-		DurationMs  func(childComplexity int) int
-		Episode     func(childComplexity int) int
-		Error       func(childComplexity int) int
-		InfoHash    func(childComplexity int) int
-		Languages   func(childComplexity int) int
-		Outcome     func(childComplexity int) int
-		Provider    func(childComplexity int) int
-		Season      func(childComplexity int) int
-		Timestamp   func(childComplexity int) int
-		Title       func(childComplexity int) int
-		TorrentName func(childComplexity int) int
-		Year        func(childComplexity int) int
+		CompletionTokens func(childComplexity int) int
+		ContentType      func(childComplexity int) int
+		DurationMs       func(childComplexity int) int
+		Episode          func(childComplexity int) int
+		Error            func(childComplexity int) int
+		InfoHash         func(childComplexity int) int
+		Languages        func(childComplexity int) int
+		Outcome          func(childComplexity int) int
+		PromptTokens     func(childComplexity int) int
+		Provider         func(childComplexity int) int
+		Season           func(childComplexity int) int
+		Timestamp        func(childComplexity int) int
+		Title            func(childComplexity int) int
+		TorrentName      func(childComplexity int) int
+		Year             func(childComplexity int) int
 	}
 
 	LlmProviderStats struct {
@@ -250,6 +252,7 @@ type ComplexityRoot struct {
 
 	LlmStats struct {
 		Attempted           func(childComplexity int) int
+		CompletionTokens    func(childComplexity int) int
 		Concurrency         func(childComplexity int) int
 		Errored             func(childComplexity int) int
 		InFlight            func(childComplexity int) int
@@ -258,6 +261,7 @@ type ComplexityRoot struct {
 		Matched             func(childComplexity int) int
 		OldestBuffered      func(childComplexity int) int
 		PerProvider         func(childComplexity int) int
+		PromptTokens        func(childComplexity int) int
 		QueuePending        func(childComplexity int) int
 		Skipped             func(childComplexity int) int
 		SuccessRate         func(childComplexity int) int
@@ -1254,6 +1258,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LanguageInfo.Name(childComplexity), true
 
+	case "LlmClassificationEvent.completionTokens":
+		if e.complexity.LlmClassificationEvent.CompletionTokens == nil {
+			break
+		}
+
+		return e.complexity.LlmClassificationEvent.CompletionTokens(childComplexity), true
+
 	case "LlmClassificationEvent.contentType":
 		if e.complexity.LlmClassificationEvent.ContentType == nil {
 			break
@@ -1302,6 +1313,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LlmClassificationEvent.Outcome(childComplexity), true
+
+	case "LlmClassificationEvent.promptTokens":
+		if e.complexity.LlmClassificationEvent.PromptTokens == nil {
+			break
+		}
+
+		return e.complexity.LlmClassificationEvent.PromptTokens(childComplexity), true
 
 	case "LlmClassificationEvent.provider":
 		if e.complexity.LlmClassificationEvent.Provider == nil {
@@ -1411,6 +1429,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LlmStats.Attempted(childComplexity), true
 
+	case "LlmStats.completionTokens":
+		if e.complexity.LlmStats.CompletionTokens == nil {
+			break
+		}
+
+		return e.complexity.LlmStats.CompletionTokens(childComplexity), true
+
 	case "LlmStats.concurrency":
 		if e.complexity.LlmStats.Concurrency == nil {
 			break
@@ -1466,6 +1491,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LlmStats.PerProvider(childComplexity), true
+
+	case "LlmStats.promptTokens":
+		if e.complexity.LlmStats.PromptTokens == nil {
+			break
+		}
+
+		return e.complexity.LlmStats.PromptTokens(childComplexity), true
 
 	case "LlmStats.queuePending":
 		if e.complexity.LlmStats.QueuePending == nil {
@@ -3200,6 +3232,8 @@ type LlmClassificationEvent {
   provider: String!
   durationMs: Int!
   outcome: LlmClassificationOutcome!
+  promptTokens: Int!
+  completionTokens: Int!
   contentType: String!
   title: String!
   year: Int!
@@ -3223,6 +3257,8 @@ type LlmStats {
   unmatched: Int!
   errored: Int!
   skipped: Int!
+  promptTokens: Int!
+  completionTokens: Int!
   successRate: Float!
   perProvider: [LlmProviderStats!]!
   inFlight: Int!
@@ -8784,6 +8820,94 @@ func (ec *executionContext) fieldContext_LlmClassificationEvent_outcome(_ contex
 	return fc, nil
 }
 
+func (ec *executionContext) _LlmClassificationEvent_promptTokens(ctx context.Context, field graphql.CollectedField, obj *gen.LlmClassificationEvent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmClassificationEvent_promptTokens(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PromptTokens, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmClassificationEvent_promptTokens(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmClassificationEvent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LlmClassificationEvent_completionTokens(ctx context.Context, field graphql.CollectedField, obj *gen.LlmClassificationEvent) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmClassificationEvent_completionTokens(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CompletionTokens, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmClassificationEvent_completionTokens(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmClassificationEvent",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _LlmClassificationEvent_contentType(ctx context.Context, field graphql.CollectedField, obj *gen.LlmClassificationEvent) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_LlmClassificationEvent_contentType(ctx, field)
 	if err != nil {
@@ -9363,6 +9487,10 @@ func (ec *executionContext) fieldContext_LlmQuery_events(ctx context.Context, fi
 				return ec.fieldContext_LlmClassificationEvent_durationMs(ctx, field)
 			case "outcome":
 				return ec.fieldContext_LlmClassificationEvent_outcome(ctx, field)
+			case "promptTokens":
+				return ec.fieldContext_LlmClassificationEvent_promptTokens(ctx, field)
+			case "completionTokens":
+				return ec.fieldContext_LlmClassificationEvent_completionTokens(ctx, field)
 			case "contentType":
 				return ec.fieldContext_LlmClassificationEvent_contentType(ctx, field)
 			case "title":
@@ -9444,6 +9572,10 @@ func (ec *executionContext) fieldContext_LlmQuery_stats(ctx context.Context, fie
 				return ec.fieldContext_LlmStats_errored(ctx, field)
 			case "skipped":
 				return ec.fieldContext_LlmStats_skipped(ctx, field)
+			case "promptTokens":
+				return ec.fieldContext_LlmStats_promptTokens(ctx, field)
+			case "completionTokens":
+				return ec.fieldContext_LlmStats_completionTokens(ctx, field)
 			case "successRate":
 				return ec.fieldContext_LlmStats_successRate(ctx, field)
 			case "perProvider":
@@ -9692,6 +9824,94 @@ func (ec *executionContext) _LlmStats_skipped(ctx context.Context, field graphql
 }
 
 func (ec *executionContext) fieldContext_LlmStats_skipped(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LlmStats_promptTokens(ctx context.Context, field graphql.CollectedField, obj *gen.LlmStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmStats_promptTokens(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.PromptTokens, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmStats_promptTokens(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LlmStats_completionTokens(ctx context.Context, field graphql.CollectedField, obj *gen.LlmStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmStats_completionTokens(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.CompletionTokens, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmStats_completionTokens(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LlmStats",
 		Field:      field,
@@ -22953,6 +23173,16 @@ func (ec *executionContext) _LlmClassificationEvent(ctx context.Context, sel ast
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "promptTokens":
+			out.Values[i] = ec._LlmClassificationEvent_promptTokens(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "completionTokens":
+			out.Values[i] = ec._LlmClassificationEvent_completionTokens(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "contentType":
 			out.Values[i] = ec._LlmClassificationEvent_contentType(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -23209,6 +23439,16 @@ func (ec *executionContext) _LlmStats(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "skipped":
 			out.Values[i] = ec._LlmStats_skipped(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "promptTokens":
+			out.Values[i] = ec._LlmStats_promptTokens(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "completionTokens":
+			out.Values[i] = ec._LlmStats_completionTokens(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}

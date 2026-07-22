@@ -124,19 +124,21 @@ type LanguageFacetInput struct {
 }
 
 type LlmClassificationEvent struct {
-	Timestamp   time.Time                `json:"timestamp"`
-	InfoHash    string                   `json:"infoHash"`
-	TorrentName string                   `json:"torrentName"`
-	Provider    string                   `json:"provider"`
-	DurationMs  int                      `json:"durationMs"`
-	Outcome     LlmClassificationOutcome `json:"outcome"`
-	ContentType string                   `json:"contentType"`
-	Title       string                   `json:"title"`
-	Year        int                      `json:"year"`
-	Season      int                      `json:"season"`
-	Episode     int                      `json:"episode"`
-	Languages   []string                 `json:"languages"`
-	Error       string                   `json:"error"`
+	Timestamp        time.Time                `json:"timestamp"`
+	InfoHash         string                   `json:"infoHash"`
+	TorrentName      string                   `json:"torrentName"`
+	Provider         string                   `json:"provider"`
+	DurationMs       int                      `json:"durationMs"`
+	Outcome          LlmClassificationOutcome `json:"outcome"`
+	PromptTokens     int                      `json:"promptTokens"`
+	CompletionTokens int                      `json:"completionTokens"`
+	ContentType      string                   `json:"contentType"`
+	Title            string                   `json:"title"`
+	Year             int                      `json:"year"`
+	Season           int                      `json:"season"`
+	Episode          int                      `json:"episode"`
+	Languages        []string                 `json:"languages"`
+	Error            string                   `json:"error"`
 }
 
 type LlmProviderStats struct {
@@ -158,6 +160,8 @@ type LlmStats struct {
 	Unmatched           int                `json:"unmatched"`
 	Errored             int                `json:"errored"`
 	Skipped             int                `json:"skipped"`
+	PromptTokens        int                `json:"promptTokens"`
+	CompletionTokens    int                `json:"completionTokens"`
 	SuccessRate         float64            `json:"successRate"`
 	PerProvider         []LlmProviderStats `json:"perProvider"`
 	InFlight            int                `json:"inFlight"`
