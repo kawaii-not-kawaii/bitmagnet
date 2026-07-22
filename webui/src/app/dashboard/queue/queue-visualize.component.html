@@ -2,131 +2,80 @@
   <app-document-title [parts]="[t('routes.visualize'), t('routes.queues')]" />
 
   <section class="visualize" aria-label="Queue activity">
-    <div class="filter-bar">
-      <label class="select-control">
-        <span>{{ t("dashboard.metrics.timeframe") }}</span>
-        <select
-          [value]="queueMetricsController.params.buckets.timeframe"
-          (change)="
-            queueMetricsController.setTimeframe($any($event.target).value)
-          "
-        >
-          @for (name of timeframeNames; track name) {
-            <option [value]="name">
-              {{ t("dashboard.interval." + name) }}
-            </option>
+    <div class="filter-groups">
+      <fieldset>
+        <legend>{{ t("dashboard.metrics.timeframe") }}</legend>
+        <div class="segments">
+          @for (timeframe of timeframes; track timeframe.value) {
+            <button
+              type="button"
+              [class.active]="
+                queueMetricsController.params.buckets.timeframe ===
+                timeframe.value
+              "
+              [attr.aria-pressed]="
+                queueMetricsController.params.buckets.timeframe ===
+                timeframe.value
+              "
+              (click)="queueMetricsController.setTimeframe(timeframe.value)"
+            >
+              {{ timeframe.label }}
+            </button>
           }
-        </select>
-      </label>
+        </div>
+      </fieldset>
 
-      <div class="resolution-control">
-        <label>
-          <span>{{ t("dashboard.metrics.resolution") }}</span>
-          <input
-            type="number"
-            min="1"
-            step="1"
-            inputmode="numeric"
-            [placeholder]="
-              (
-                queueMetricsController.result$ | async
-              )?.params?.buckets?.multiplier?.toString() ?? 'auto'
-            "
-            [value]="
-              queueMetricsController.params.buckets.multiplier === 'AUTO'
-                ? ''
-                : queueMetricsController.params.buckets.multiplier
-            "
-            (change)="handleMultiplierEvent($event)"
-          />
-        </label>
-        <label class="resolution-unit">
-          <span aria-hidden="true">&nbsp;</span>
-          <select
-            [value]="queueMetricsController.bucketDuration"
-            (change)="
-              queueMetricsController.setBucketDuration(
-                $any($event.target).value
-              )
-            "
+      <fieldset>
+        <legend>{{ t("dashboard.queues.queue") }}</legend>
+        <div class="segments">
+          <button
+            type="button"
+            [class.active]="!queueMetricsController.params.queue"
+            [attr.aria-pressed]="!queueMetricsController.params.queue"
+            (click)="queueMetricsController.setQueue(null)"
           >
-            @for (name of resolutionNames; track name) {
-              <option [value]="name">
-                {{ t("dashboard.interval." + name + "s") }}
-              </option>
-            }
-          </select>
-        </label>
-      </div>
-
-      <label class="select-control">
-        <span>{{ t("dashboard.queues.queue") }}</span>
-        <select
-          [value]="queueMetricsController.params.queue ?? '_all'"
-          (change)="
-            queueMetricsController.setQueue(
-              $any($event.target).value === '_all'
-                ? null
-                : $any($event.target).value
-            )
-          "
-        >
-          <option value="_all">{{ t("general.all") }}</option>
+            {{ t("general.all") }}
+          </button>
           @for (queue of availableQueueNames; track queue) {
-            <option [value]="queue">{{ queue }}</option>
+            <button
+              type="button"
+              [class.active]="queueMetricsController.params.queue === queue"
+              [attr.aria-pressed]="
+                queueMetricsController.params.queue === queue
+              "
+              (click)="queueMetricsController.setQueue(queue)"
+            >
+              {{ queue }}
+            </button>
           }
-        </select>
-      </label>
+        </div>
+      </fieldset>
 
-      <label class="select-control">
-        <span>{{ t("dashboard.metrics.event") }}</span>
-        <select
-          [value]="queueMetricsController.params.event ?? '_all'"
-          (change)="
-            queueMetricsController.setEvent(
-              $any($event.target).value === '_all'
-                ? null
-                : $any($event.target).value
-            )
-          "
-        >
-          <option value="_all">{{ t("general.all") }}</option>
+      <fieldset>
+        <legend>{{ t("dashboard.metrics.event") }}</legend>
+        <div class="segments">
+          <button
+            type="button"
+            [class.active]="!queueMetricsController.params.event"
+            [attr.aria-pressed]="!queueMetricsController.params.event"
+            (click)="queueMetricsController.setEvent(null)"
+          >
+            {{ t("general.all") }}
+          </button>
           @for (event of eventNames; track event) {
-            <option [value]="event">
+            <button
+              type="button"
+              [class.active]="queueMetricsController.params.event === event"
+              [attr.aria-pressed]="
+                queueMetricsController.params.event === event
+              "
+              (click)="queueMetricsController.setEvent(event)"
+            >
               {{ t("dashboard.event." + event) }}
-            </option>
+            </button>
           }
-        </select>
-      </label>
-
-      <label class="select-control">
-        <span>{{ t("general.refresh") }}</span>
-        <select
-          [value]="queueMetricsController.params.autoRefresh"
-          (change)="
-            queueMetricsController.setAutoRefreshInterval(
-              $any($event.target).value
-            )
-          "
-        >
-          @for (name of autoRefreshIntervalNames; track name) {
-            <option [value]="name">
-              {{ t("dashboard.interval." + name) }}
-            </option>
-          }
-        </select>
-      </label>
-
-      <button
-        type="button"
-        class="refresh-button"
-        [class.loading]="queueMetricsController.loading"
-        (click)="queueMetricsController.refresh()"
-        [attr.aria-label]="t('general.refresh')"
-        [title]="t('general.refresh')"
-      >
-        ↻
-      </button>
+        </div>
+      </fieldset>
     </div>
 
     <div
@@ -134,44 +83,47 @@
       [class.active]="queueMetricsController.loading"
     ></div>
 
-    <div class="chart-grid">
-      <article class="chart-card">
-        <header>
-          <div>
-            <strong>{{ t("dashboard.queues.total_counts_by_status") }}</strong>
-            <span>Current queue distribution</span>
+    @if (view$ | async; as view) {
+      <div class="visualization-grid">
+        <article class="status-card">
+          <h2>{{ t("dashboard.queues.total_counts_by_status") }}</h2>
+          <div class="status-list">
+            @for (item of view.statusTotals; track item.status) {
+              <div class="status-row" [class]="item.status">
+                <div class="status-heading">
+                  <span><i></i>{{ t("dashboard.queues." + item.status) }}</span>
+                  <strong>{{ item.count | number }}</strong>
+                </div>
+                <div class="status-track">
+                  <span [style.width.%]="item.percent"></span>
+                </div>
+              </div>
+            }
           </div>
-        </header>
-        <div class="chart-wrap">
-          <app-chart
-            title=""
-            [adapter]="totals"
-            [$data]="queueMetricsController.result$"
-            [height]="330"
-            [width]="520"
-          />
-        </div>
-      </article>
+        </article>
 
-      <article class="chart-card">
-        <header>
-          <div>
-            <strong>{{ t("dashboard.metrics.throughput") }}</strong>
-            <span>Queue events over time</span>
+        <article class="throughput-card">
+          <header>
+            <h2>
+              {{ t("dashboard.metrics.throughput") }}
+              <span>· {{ view.queueLabel }}</span>
+            </h2>
+            <span>jobs / bucket</span>
+          </header>
+          <div class="bars" aria-label="Queue throughput">
+            @for (bar of view.bars; track $index) {
+              <div class="bar-slot" [title]="bar.count + ' jobs'">
+                <span [style.height.%]="bar.height"></span>
+              </div>
+            }
           </div>
-          <span class="live-indicator"><i></i> live metrics</span>
-        </header>
-        <div class="chart-wrap">
-          <app-chart
-            title=""
-            [adapter]="timeline"
-            [legend]="breakpoints.sizeAtLeast('Small')"
-            [$data]="queueMetricsController.result$"
-            [height]="330"
-            [width]="520"
-          />
-        </div>
-      </article>
-    </div>
+          <div class="bar-labels">
+            @for (bar of view.bars; track $index) {
+              <span>{{ bar.label }}</span>
+            }
+          </div>
+        </article>
+      </div>
+    }
   </section>
 </ng-container>

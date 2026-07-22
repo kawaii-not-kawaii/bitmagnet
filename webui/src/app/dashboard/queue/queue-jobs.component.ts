@@ -72,5 +72,9 @@ export class QueueJobsComponent {
     );
   }
 
+  refresh() {
+    this.dataSource.refresh();
+  }
+
   protected readonly orderByOptions = orderByOptions;
 }

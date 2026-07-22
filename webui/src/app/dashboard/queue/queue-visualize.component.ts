@@ -1,75 +1,173 @@
-import { Component, inject, OnDestroy, OnInit } from "@angular/core";
+import { Component, inject, OnDestroy } from "@angular/core";
+import { format as formatDate } from "date-fns/format";
 import { Apollo } from "apollo-angular";
-import { ChartComponent } from "../../charting/chart.component";
+import { Observable } from "rxjs";
+import { map } from "rxjs/operators";
 import { ErrorsService } from "../../errors/errors.service";
 import { AppModule } from "../../app.module";
 import { DocumentTitleComponent } from "../../layout/document-title.component";
-import { BreakpointsService } from "../../layout/breakpoints.service";
+import { QueueJobStatus } from "../../graphql/generated";
 import {
-  autoRefreshIntervalNames,
   availableQueueNames,
+  durationSeconds,
   eventNames,
-  resolutionNames,
-  timeframeNames,
 } from "./queue.constants";
-import { QueueChartAdapterTotals } from "./queue-chart-adapter.totals";
-import { QueueMetricsController } from "./queue-metrics.controller";
-import { QueueChartAdapterTimeline } from "./queue-chart-adapter.timeline";
+import {
+  normalizeBucket,
+  QueueMetricsController,
+} from "./queue-metrics.controller";
+import { EventName, Result, TimeframeName } from "./queue-metrics.types";
+
+type StatusTotal = {
+  status: QueueJobStatus;
+  count: number;
+  percent: number;
+};
+
+type ThroughputBar = {
+  count: number;
+  height: number;
+  label: string;
+};
+
+type VisualizeView = {
+  queueLabel: string;
+  statusTotals: StatusTotal[];
+  bars: ThroughputBar[];
+};
+
+const statusOrder: QueueJobStatus[] = [
+  "processed",
+  "pending",
+  "retry",
+  "failed",
+];
 
 @Component({
   selector: "app-queue-visualize",
   standalone: true,
   templateUrl: "./queue-visualize.component.html",
   styleUrl: "./queue-visualize.component.scss",
-  imports: [AppModule, ChartComponent, DocumentTitleComponent],
+  imports: [AppModule, DocumentTitleComponent],
 })
-export class QueueVisualizeComponent implements OnInit, OnDestroy {
+export class QueueVisualizeComponent implements OnDestroy {
   private apollo = inject(Apollo);
-  queueMetricsController = new QueueMetricsController(
+  protected readonly queueMetricsController = new QueueMetricsController(
     this.apollo,
     {
       buckets: {
         duration: "AUTO",
         multiplier: "AUTO",
-        timeframe: "all",
+        timeframe: "hours_1",
       },
-      autoRefresh: "seconds_30",
+      autoRefresh: "off",
     },
     inject(ErrorsService),
   );
-  protected readonly timeline = inject(QueueChartAdapterTimeline);
-  protected readonly totals = inject(QueueChartAdapterTotals);
-  protected readonly breakpoints = inject(BreakpointsService);
 
-  protected readonly resolutionNames = resolutionNames;
-  protected readonly timeframeNames = timeframeNames;
+  protected readonly timeframes: {
+    value: TimeframeName;
+    label: string;
+  }[] = [
+    { value: "minutes_15", label: "15m" },
+    { value: "minutes_30", label: "30m" },
+    { value: "hours_1", label: "1h" },
+    { value: "hours_6", label: "6h" },
+    { value: "hours_12", label: "12h" },
+    { value: "days_1", label: "1d" },
+    { value: "weeks_1", label: "1w" },
+  ];
   protected readonly availableQueueNames = availableQueueNames;
-  protected readonly autoRefreshIntervalNames = autoRefreshIntervalNames;
   protected readonly eventNames = eventNames;
-
-  ngOnInit() {
-    this.queueMetricsController.result$.subscribe((result) => {
-      if (
-        this.queueMetricsController.params.buckets.timeframe === "all" &&
-        this.queueMetricsController.params.buckets.duration === "AUTO" &&
-        result.params.buckets.duration === "hour"
-      ) {
-        const span = result.bucketSpan;
-        if (span && span.latestBucket - span.earliestBucket < 12) {
-          this.queueMetricsController.setBucketDuration("minute");
-        }
-      }
-    });
-  }
+  protected readonly view$: Observable<VisualizeView> =
+    this.queueMetricsController.result$.pipe(
+      map((result) => this.createView(result)),
+    );
 
   ngOnDestroy() {
     this.queueMetricsController.setAutoRefreshInterval("off");
   }
 
-  handleMultiplierEvent(event: Event) {
-    const value = (event.currentTarget as HTMLInputElement).value;
-    this.queueMetricsController.setBucketMultiplier(
-      /^\d+$/.test(value) ? parseInt(value) : "AUTO",
+  refresh() {
+    this.queueMetricsController.refresh();
+  }
+
+  private createView(result: Result | undefined): VisualizeView {
+    const statusCounts = statusOrder.map((status) => ({
+      status,
+      count:
+        result?.queues.reduce(
+          (total, queue) => total + queue.statusCounts[status],
+          0,
+        ) ?? 0,
+    }));
+    const maxStatus = Math.max(...statusCounts.map(({ count }) => count));
+
+    return {
+      queueLabel:
+        result?.params.queue ??
+        this.queueMetricsController.params.queue ??
+        "all queues",
+      statusTotals: statusCounts.map(({ status, count }) => ({
+        status,
+        count,
+        percent: count ? Math.max(3, Math.round((count / maxStatus) * 100)) : 0,
+      })),
+      bars: result ? this.createBars(result) : [],
+    };
+  }
+
+  private createBars(result: Result): ThroughputBar[] {
+    const counts = new Map<number, number>();
+    const events: readonly EventName[] = result.params.event
+      ? [result.params.event]
+      : eventNames;
+
+    for (const queue of result.queues) {
+      for (const event of events) {
+        for (const [bucket, entry] of Object.entries(
+          queue.events?.eventBuckets[event]?.entries ?? {},
+        )) {
+          if (!entry) {
+            continue;
+          }
+          counts.set(
+            parseInt(bucket),
+            (counts.get(parseInt(bucket)) ?? 0) + entry.count,
+          );
+        }
+      }
+    }
+
+    const latestBucket = Math.max(
+      result.bucketSpan?.latestBucket ?? 0,
+      normalizeBucket(new Date(), result.params.buckets).index,
     );
+    const values = Array.from(
+      { length: 12 },
+      (_, index) => counts.get(latestBucket - 11 + index) ?? 0,
+    );
+    const maxCount = Math.max(...values);
+
+    return values.map((count, index) => {
+      const bucket = latestBucket - 11 + index;
+      const timestamp =
+        1000 *
+        durationSeconds[result.params.buckets.duration] *
+        result.params.buckets.multiplier *
+        bucket;
+      const showLabel = index % 2 === 0 || index === values.length - 1;
+
+      return {
+        count,
+        height: count ? Math.max(3, Math.round((count / maxCount) * 100)) : 0,
+        label: showLabel
+          ? formatDate(
+              timestamp,
+              result.params.buckets.duration === "day" ? "d LLL" : "HH:mm",
+            )
+          : "",
+      };
+    });
   }
 }
