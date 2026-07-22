@@ -14,10 +14,13 @@ import { provideTransloco } from "@jsverse/transloco";
 import { provideCharts, withDefaultRegisterables } from "ng2-charts";
 import { provideApollo } from "apollo-angular";
 import { HttpLink } from "apollo-angular/http";
-import { InMemoryCache } from "@apollo/client/core";
+import { ApolloLink, InMemoryCache } from "@apollo/client/core";
+import { setContext } from "@apollo/client/link/context";
+import { onError } from "@apollo/client/link/error";
 import { graphqlEndpoint } from "../environments/environment";
 import { TranslocoImportLoader } from "./i18n/transloco.loader";
 import { routes } from "./app.routes";
+import { API_KEY_HEADER, AuthService } from "./auth/auth.service";
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -28,8 +31,40 @@ export const appConfig: ApplicationConfig = {
     provideHttpClient(),
     provideApollo(() => {
       const httpLink = inject(HttpLink);
+      const auth = inject(AuthService);
+
+      // Attach the stored API key to every request. When no key is stored the
+      // header is omitted, so a server with auth disabled works unchanged.
+      const authLink = setContext((_, prevContext) => {
+        const headers = (prevContext["headers"] ?? {}) as Record<
+          string,
+          string
+        >;
+        const apiKey = auth.getApiKey();
+        return {
+          headers: apiKey ? { ...headers, [API_KEY_HEADER]: apiKey } : headers,
+        };
+      });
+
+      // On a 401 the credential is missing or rejected: flag it so the shell
+      // can prompt for a key, rather than failing silently or with an opaque
+      // network error.
+      const errorLink = onError(({ networkError }) => {
+        if (
+          networkError &&
+          "statusCode" in networkError &&
+          networkError.statusCode === 401
+        ) {
+          auth.notifyAuthRequired();
+        }
+      });
+
       return {
-        link: httpLink.create({ uri: graphqlEndpoint }),
+        link: ApolloLink.from([
+          authLink,
+          errorLink,
+          httpLink.create({ uri: graphqlEndpoint }),
+        ]),
         cache: new InMemoryCache({
           typePolicies: {
             Query: {

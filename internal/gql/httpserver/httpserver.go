@@ -9,6 +9,7 @@ import (
 	"github.com/99designs/gqlgen/graphql/handler/lru"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
+	"github.com/bitmagnet-io/bitmagnet/internal/gql/auth"
 	"github.com/bitmagnet-io/bitmagnet/internal/httpserver"
 	"github.com/bitmagnet-io/bitmagnet/internal/lazy"
 	"github.com/gin-gonic/gin"
@@ -19,8 +20,9 @@ import (
 
 type Params struct {
 	fx.In
-	Schema lazy.Lazy[graphql.ExecutableSchema]
-	Logger *zap.SugaredLogger
+	Schema        lazy.Lazy[graphql.ExecutableSchema]
+	Authenticator *auth.Authenticator
+	Logger        *zap.SugaredLogger
 }
 
 type Result struct {
@@ -32,12 +34,14 @@ func New(p Params) Result {
 	return Result{
 		Option: &builder{
 			schema: p.Schema,
+			auth:   p.Authenticator,
 		},
 	}
 }
 
 type builder struct {
 	schema lazy.Lazy[graphql.ExecutableSchema]
+	auth   *auth.Authenticator
 }
 
 func (builder) Key() string {
@@ -52,13 +56,19 @@ func (b builder) Apply(e *gin.Engine) error {
 
 	gql := newServer(schema)
 
-	e.POST("/graphql", func(c *gin.Context) {
+	// Auth is attached here, per-route, and NOT via e.Use(): this engine is
+	// shared with torznab/telemetry/importer, and an engine-wide guard would
+	// break the *arr-stack integrations that consume torznab. See
+	// auth.Authenticator.Middleware.
+	authMW := b.auth.Middleware()
+
+	e.POST("/graphql", authMW, func(c *gin.Context) {
 		gql.ServeHTTP(c.Writer, c.Request)
 	})
 
 	pg := playground.Handler("GraphQL playground", "/graphql")
 
-	e.GET("/graphql", func(c *gin.Context) {
+	e.GET("/graphql", authMW, func(c *gin.Context) {
 		pg.ServeHTTP(c.Writer, c.Request)
 	})
 
