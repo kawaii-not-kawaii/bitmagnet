@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/adrg/xdg"
+	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
 	"github.com/bitmagnet-io/bitmagnet/internal/config"
 	"github.com/bitmagnet-io/bitmagnet/internal/config/configresolver"
 	"github.com/go-playground/validator/v10"
@@ -41,6 +42,18 @@ func New() fx.Option {
 
 	options = append(options,
 		fx.Provide(config.New),
+		// Also provide the whole resolved config behind an AtomicValue, seeded
+		// with the startup snapshot. The settings read query calls Get() at
+		// request time and a runtime config mutation calls Set with a rebuilt
+		// snapshot on the same instance, so mutations are immediately visible
+		// to reads. Readers must not mutate the snapshot's NodeMap in place —
+		// writers replace the whole value.
+		fx.Provide(func(r config.ResolvedConfig) *concurrency.AtomicValue[config.ResolvedConfig] {
+			av := &concurrency.AtomicValue[config.ResolvedConfig]{}
+			av.Set(r)
+
+			return av
+		}),
 		fx.Provide(fx.Annotated{
 			Group: "config_resolvers",
 			Target: func() (configresolver.Resolver, error) {
