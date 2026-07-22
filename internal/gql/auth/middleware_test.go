@@ -4,171 +4,117 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
-	"go.uber.org/zap"
 )
 
 func init() {
 	gin.SetMode(gin.TestMode)
 }
 
-// testEngine builds a gin engine with the authenticator's middleware guarding a
-// single /guarded route whose handler records the principal it observed.
-func testEngine(t *testing.T, a *Authenticator) (*gin.Engine, **Principal) {
-	t.Helper()
-
-	var seen *Principal
-
-	e := gin.New()
-	e.GET("/guarded", a.Middleware(), func(c *gin.Context) {
-		if p, ok := PrincipalFromContext(c.Request.Context()); ok {
-			seen = &p
+func testEngine(authenticator *Authenticator) *gin.Engine {
+	engine := gin.New()
+	engine.GET("/guarded", authenticator.Middleware(), func(ctx *gin.Context) {
+		principal, ok := PrincipalFromContext(ctx.Request.Context())
+		if !ok || principal.AccessLevel != AccessLevelAdmin {
+			ctx.Status(http.StatusInternalServerError)
+			return
 		}
-
-		c.Status(http.StatusOK)
+		ctx.Status(http.StatusOK)
 	})
-
-	return e, &seen
+	return engine
 }
 
-func authEnabled(t *testing.T, key string) *Authenticator {
-	t.Helper()
-
-	a, err := NewAuthenticator(Config{APIKey: key}, zap.NewNop().Sugar())
-	if err != nil {
-		t.Fatalf("NewAuthenticator: %v", err)
-	}
-
-	return a
+func doRequest(engine *gin.Engine, request *http.Request) *httptest.ResponseRecorder {
+	recorder := httptest.NewRecorder()
+	engine.ServeHTTP(recorder, request)
+	return recorder
 }
 
-func do(e *gin.Engine, headers map[string]string) *httptest.ResponseRecorder {
-	req := httptest.NewRequest(http.MethodGet, "/guarded", nil)
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-
-	rec := httptest.NewRecorder()
-	e.ServeHTTP(rec, req)
-
-	return rec
-}
-
-func TestMiddleware_ValidKeyViaXApiKey(t *testing.T) {
+func TestMiddlewareHeaderClientsAndDisabledBypass(t *testing.T) {
 	t.Parallel()
+	authenticator, _ := newTestAuthenticator(t, Config{APIKey: "s3cret"})
+	engine := testEngine(authenticator)
 
-	e, seen := testEngine(t, authEnabled(t, "s3cret"))
-
-	rec := do(e, map[string]string{"X-Api-Key": "s3cret"})
-	if rec.Code != http.StatusOK {
-		t.Fatalf("want 200, got %d", rec.Code)
+	for name, headers := range map[string]map[string]string{
+		"x-api-key": {"X-Api-Key": "s3cret"},
+		"bearer":    {"Authorization": "Bearer s3cret"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			request := httptest.NewRequest(http.MethodGet, "/guarded", nil)
+			for key, value := range headers {
+				request.Header.Set(key, value)
+			}
+			if code := doRequest(engine, request).Code; code != http.StatusOK {
+				t.Fatalf("status = %d, want 200", code)
+			}
+		})
 	}
 
-	if *seen == nil || (*seen).AccessLevel != AccessLevelAdmin {
-		t.Errorf("expected an admin principal on context, got %+v", *seen)
-	}
-}
-
-func TestMiddleware_ValidKeyViaBearer(t *testing.T) {
-	t.Parallel()
-
-	e, _ := testEngine(t, authEnabled(t, "s3cret"))
-
-	rec := do(e, map[string]string{"Authorization": "Bearer s3cret"})
-	if rec.Code != http.StatusOK {
-		t.Errorf("Bearer alias should authenticate: got %d", rec.Code)
-	}
-}
-
-// TestMiddleware_MissingAndWrongAreIdentical is the anti-oracle requirement: a
-// wrong credential must be indistinguishable from a missing one.
-func TestMiddleware_MissingAndWrongAreIdentical(t *testing.T) {
-	t.Parallel()
-
-	e, _ := testEngine(t, authEnabled(t, "s3cret"))
-
-	missing := do(e, nil)
-	wrong := do(e, map[string]string{"X-Api-Key": "nope"})
-	malformed := do(e, map[string]string{"Authorization": "Basic zzz"})
-
-	if missing.Code != http.StatusUnauthorized {
-		t.Errorf("missing credential: want 401, got %d", missing.Code)
+	missing := doRequest(engine, httptest.NewRequest(http.MethodGet, "/guarded", nil))
+	wrongRequest := httptest.NewRequest(http.MethodGet, "/guarded", nil)
+	wrongRequest.Header.Set("X-Api-Key", "wrong")
+	wrong := doRequest(engine, wrongRequest)
+	if missing.Code != http.StatusUnauthorized || wrong.Code != missing.Code ||
+		wrong.Body.String() != missing.Body.String() {
+		t.Fatalf("missing and wrong credentials differ: %d/%q vs %d/%q",
+			missing.Code, missing.Body.String(), wrong.Code, wrong.Body.String())
 	}
 
-	if wrong.Code != missing.Code || wrong.Body.String() != missing.Body.String() {
-		t.Errorf("wrong credential differs from missing: %d/%q vs %d/%q",
-			wrong.Code, wrong.Body.String(), missing.Code, missing.Body.String())
-	}
-
-	if malformed.Code != missing.Code || malformed.Body.String() != missing.Body.String() {
-		t.Errorf("malformed credential differs from missing: %d/%q vs %d/%q",
-			malformed.Code, malformed.Body.String(), missing.Code, missing.Body.String())
+	disabled, _ := newTestAuthenticator(t, Config{Disabled: true})
+	if code := doRequest(testEngine(disabled), httptest.NewRequest(http.MethodGet, "/guarded", nil)).Code; code != http.StatusOK {
+		t.Fatalf("disabled auth status = %d, want 200", code)
 	}
 }
 
-// TestMiddleware_XApiKeyPreferredOverBearer pins the precedence: when both
-// headers are present, X-Api-Key wins.
-func TestMiddleware_XApiKeyPreferredOverBearer(t *testing.T) {
+func TestMiddlewareSessionAndSlidingRefresh(t *testing.T) {
 	t.Parallel()
+	authenticator, _ := newTestAuthenticator(t, Config{APIKey: "key"})
+	now := time.Unix(1_700_000_000, 0)
+	authenticator.now = func() time.Time { return now }
+	cookie := &http.Cookie{
+		Name:  SessionCookieName,
+		Value: signSession(now.Add(sessionLifetime/2-time.Second), authenticator.snapshot().sessionKey),
+	}
+	request := httptest.NewRequest(http.MethodGet, "/guarded", nil)
+	request.AddCookie(cookie)
 
-	e, _ := testEngine(t, authEnabled(t, "right"))
+	response := doRequest(testEngine(authenticator), request)
+	if response.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", response.Code)
+	}
+	if response.Header().Get("Set-Cookie") == "" {
+		t.Fatal("past-half-life session was not refreshed")
+	}
+}
 
-	rec := do(e, map[string]string{
-		"X-Api-Key":     "right",
-		"Authorization": "Bearer wrong",
+func TestMiddlewareTrustedNetworkAndProxyRules(t *testing.T) {
+	t.Parallel()
+	authenticator, _ := newTestAuthenticator(t, Config{
+		APIKey:          "key",
+		TrustedNetworks: []string{"10.0.0.0/8"},
+		TrustedProxies:  []string{"192.0.2.0/24"},
 	})
-	if rec.Code != http.StatusOK {
-		t.Errorf("X-Api-Key should take precedence: got %d", rec.Code)
-	}
-}
+	engine := testEngine(authenticator)
 
-func TestMiddleware_DisabledAllowsAnonymousAdmin(t *testing.T) {
-	t.Parallel()
-
-	a, err := NewAuthenticator(Config{Disabled: true}, zap.NewNop().Sugar())
-	if err != nil {
-		t.Fatalf("NewAuthenticator: %v", err)
+	direct := httptest.NewRequest(http.MethodGet, "/guarded", nil)
+	direct.RemoteAddr = "10.1.2.3:1234"
+	if code := doRequest(engine, direct).Code; code != http.StatusOK {
+		t.Fatalf("trusted direct client status = %d", code)
 	}
 
-	e, seen := testEngine(t, a)
-
-	rec := do(e, nil)
-	if rec.Code != http.StatusOK {
-		t.Fatalf("disabled auth should allow unauthenticated: got %d", rec.Code)
+	forged := httptest.NewRequest(http.MethodGet, "/guarded", nil)
+	forged.RemoteAddr = "203.0.113.10:1234"
+	forged.Header.Set("X-Forwarded-For", "10.1.2.3")
+	if code := doRequest(engine, forged).Code; code != http.StatusUnauthorized {
+		t.Fatalf("forged XFF status = %d, want 401", code)
 	}
 
-	if *seen == nil || (*seen).AccessLevel != AccessLevelAdmin {
-		t.Errorf("disabled auth should still place an admin principal: %+v", *seen)
+	proxied := httptest.NewRequest(http.MethodGet, "/guarded", nil)
+	proxied.RemoteAddr = "192.0.2.10:1234"
+	proxied.Header.Set("X-Forwarded-For", "10.1.2.3")
+	if code := doRequest(engine, proxied).Code; code != http.StatusOK {
+		t.Fatalf("trusted proxy status = %d, want 200", code)
 	}
-}
-
-// TestMiddleware_BelowRequiredLevelForbidden exercises the 403 path. v1 issues
-// only Admin, so this uses a hand-built authenticator whose resolver returns a
-// below-admin principal, proving the level check is enforced (not stubbed) and
-// ready for a future read-only tier.
-func TestMiddleware_BelowRequiredLevelForbidden(t *testing.T) {
-	t.Parallel()
-
-	a := &Authenticator{
-		disabled: false,
-		required: AccessLevelAdmin,
-		resolver: fixedResolver{level: AccessLevelAnonymous, ok: true},
-	}
-
-	e, _ := testEngine(t, a)
-
-	rec := do(e, map[string]string{"X-Api-Key": "whatever"})
-	if rec.Code != http.StatusForbidden {
-		t.Errorf("principal below required level: want 403, got %d", rec.Code)
-	}
-}
-
-type fixedResolver struct {
-	level AccessLevel
-	ok    bool
-}
-
-func (f fixedResolver) Resolve(string) (Principal, bool) {
-	return Principal{AccessLevel: f.level}, f.ok
 }

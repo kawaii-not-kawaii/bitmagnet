@@ -5,9 +5,11 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/99designs/gqlgen/graphql"
+	"github.com/bitmagnet-io/bitmagnet/internal/config/configwrite"
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/auth"
 	"github.com/bitmagnet-io/bitmagnet/internal/lazy"
 	"github.com/gin-gonic/gin"
@@ -75,7 +77,11 @@ func request(e *gin.Engine, method, path string, headers map[string]string) int 
 func enabledAuth(t *testing.T) *auth.Authenticator {
 	t.Helper()
 
-	a, err := auth.NewAuthenticator(auth.Config{APIKey: "s3cret"}, zap.NewNop().Sugar())
+	a, err := auth.NewAuthenticator(
+		auth.Config{APIKey: "s3cret"},
+		configwrite.TargetPath(filepath.Join(t.TempDir(), "config.yml")),
+		zap.NewNop().Sugar(),
+	)
 	if err != nil {
 		t.Fatalf("NewAuthenticator: %v", err)
 	}
@@ -119,7 +125,11 @@ func TestBuilder_TorznabStaysOpen(t *testing.T) {
 func TestBuilder_DisabledLeavesGraphQLOpen(t *testing.T) {
 	t.Parallel()
 
-	a, err := auth.NewAuthenticator(auth.Config{Disabled: true}, zap.NewNop().Sugar())
+	a, err := auth.NewAuthenticator(
+		auth.Config{Disabled: true},
+		configwrite.TargetPath(filepath.Join(t.TempDir(), "config.yml")),
+		zap.NewNop().Sugar(),
+	)
 	if err != nil {
 		t.Fatalf("NewAuthenticator: %v", err)
 	}
