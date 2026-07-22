@@ -34,10 +34,7 @@ mutation {
     setSection(
       input: {
         key: "tmdb"
-        value: {
-          enabled: true
-          api_key: "your-tmdb-api-key"
-        }
+        value: { enabled: true, api_key: "your-tmdb-api-key" }
       }
     ) {
       section {
