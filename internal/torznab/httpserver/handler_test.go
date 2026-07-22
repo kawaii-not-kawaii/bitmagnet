@@ -60,6 +60,7 @@ func newTestHarnessWithAuth(t *testing.T, authConfig auth.Config) *testHarness {
 
 	cfg := &concurrency.AtomicValue[torznab.Config]{}
 	cfg.Set(testCfg)
+
 	authenticator, err := auth.NewAuthenticator(
 		authConfig,
 		configwrite.TargetPath(filepath.Join(t.TempDir(), "config.yml")),

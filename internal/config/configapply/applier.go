@@ -105,11 +105,13 @@ func (a *Applier) setSection(
 	if targetType == nil {
 		targetType = reflect.TypeOf(node.Value)
 	}
+
 	if targetType == nil {
 		return Outcome{}, fmt.Errorf("configapply: section %q: missing value type", key)
 	}
 
 	decodedValue := reflect.New(targetType)
+
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		Result:      decodedValue.Interface(),
 		ErrorUnused: true,
@@ -121,11 +123,13 @@ func (a *Applier) setSection(
 	if err != nil {
 		return Outcome{}, fmt.Errorf("configapply: decode section %q: %w", key, err)
 	}
+
 	if err = decoder.Decode(raw); err != nil {
 		return Outcome{}, fmt.Errorf("configapply: decode section %q: %w", key, err)
 	}
 
 	decoded := decodedValue.Elem().Interface()
+
 	if decodedValue.Elem().Kind() == reflect.Struct {
 		if err = a.validate.Struct(decoded); err != nil {
 			return Outcome{}, fmt.Errorf("configapply: validate section %q: %w", key, err)
@@ -133,14 +137,17 @@ func (a *Applier) setSection(
 	}
 
 	liveApplier, isLive := a.live[key]
+
 	a.mutex.Lock()
 
 	resolved := a.resolved.Get()
+
 	node, ok = resolved.NodeMap[key]
 	if !ok {
 		a.mutex.Unlock()
 		return Outcome{}, fmt.Errorf("configapply: section %q: %w", key, ErrUnknownSection)
 	}
+
 	if check != nil {
 		if err = check(node.Value); err != nil {
 			a.mutex.Unlock()
@@ -172,9 +179,11 @@ func (a *Applier) setSection(
 	}
 
 	a.mutex.Unlock()
+
 	if after != nil {
 		after()
 	}
+
 	if writeErr != nil {
 		return Outcome{}, fmt.Errorf("configapply: persist section %q: %w", key, writeErr)
 	}

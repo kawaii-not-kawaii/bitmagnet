@@ -22,8 +22,11 @@ func TestTorznabAuthAcceptsQueryAndHeaderKeys(t *testing.T) {
 		{name: "query", path: "/torznab/?t=caps&apikey=machine-key"},
 		{name: "header", path: "/torznab/?t=caps", header: "machine-key"},
 	}
+
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
 			harness := newTestHarnessWithAuth(t, auth.Config{APIKey: "machine-key"})
 			request, err := http.NewRequestWithContext(
 				context.Background(),
@@ -32,6 +35,7 @@ func TestTorznabAuthAcceptsQueryAndHeaderKeys(t *testing.T) {
 				nil,
 			)
 			require.NoError(t, err)
+
 			if testCase.header != "" {
 				request.Header.Set("X-Api-Key", testCase.header)
 			}
@@ -44,6 +48,7 @@ func TestTorznabAuthAcceptsQueryAndHeaderKeys(t *testing.T) {
 
 func TestTorznabAuthRejectsMissingWrongAndTrustedNetwork(t *testing.T) {
 	t.Parallel()
+
 	expected, err := (torznab.Error{Code: 100, Description: "Incorrect user credentials"}).XML()
 	require.NoError(t, err)
 
@@ -56,8 +61,11 @@ func TestTorznabAuthRejectsMissingWrongAndTrustedNetwork(t *testing.T) {
 		{name: "wrong", path: "/torznab/?t=caps&apikey=wrong", remoteAddr: "203.0.113.10:1234"},
 		{name: "trusted-network", path: "/torznab/?t=caps", remoteAddr: "10.1.2.3:1234"},
 	}
+
 	for _, testCase := range cases {
 		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
 			harness := newTestHarnessWithAuth(t, auth.Config{
 				APIKey: "machine-key", TrustedNetworks: []string{"10.0.0.0/8"},
 			})
@@ -65,6 +73,7 @@ func TestTorznabAuthRejectsMissingWrongAndTrustedNetwork(t *testing.T) {
 				context.Background(), http.MethodGet, testCase.path, nil,
 			)
 			require.NoError(t, requestErr)
+
 			request.RemoteAddr = testCase.remoteAddr
 
 			harness.engine.ServeHTTP(harness.responseRecorder, request)
@@ -81,8 +90,14 @@ func TestTorznabAuthRejectsMissingWrongAndTrustedNetwork(t *testing.T) {
 
 func TestTorznabAuthDisabledPassesThrough(t *testing.T) {
 	t.Parallel()
+
 	harness := newTestHarnessWithAuth(t, auth.Config{Disabled: true})
-	request, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "/torznab/?t=caps", nil)
+	request, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodGet,
+		"/torznab/?t=caps",
+		nil,
+	)
 	require.NoError(t, err)
 
 	harness.engine.ServeHTTP(harness.responseRecorder, request)

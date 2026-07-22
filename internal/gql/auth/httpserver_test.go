@@ -29,6 +29,7 @@ type authHTTPHarness struct {
 func newAuthHTTPHarness(t *testing.T, cfg Config) authHTTPHarness {
 	t.Helper()
 	configPath := filepath.Join(t.TempDir(), "config.yml")
+
 	authenticator, err := NewAuthenticator(cfg, configwrite.TargetPath(configPath), zap.NewNop().Sugar())
 	if err != nil {
 		t.Fatalf("NewAuthenticator: %v", err)
@@ -38,6 +39,7 @@ func newAuthHTTPHarness(t *testing.T, cfg Config) authHTTPHarness {
 	resolved.Set(rootconfig.ResolvedConfig{NodeMap: map[string]rootconfig.ResolvedNode{
 		"auth": {Type: reflect.TypeOf(cfg), Value: cfg},
 	}})
+
 	result := configapply.New(configapply.Params{
 		Appliers: []configapply.LiveApplier{NewLiveApplier(authenticator)},
 		Resolved: resolved,
@@ -49,19 +51,23 @@ func newAuthHTTPHarness(t *testing.T, cfg Config) authHTTPHarness {
 	if err = NewHTTPServer(authenticator, result.Applier).Apply(engine); err != nil {
 		t.Fatalf("Apply: %v", err)
 	}
+
 	return authHTTPHarness{engine: engine, authenticator: authenticator, configPath: configPath}
 }
 
 func performJSON(engine *gin.Engine, method, path, body string) *httptest.ResponseRecorder {
 	request := httptest.NewRequest(method, path, strings.NewReader(body))
 	request.Header.Set("Content-Type", "application/json")
+
 	recorder := httptest.NewRecorder()
 	engine.ServeHTTP(recorder, request)
+
 	return recorder
 }
 
 func TestAuthStateAndSetupLifecycle(t *testing.T) {
 	t.Parallel()
+
 	harness := newAuthHTTPHarness(t, Config{APIKey: "machine-key"})
 
 	state := performJSON(harness.engine, http.MethodGet, "/auth/state", "")
@@ -88,11 +94,13 @@ func TestAuthStateAndSetupLifecycle(t *testing.T) {
 	if setup.Code != http.StatusOK {
 		t.Fatalf("setup status = %d body=%s", setup.Code, setup.Body.String())
 	}
+
 	cookies := setup.Result().Cookies()
 	if len(cookies) != 1 || cookies[0].Name != SessionCookieName || !cookies[0].HttpOnly ||
 		cookies[0].SameSite != http.SameSiteStrictMode || cookies[0].Path != "/" {
 		t.Fatalf("setup cookie = %+v", cookies)
 	}
+
 	if harness.authenticator.NeedsSetup() {
 		t.Fatal("setup did not live-apply credentials")
 	}
@@ -101,6 +109,7 @@ func TestAuthStateAndSetupLifecycle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	text := string(persisted)
 	if strings.Contains(text, "password123") || !strings.Contains(text, "password_hash:") ||
 		!strings.Contains(text, "username: admin") {
@@ -120,10 +129,12 @@ func TestAuthStateAndSetupLifecycle(t *testing.T) {
 
 func TestAuthLoginCredentialsAndLogout(t *testing.T) {
 	t.Parallel()
+
 	hash, err := bcrypt.GenerateFromPassword([]byte("password123"), bcrypt.DefaultCost)
 	if err != nil {
 		t.Fatal(err)
 	}
+
 	harness := newAuthHTTPHarness(t, Config{
 		APIKey: "machine-key", Username: "admin", PasswordHash: string(hash),
 	})
@@ -133,6 +144,8 @@ func TestAuthLoginCredentialsAndLogout(t *testing.T) {
 		"api-key":  `{"apiKey":"machine-key"}`,
 	} {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			response := performJSON(harness.engine, http.MethodPost, "/auth/login", body)
 			if response.Code != http.StatusOK || len(response.Result().Cookies()) != 1 {
 				t.Fatalf("login = %d %s", response.Code, response.Body.String())
@@ -153,19 +166,24 @@ func TestAuthLoginCredentialsAndLogout(t *testing.T) {
 	}
 
 	logout := performJSON(harness.engine, http.MethodPost, "/auth/logout", `{}`)
-	if logout.Code != http.StatusNoContent || !strings.Contains(logout.Header().Get("Set-Cookie"), "Max-Age=0") {
+	logoutCookie := logout.Header().Get("Set-Cookie")
+
+	if logout.Code != http.StatusNoContent || !strings.Contains(logoutCookie, "Max-Age=0") {
 		t.Fatalf("logout = %d cookie=%q", logout.Code, logout.Header().Get("Set-Cookie"))
 	}
 }
 
 func TestAuthDisabledAndTrustedState(t *testing.T) {
 	t.Parallel()
+
 	disabled := newAuthHTTPHarness(t, Config{Disabled: true})
+
 	login := performJSON(disabled.engine, http.MethodPost, "/auth/login", `{}`)
 	if login.Code != http.StatusOK || login.Header().Get("Set-Cookie") != "" ||
 		login.Body.String() != `{"authDisabled":true,"ok":true}` {
 		t.Fatalf("disabled login = %d %s", login.Code, login.Body.String())
 	}
+
 	setup := performJSON(
 		disabled.engine,
 		http.MethodPost,
@@ -177,11 +195,15 @@ func TestAuthDisabledAndTrustedState(t *testing.T) {
 	}
 
 	trusted := newAuthHTTPHarness(t, Config{
-		APIKey: "key", TrustedNetworks: []string{"10.0.0.0/8"}, TrustedProxies: []string{"192.0.2.0/24"},
+		APIKey:          "key",
+		TrustedNetworks: []string{"10.0.0.0/8"},
+		TrustedProxies:  []string{"192.0.2.0/24"},
 	})
+
 	request := httptest.NewRequest(http.MethodGet, "/auth/state", nil)
 	request.RemoteAddr = "192.0.2.1:1234"
 	request.Header.Set("X-Forwarded-For", "10.2.3.4")
+
 	recorder := httptest.NewRecorder()
 	trusted.engine.ServeHTTP(recorder, request)
 
@@ -189,6 +211,7 @@ func TestAuthDisabledAndTrustedState(t *testing.T) {
 	if err := json.Unmarshal(recorder.Body.Bytes(), &state); err != nil {
 		t.Fatal(err)
 	}
+
 	if !state["trustedBypass"] {
 		t.Fatalf("trusted proxy state = %s", recorder.Body.String())
 	}
@@ -196,26 +219,39 @@ func TestAuthDisabledAndTrustedState(t *testing.T) {
 
 func TestLoginCookieSecureOnlyForTrustedTLSProxy(t *testing.T) {
 	t.Parallel()
+
 	harness := newAuthHTTPHarness(t, Config{
 		APIKey: "machine-key", TrustedProxies: []string{"192.0.2.0/24"},
 	})
 
-	request := httptest.NewRequest(http.MethodPost, "/auth/login", strings.NewReader(`{"apiKey":"machine-key"}`))
+	request := httptest.NewRequest(
+		http.MethodPost,
+		"/auth/login",
+		strings.NewReader(`{"apiKey":"machine-key"}`),
+	)
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Forwarded-Proto", "https")
 	request.RemoteAddr = "192.0.2.10:1234"
+
 	recorder := httptest.NewRecorder()
 	harness.engine.ServeHTTP(recorder, request)
+
 	if cookies := recorder.Result().Cookies(); len(cookies) != 1 || !cookies[0].Secure {
 		t.Fatalf("trusted HTTPS proxy cookie = %+v", cookies)
 	}
 
-	request = httptest.NewRequest(http.MethodPost, "/auth/login", strings.NewReader(`{"apiKey":"machine-key"}`))
+	request = httptest.NewRequest(
+		http.MethodPost,
+		"/auth/login",
+		strings.NewReader(`{"apiKey":"machine-key"}`),
+	)
 	request.Header.Set("Content-Type", "application/json")
 	request.Header.Set("X-Forwarded-Proto", "https")
 	request.RemoteAddr = "203.0.113.10:1234"
+
 	recorder = httptest.NewRecorder()
 	harness.engine.ServeHTTP(recorder, request)
+
 	if cookies := recorder.Result().Cookies(); len(cookies) != 1 || cookies[0].Secure {
 		t.Fatalf("untrusted proxy cookie = %+v", cookies)
 	}

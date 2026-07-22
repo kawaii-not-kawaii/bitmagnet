@@ -19,6 +19,7 @@ func NewLiveApplier(authenticator *Authenticator) configapply.LiveApplier {
 					value,
 				)
 			}
+
 			return nil, authenticator.applyConfig(cfg)
 		},
 	}

@@ -31,6 +31,7 @@ func (builder httpBuilder) Apply(engine *gin.Engine) error {
 	engine.POST("/auth/setup", builder.setup)
 	engine.POST("/auth/login", builder.login)
 	engine.POST("/auth/logout", builder.logout)
+
 	return nil
 }
 
@@ -58,10 +59,12 @@ func (builder httpBuilder) setup(ctx *gin.Context) {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body"})
 		return
 	}
+
 	if request.Username == "" {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "username is required"})
 		return
 	}
+
 	if len(request.Password) < 8 {
 		ctx.JSON(http.StatusBadRequest, gin.H{"error": "password must be at least 8 characters"})
 		return
@@ -76,20 +79,24 @@ func (builder httpBuilder) setup(ctx *gin.Context) {
 	cfg := builder.authenticator.config()
 	cfg.Username = request.Username
 	cfg.PasswordHash = string(passwordHash)
+
 	_, err = builder.applier.SetSectionPrivileged("auth", cfg, func(current any) error {
 		currentConfig, ok := current.(Config)
 		if !ok {
 			return fmt.Errorf("expected %T, got %T", Config{}, current)
 		}
+
 		if currentConfig.Disabled || (currentConfig.Username != "" && currentConfig.PasswordHash != "") {
 			return errAlreadyConfigured
 		}
+
 		return nil
 	})
 	if errors.Is(err, errAlreadyConfigured) {
 		ctx.JSON(http.StatusConflict, gin.H{"error": errAlreadyConfigured.Error()})
 		return
 	}
+
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "failed to persist credentials"})
 		return
@@ -121,6 +128,7 @@ func (builder httpBuilder) login(ctx *gin.Context) {
 	if request.APIKey != "" {
 		valid = builder.authenticator.ValidateAPIKey(request.APIKey)
 	}
+
 	if !valid {
 		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
 		return

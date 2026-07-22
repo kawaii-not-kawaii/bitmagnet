@@ -15,10 +15,12 @@ func (a *Authenticator) Middleware() gin.HandlerFunc {
 		if a.Disabled() {
 			setPrincipal(c, Principal{AccessLevel: AccessLevelAdmin})
 			c.Next()
+
 			return
 		}
 
 		validSession, refresh := a.ValidateSession(c.Request)
+
 		authenticated := validSession ||
 			a.ValidateAPIKey(extractCredential(c.Request)) ||
 			a.TrustedBypass(c.Request)

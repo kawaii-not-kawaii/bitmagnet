@@ -26,6 +26,7 @@ func (h handler) handleRequest(ctx *gin.Context) {
 			Code:        100,
 			Description: "Incorrect user credentials",
 		})
+
 		return
 	}
 

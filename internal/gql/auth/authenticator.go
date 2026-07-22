@@ -58,6 +58,7 @@ func NewAuthenticator(
 	}
 
 	var resolver CredentialResolver
+
 	if cfg.Disabled {
 		logger.Warn(
 			"GraphQL API authentication is DISABLED (auth.disabled=true): " +
@@ -70,7 +71,11 @@ func NewAuthenticator(
 			if err != nil {
 				return nil, fmt.Errorf("auth: generate api key: %w", err)
 			}
-			logger.Warnf("No auth.api_key configured; generated a temporary API key for this session: %s", key)
+
+			logger.Warnf(
+				"No auth.api_key configured; generated a temporary API key for this session: %s",
+				key,
+			)
 			logger.Warn("Set auth.api_key in your config to keep the machine credential across restarts")
 		}
 
@@ -96,6 +101,7 @@ func NewAuthenticator(
 func newRuntimeState(cfg Config, resolver CredentialResolver, salt []byte) (runtimeState, error) {
 	if cfg.APIKey != "" {
 		var err error
+
 		resolver, err = newStaticKeyResolver(cfg.APIKey)
 		if err != nil {
 			return runtimeState{}, fmt.Errorf("auth: init resolver: %w", err)
@@ -106,12 +112,14 @@ func newRuntimeState(cfg Config, resolver CredentialResolver, salt []byte) (runt
 	if err != nil {
 		return runtimeState{}, err
 	}
+
 	proxies, err := parsePrefixes("trusted_proxies", cfg.TrustedProxies)
 	if err != nil {
 		return runtimeState{}, err
 	}
 
 	var sessionKey [sha256.Size]byte
+
 	reader := hkdf.New(sha256.New, []byte(cfg.PasswordHash), salt, []byte("bitmagnet session"))
 	if _, err = io.ReadFull(reader, sessionKey[:]); err != nil {
 		return runtimeState{}, fmt.Errorf("auth: derive session key: %w", err)
@@ -128,13 +136,16 @@ func newRuntimeState(cfg Config, resolver CredentialResolver, salt []byte) (runt
 
 func parsePrefixes(key string, values []string) ([]netip.Prefix, error) {
 	prefixes := make([]netip.Prefix, len(values))
+
 	for i, value := range values {
 		prefix, err := netip.ParsePrefix(value)
 		if err != nil {
 			return nil, fmt.Errorf("auth.%s: invalid CIDR %q: %w", key, value, err)
 		}
+
 		prefixes[i] = prefix
 	}
+
 	return prefixes, nil
 }
 
@@ -143,6 +154,7 @@ func loadOrCreateSalt(path string) ([]byte, error) {
 	if err == nil {
 		return validateSalt(data)
 	}
+
 	if !errors.Is(err, os.ErrNotExist) {
 		return nil, err
 	}
@@ -156,6 +168,7 @@ func loadOrCreateSalt(path string) ([]byte, error) {
 	if errors.Is(err, os.ErrExist) {
 		return loadOrCreateSalt(path)
 	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -163,9 +176,11 @@ func loadOrCreateSalt(path string) ([]byte, error) {
 	if _, err = file.Write(data); err == nil {
 		err = file.Sync()
 	}
+
 	if closeErr := file.Close(); err == nil {
 		err = closeErr
 	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -177,6 +192,7 @@ func validateSalt(salt []byte) ([]byte, error) {
 	if len(salt) != sha256.Size {
 		return nil, fmt.Errorf("invalid salt length %d", len(salt))
 	}
+
 	return salt, nil
 }
 
@@ -193,12 +209,14 @@ func (a *Authenticator) applyConfig(cfg Config) error {
 	a.mu.Lock()
 	a.state = state
 	a.mu.Unlock()
+
 	return nil
 }
 
 func (a *Authenticator) snapshot() runtimeState {
 	a.mu.RLock()
 	defer a.mu.RUnlock()
+
 	return a.state
 }
 
@@ -220,7 +238,9 @@ func (a *Authenticator) ValidateAPIKey(key string) bool {
 	if resolver == nil {
 		return false
 	}
+
 	_, ok := resolver.Resolve(key)
+
 	return ok
 }
 
@@ -228,18 +248,21 @@ func (a *Authenticator) ValidatePassword(username, password string) bool {
 	cfg := a.config()
 	usernameOK := constantTimeStringEqual(username, cfg.Username)
 	passwordOK := bcrypt.CompareHashAndPassword([]byte(cfg.PasswordHash), []byte(password)) == nil
+
 	return usernameOK && passwordOK && cfg.Username != "" && cfg.PasswordHash != ""
 }
 
 func constantTimeStringEqual(left, right string) bool {
 	leftHash := sha256.Sum256([]byte(left))
 	rightHash := sha256.Sum256([]byte(right))
+
 	return hmac.Equal(leftHash[:], rightHash[:])
 }
 
 func (a *Authenticator) TrustedBypass(request *http.Request) bool {
 	state := a.snapshot()
 	client, ok := effectiveClientIP(request, state.trustedProxies)
+
 	return ok && containsAddress(state.trustedNetworks, client)
 }
 
@@ -250,11 +273,13 @@ func (a *Authenticator) secureRequest(request *http.Request) bool {
 
 	state := a.snapshot()
 	direct, ok := directClientIP(request)
+
 	if !ok || !containsAddress(state.trustedProxies, direct) {
 		return false
 	}
 
 	proto, _, _ := strings.Cut(request.Header.Get("X-Forwarded-Proto"), ",")
+
 	return strings.EqualFold(strings.TrimSpace(proto), "https")
 }
 
@@ -265,10 +290,12 @@ func effectiveClientIP(request *http.Request, trustedProxies []netip.Prefix) (ne
 	}
 
 	forwarded, _, _ := strings.Cut(request.Header.Get("X-Forwarded-For"), ",")
+
 	client, err := netip.ParseAddr(strings.TrimSpace(forwarded))
 	if err != nil {
 		return direct, true
 	}
+
 	return client.Unmap(), true
 }
 
@@ -277,10 +304,12 @@ func directClientIP(request *http.Request) (netip.Addr, bool) {
 	if err != nil {
 		host = request.RemoteAddr
 	}
+
 	addr, err := netip.ParseAddr(strings.Trim(host, "[]"))
 	if err != nil {
 		return netip.Addr{}, false
 	}
+
 	return addr.Unmap(), true
 }
 
@@ -290,6 +319,7 @@ func containsAddress(prefixes []netip.Prefix, address netip.Addr) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -324,19 +354,26 @@ func (a *Authenticator) ValidateSession(request *http.Request) (valid, refresh b
 	if err != nil {
 		return false, false
 	}
+
 	return validateSession(cookie.Value, a.snapshot().sessionKey, a.now())
 }
 
 func signSession(expires time.Time, key [sha256.Size]byte) string {
 	payload := make([]byte, 8, 8+sha256.Size)
 	binary.BigEndian.PutUint64(payload, uint64(expires.Unix()))
+
 	mac := hmac.New(sha256.New, key[:])
 	_, _ = mac.Write(payload)
 	payload = append(payload, mac.Sum(nil)...)
+
 	return base64.RawURLEncoding.EncodeToString(payload)
 }
 
-func validateSession(value string, key [sha256.Size]byte, now time.Time) (bool, bool) {
+func validateSession(
+	value string,
+	key [sha256.Size]byte,
+	now time.Time,
+) (valid bool, refresh bool) {
 	payload, err := base64.RawURLEncoding.DecodeString(value)
 	if err != nil || len(payload) != 8+sha256.Size {
 		return false, false
@@ -344,6 +381,7 @@ func validateSession(value string, key [sha256.Size]byte, now time.Time) (bool, 
 
 	mac := hmac.New(sha256.New, key[:])
 	_, _ = mac.Write(payload[:8])
+
 	if !hmac.Equal(payload[8:], mac.Sum(nil)) {
 		return false, false
 	}
@@ -352,6 +390,7 @@ func validateSession(value string, key [sha256.Size]byte, now time.Time) (bool, 
 	if !expires.After(now) {
 		return false, false
 	}
+
 	return true, expires.Sub(now) < sessionLifetime/2
 }
 
@@ -360,6 +399,7 @@ func generateKey() (string, error) {
 	if _, err := rand.Read(key); err != nil {
 		return "", err
 	}
+
 	return base64.RawURLEncoding.EncodeToString(key), nil
 }
 
@@ -373,12 +413,14 @@ func newStaticKeyResolver(key string) (staticKeyResolver, error) {
 	if _, err := rand.Read(hmacKey); err != nil {
 		return staticKeyResolver{}, fmt.Errorf("auth: init resolver key: %w", err)
 	}
+
 	return staticKeyResolver{hmacKey: hmacKey, tag: tagOf(hmacKey, key)}, nil
 }
 
 func tagOf(hmacKey []byte, value string) []byte {
 	mac := hmac.New(sha256.New, hmacKey)
 	_, _ = mac.Write([]byte(value))
+
 	return mac.Sum(nil)
 }
 
@@ -386,5 +428,6 @@ func (resolver staticKeyResolver) Resolve(credential string) (Principal, bool) {
 	if hmac.Equal(tagOf(resolver.hmacKey, credential), resolver.tag) {
 		return Principal{AccessLevel: AccessLevelAdmin}, true
 	}
+
 	return Principal{}, false
 }
