@@ -2,61 +2,98 @@
   <app-document-title [parts]="[t('routes.admin'), t('routes.queues')]" />
 
   <section class="admin-screen" aria-label="Queue administration">
-    <header class="admin-heading">
-      <div>
-        <h2>Queue administration</h2>
-        <p>Maintenance actions for the background job system.</p>
-      </div>
-      <span>operator tools</span>
-    </header>
+    <article class="action-card">
+      <h2>Enqueue torrent processing batch</h2>
+      <p>Queue a batch job to (re)classify torrents in the database.</p>
 
-    <div class="action-grid">
-      <article class="action-card">
-        <div class="action-icon enqueue">↻</div>
-        <div class="action-copy">
-          <span class="eyebrow">Batch operation</span>
-          <h3>Reprocess torrents</h3>
-          <p>
-            Enqueue torrents for another classification pass, with optional
-            content-type and orphan filters.
-          </p>
+      <label class="toggle-row">
+        <input type="checkbox" [(ngModel)]="orphans" />
+        <span class="toggle"><i></i></span>
+        <span>Process orphaned torrents only</span>
+      </label>
+
+      <label class="priority-field">
+        <span>Priority</span>
+        <input type="number" min="0" step="1" [(ngModel)]="priority" />
+      </label>
+
+      <button
+        type="button"
+        class="primary-action"
+        [disabled]="enqueueStage !== 'PENDING'"
+        (click)="handleEnqueue()"
+      >
+        {{
+          enqueueStage === "REQUESTING"
+            ? "Enqueuing…"
+            : enqueueStage === "DONE"
+              ? "✓ Jobs enqueued"
+              : "＋ Enqueue jobs"
+        }}
+      </button>
+    </article>
+
+    <article class="action-card danger-card">
+      <h2>Purge queue jobs</h2>
+      <p>
+        Permanently delete completed or failed jobs from a queue. This cannot be
+        undone.
+      </p>
+
+      <fieldset>
+        <legend>Queue</legend>
+        <div class="segments">
           <button
             type="button"
-            class="primary-action"
-            (click)="openEnqueueReprocessTorrentsBatch()"
+            [class.active]="purgeQueue === null"
+            (click)="purgeQueue = null; purgeStage = 'PENDING'"
           >
-            {{ t("dashboard.queues.enqueue_torrent_processing_batch") }}
-            <span>→</span>
+            All
           </button>
+          @for (queue of availableQueueNames; track queue) {
+            <button
+              type="button"
+              [class.active]="purgeQueue === queue"
+              (click)="purgeQueue = queue; purgeStage = 'PENDING'"
+            >
+              {{ queue }}
+            </button>
+          }
         </div>
-      </article>
+      </fieldset>
 
-      <article class="action-card danger-card">
-        <div class="action-icon purge">!</div>
-        <div class="action-copy">
-          <span class="eyebrow">Destructive operation</span>
-          <h3>Purge queue jobs</h3>
-          <p>
-            Permanently remove jobs by queue and status. Review the selected
-            scope before confirming.
-          </p>
-          <button
-            type="button"
-            class="danger-action"
-            (click)="openPurgeDialog()"
-          >
-            {{ t("dashboard.queues.purge_jobs") }}
-            <span>→</span>
-          </button>
+      @if (purgeStage === "CONFIRMING") {
+        <div class="confirm-step">
+          <strong>Confirm permanent purge?</strong>
+          <div>
+            <button
+              type="button"
+              class="cancel"
+              (click)="purgeStage = 'PENDING'"
+            >
+              Cancel
+            </button>
+            <button type="button" class="danger-action" (click)="handlePurge()">
+              Confirm purge
+            </button>
+          </div>
         </div>
-      </article>
-    </div>
-
-    <aside class="safety-note">
-      <b>Safety note</b>
-      <span>
-        These actions change queue state immediately and cannot be undone.
-      </span>
-    </aside>
+      } @else {
+        <button
+          type="button"
+          class="danger-action"
+          [disabled]="purgeStage !== 'PENDING'"
+          (click)="purgeStage = 'CONFIRMING'"
+        >
+          {{
+            purgeStage === "REQUESTING"
+              ? "Purging…"
+              : purgeStage === "DONE"
+                ? "✓ Jobs purged"
+                : "✕ Purge jobs"
+          }}
+        </button>
+      }
+    </article>
   </section>
 </ng-container>
