@@ -281,7 +281,7 @@ func TestConfig_Resolver_ReflectsLiveUpdate(t *testing.T) {
 	}
 
 	before := readTmdb()
-	if before["Enabled"] != true {
+	if v, ok := before["Enabled"].(bool); !ok || !v {
 		t.Fatalf("tmdb.Enabled = %v before update, want true", before["Enabled"])
 	}
 
@@ -297,7 +297,7 @@ func TestConfig_Resolver_ReflectsLiveUpdate(t *testing.T) {
 	live.Set(updated)
 
 	after := readTmdb()
-	if after["Enabled"] != false {
+	if v, ok := after["Enabled"].(bool); !ok || v {
 		t.Errorf("tmdb.Enabled = %v after update, want false (stale snapshot served?)", after["Enabled"])
 	}
 
