@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"sync"
 	"time"
 
@@ -38,8 +39,12 @@ type RegistryConfig struct {
 	Timeout    time.Duration             `json:"timeout"            yaml:"timeout"`
 }
 
-// ProviderFactory creates a Provider from a ProviderConfig.
-type ProviderFactory func(name string, cfg ProviderConfig) Provider
+// ProviderFactory creates a Provider from a ProviderConfig. It also receives
+// the full RegistryConfig the provider is being built under, so registry-wide
+// settings (batch size, flush interval, default timeout) are read from the
+// config current at build time rather than captured once at startup — a
+// runtime Update with, say, a new batch_size builds providers that honor it.
+type ProviderFactory func(name string, cfg ProviderConfig, reg RegistryConfig) Provider
 
 // Registry holds the current LLM providers and configuration.
 // It supports live updates and graceful persistence on shutdown.
@@ -60,7 +65,7 @@ func NewRegistry(cfg RegistryConfig, factory ProviderFactory, configPath string)
 		providers:  make(map[string]Provider, len(cfg.Providers)),
 	}
 	for name, pCfg := range cfg.Providers {
-		r.providers[name] = factory(name, pCfg)
+		r.providers[name] = factory(name, pCfg, cfg)
 	}
 
 	return r
@@ -100,21 +105,40 @@ func (r *Registry) Config() RegistryConfig {
 // New providers are created via the factory.
 // Any evicted provider that implements Drainer is drained before being discarded.
 func (r *Registry) Update(cfg RegistryConfig) {
+	r.Swap(cfg)()
+}
+
+// Swap replaces providers from a new config like Update, but defers draining:
+// it returns a func the caller MUST invoke — after releasing any locks it
+// holds — to drain the evicted providers. This lets a caller that serializes
+// config mutations under its own mutex avoid holding that mutex across a
+// potentially slow drain (a batch flush is a network round-trip). Evicted
+// providers are drained in sorted name order for determinism.
+func (r *Registry) Swap(cfg RegistryConfig) (drain func()) {
 	r.mu.Lock()
 	old := r.providers
 
 	newProviders := make(map[string]Provider, len(cfg.Providers))
 	for name, pCfg := range cfg.Providers {
-		newProviders[name] = r.factory(name, pCfg)
+		newProviders[name] = r.factory(name, pCfg, cfg)
 	}
 
 	r.providers = newProviders
 	r.config = cfg
 	r.mu.Unlock()
 
-	for _, prov := range old {
-		if d, ok := prov.(Drainer); ok {
-			d.Drain()
+	return func() {
+		names := make([]string, 0, len(old))
+		for name := range old {
+			names = append(names, name)
+		}
+
+		sort.Strings(names)
+
+		for _, name := range names {
+			if d, ok := old[name].(Drainer); ok {
+				d.Drain()
+			}
 		}
 	}
 }

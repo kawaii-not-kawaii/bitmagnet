@@ -23,7 +23,7 @@ type parsedConfig struct {
 }
 
 // noopFactory builds providers that do nothing; Flush never touches providers.
-func noopFactory(name string, _ ProviderConfig) Provider {
+func noopFactory(name string, _ ProviderConfig, _ RegistryConfig) Provider {
 	return &mockProvider{name: name}
 }
 

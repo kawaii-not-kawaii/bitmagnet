@@ -11,9 +11,12 @@ import (
 )
 
 type dependencies struct {
-	search       LocalSearch
-	tmdbClient   tmdb.Client
-	llmProviders map[string]llm.Provider
+	search     LocalSearch
+	tmdbClient tmdb.Client
+	// llmProviders returns the providers current at call time (backed by
+	// llm.Registry.All), so runtime config updates are observed. May be nil
+	// when no registry is wired (e.g. tests without LLM).
+	llmProviders func() map[string]llm.Provider
 	_logger      *zap.SugaredLogger
 	logger       *zap.SugaredLogger
 }

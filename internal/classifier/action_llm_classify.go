@@ -37,8 +37,13 @@ func (llmClassifyAction) compileAction(ctx compilerContext) (action, error) {
 				return cl, nil
 			}
 
-			// Get a provider from the dependencies
-			providers := ctx.llmProviders
+			// Get the providers current at classification time, so a runtime
+			// LLM config update is observed without recompiling the workflow.
+			var providers map[string]llm.Provider
+			if ctx.llmProviders != nil {
+				providers = ctx.llmProviders()
+			}
+
 			if len(providers) == 0 {
 				ctx.logger.Warn("no llm providers configured, skipping llm classification")
 				return cl, classification.RuntimeError{

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
+	"github.com/bitmagnet-io/bitmagnet/internal/config/configwrite"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm/openai"
 	"go.uber.org/fx"
@@ -14,66 +15,82 @@ import (
 
 type Params struct {
 	fx.In
-	Config    classifier.Config
-	Logger    *zap.SugaredLogger
-	Lifecycle fx.Lifecycle
+	Config     classifier.Config
+	ConfigPath configwrite.TargetPath
+	Logger     *zap.SugaredLogger
+	Lifecycle  fx.Lifecycle
 }
 
 type Result struct {
 	fx.Out
-	Registry     *llm.Registry           `optional:"true"`
+	Registry *llm.Registry `optional:"true"`
+	// LlmProviders is a static snapshot of the providers built at startup,
+	// kept for one-shot CLI consumers (llm-bench). The live path — anything
+	// that must observe runtime config updates — reads Registry.All() at
+	// use-time instead.
 	LlmProviders map[string]llm.Provider `optional:"true"`
 }
 
-func New(p Params) Result {
-	cfg := p.Config.Llm
-	if cfg.ProviderBaseURL == "" {
-		return Result{}
+// RegistryConfig maps the classifier's LLM section onto the registry's
+// config. With no provider_base_url configured it yields a config with zero
+// providers — the registry is still constructed so a later runtime config
+// update can bring the first provider up without a restart.
+func RegistryConfig(cfg classifier.LlmConfig) llm.RegistryConfig {
+	providers := map[string]llm.ProviderConfig{}
+
+	if cfg.ProviderBaseURL != "" {
+		name := cfg.ProviderName
+		if name == "" {
+			name = "default"
+		}
+
+		providers[name] = llm.ProviderConfig{
+			BaseURL: cfg.ProviderBaseURL,
+			Model:   cfg.ProviderModel,
+			APIKey:  cfg.ProviderAPIKey,
+			Timeout: cfg.Timeout,
+		}
 	}
 
-	name := cfg.ProviderName
-	if name == "" {
-		name = "default"
-	}
-
-	p.Logger.Infof(
-		"llm provider config: name=%s base_url=%s model=%s",
-		name,
-		cfg.ProviderBaseURL,
-		cfg.ProviderModel,
-	)
-
-	regCfg := llm.RegistryConfig{
-		Providers: map[string]llm.ProviderConfig{
-			name: {
-				BaseURL: cfg.ProviderBaseURL,
-				Model:   cfg.ProviderModel,
-				APIKey:  cfg.ProviderAPIKey,
-				Timeout: cfg.Timeout,
-			},
-		},
+	return llm.RegistryConfig{
+		Providers:  providers,
 		BatchSize:  cfg.BatchSize,
 		MaxContext: cfg.MaxContext,
 		MaxTokens:  cfg.MaxTokens,
 		Interval:   cfg.Interval,
 		Timeout:    cfg.Timeout,
 	}
+}
 
-	defaultTimeout := regCfg.Timeout
-	batchSize := regCfg.BatchSize
+func New(p Params) Result {
+	cfg := p.Config.Llm
+	regCfg := RegistryConfig(cfg)
 
-	flushAfter := regCfg.Interval
-	if flushAfter <= 0 {
-		flushAfter = 5 * time.Second
+	if len(regCfg.Providers) > 0 {
+		p.Logger.Infof(
+			"llm provider config: name=%s base_url=%s model=%s",
+			cfg.ProviderName,
+			cfg.ProviderBaseURL,
+			cfg.ProviderModel,
+		)
 	}
 
-	factory := func(name string, cfg llm.ProviderConfig) llm.Provider {
+	// Registry-wide settings (timeout fallback, batch size, flush interval)
+	// are read from the RegistryConfig passed at build time, not captured
+	// from the startup config: a runtime Update with a new batch_size must
+	// build providers that honor it.
+	factory := func(name string, cfg llm.ProviderConfig, reg llm.RegistryConfig) llm.Provider {
 		timeout := cfg.Timeout
 		if timeout <= 0 {
-			timeout = defaultTimeout
+			timeout = reg.Timeout
 		}
 
-		p.Logger.Infof("llm provider '%s' ready: %s (batch=%d)", name, cfg.BaseURL, batchSize)
+		flushAfter := reg.Interval
+		if flushAfter <= 0 {
+			flushAfter = 5 * time.Second
+		}
+
+		p.Logger.Infof("llm provider '%s' ready: %s (batch=%d)", name, cfg.BaseURL, reg.BatchSize)
 
 		base := openai.New(openai.Config{
 			Name:    name,
@@ -82,18 +99,23 @@ func New(p Params) Result {
 			APIKey:  cfg.APIKey,
 			Timeout: timeout,
 		})
-		if batchSize > 1 {
-			return openai.NewBatchClient(base, batchSize, flushAfter)
+		if reg.BatchSize > 1 {
+			return openai.NewBatchClient(base, reg.BatchSize, flushAfter)
 		}
 
 		return base
 	}
 
-	registry := llm.NewRegistry(regCfg, factory, "")
-	providers := registry.All()
+	registry := llm.NewRegistry(regCfg, factory, string(p.ConfigPath))
 
 	p.Lifecycle.Append(fx.Hook{
 		OnStop: func(_ context.Context) error {
+			// Drain the providers current at shutdown, not the startup
+			// snapshot: a runtime Update swaps the registry's providers, and
+			// the evicted ones are drained by the updater. Sorted for a
+			// deterministic drain order.
+			providers := registry.All()
+
 			names := make([]string, 0, len(providers))
 			for name := range providers {
 				names = append(names, name)
@@ -110,6 +132,6 @@ func New(p Params) Result {
 
 	return Result{
 		Registry:     registry,
-		LlmProviders: providers,
+		LlmProviders: registry.All(),
 	}
 }
