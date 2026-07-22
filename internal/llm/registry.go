@@ -2,13 +2,24 @@ package llm
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io/fs"
 	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
 	"gopkg.in/yaml.v3"
 )
+
+// ErrPersistenceDisabled is returned by Flush when the registry has no config
+// file path. It is a distinct signal, not a failure: callers that treat
+// persistence as optional can check errors.Is(err, ErrPersistenceDisabled) and
+// ignore it, while callers that expected a write can tell it apart from a
+// silent success. The previous implementation returned nil here, making
+// "nothing was written" indistinguishable from "written successfully".
+var ErrPersistenceDisabled = errors.New("llm registry: persistence disabled (no config path)")
 
 // ProviderConfig is the serializable config for a single LLM provider.
 // Used for runtime updates and persistence.
@@ -111,43 +122,181 @@ func (r *Registry) Update(cfg RegistryConfig) {
 	}
 }
 
-// Flush writes the current LLM config to the config file on disk.
-// Called during graceful shutdown to persist runtime changes.
+// Flush writes the current LLM config to the config file on disk under the
+// key classifier.llm, leaving every other section of the file intact.
+//
+// It is safe against the two ways the previous implementation could lose data:
+//
+//   - It edits a yaml.Node tree rather than round-tripping through
+//     map[string]interface{}, so comments and key ordering in sections it does
+//     not own survive.
+//   - A read or parse failure on the existing file ABORTS the write. The old
+//     code discarded the unmarshal error, so a corrupt or unreadable config
+//     degraded to writing a file containing only the classifier section —
+//     silently destroying everything else. Here, the worst input produces no
+//     write at all rather than the most destructive one.
+//
+// The write itself is atomic (temp file in the same directory, fsync, rename),
+// so a crash mid-write leaves either the complete old file or the complete new
+// one, never a truncated file. An absent file is not an error: it is created
+// containing only the classifier section.
+//
+// Returns ErrPersistenceDisabled (not nil) when no config path is set, so the
+// caller can distinguish "did nothing" from "wrote successfully".
 func (r *Registry) Flush() error {
 	if r.configPath == "" {
-		return nil // no config file path — skip persistence
+		return ErrPersistenceDisabled
 	}
 
 	r.mu.RLock()
 	cfg := r.config
 	r.mu.RUnlock()
 
-	// Read existing config file if it exists.
-	existing := make(map[string]interface{})
-	if data, err := os.ReadFile(r.configPath); err == nil {
-		_ = yaml.Unmarshal(data, &existing)
-	}
-
-	// Merge LLM config into the existing structure.
-	classifierSection, _ := existing["classifier"].(map[string]interface{})
-	if classifierSection == nil {
-		classifierSection = make(map[string]interface{})
-	}
-
-	classifierSection["llm"] = cfg
-	existing["classifier"] = classifierSection
-
-	// Write back.
-	data, err := yaml.Marshal(existing)
+	root, mode, err := r.loadConfigTree()
 	if err != nil {
-		return fmt.Errorf("llm registry: marshal config: %w", err)
+		return err
 	}
 
-	if err := os.WriteFile(r.configPath, data, 0o644); err != nil {
-		return fmt.Errorf("llm registry: write config: %w", err)
+	var cfgNode yaml.Node
+	if encErr := cfgNode.Encode(cfg); encErr != nil {
+		return fmt.Errorf("llm registry: encode config: %w", encErr)
+	}
+
+	top := topMapping(root)
+	classifier := childMapping(top, "classifier")
+	setMapChild(classifier, "llm", &cfgNode)
+
+	out, marshalErr := yaml.Marshal(root)
+	if marshalErr != nil {
+		return fmt.Errorf("llm registry: marshal config: %w", marshalErr)
+	}
+
+	if writeErr := atomicWriteFile(r.configPath, out, mode); writeErr != nil {
+		return fmt.Errorf("llm registry: write config: %w", writeErr)
 	}
 
 	return nil
+}
+
+// loadConfigTree reads the existing config file into a yaml document node and
+// returns the mode to preserve on rewrite. A missing file yields an empty
+// document (to be populated with only our section) and the default mode. A
+// present-but-unreadable or unparseable file is a hard error: we must not
+// overwrite a file we could not fully understand.
+func (r *Registry) loadConfigTree() (*yaml.Node, fs.FileMode, error) {
+	const defaultMode fs.FileMode = 0o644
+
+	info, statErr := os.Stat(r.configPath)
+
+	switch {
+	case statErr == nil:
+		data, readErr := os.ReadFile(r.configPath)
+		if readErr != nil {
+			return nil, 0, fmt.Errorf("llm registry: read config: %w", readErr)
+		}
+
+		root := &yaml.Node{}
+		if unmarshalErr := yaml.Unmarshal(data, root); unmarshalErr != nil {
+			return nil, 0, fmt.Errorf("llm registry: parse config: %w", unmarshalErr)
+		}
+
+		return root, info.Mode().Perm(), nil
+	case errors.Is(statErr, fs.ErrNotExist):
+		return &yaml.Node{}, defaultMode, nil
+	default:
+		return nil, 0, fmt.Errorf("llm registry: stat config: %w", statErr)
+	}
+}
+
+// topMapping returns the top-level mapping node of a config document,
+// initializing the document and mapping when the source file was empty or held
+// something other than a mapping at the root.
+func topMapping(root *yaml.Node) *yaml.Node {
+	if root.Kind == 0 {
+		root.Kind = yaml.DocumentNode
+	}
+
+	if len(root.Content) == 0 || root.Content[0].Kind != yaml.MappingNode {
+		root.Content = []*yaml.Node{{Kind: yaml.MappingNode, Tag: "!!map"}}
+	}
+
+	return root.Content[0]
+}
+
+// childMapping returns the mapping node stored under key in m, creating an
+// empty mapping (and the key) when it is absent or not itself a mapping. A
+// non-mapping existing value is replaced rather than merged, since there is no
+// structure to preserve in that case.
+func childMapping(m *yaml.Node, key string) *yaml.Node {
+	for i := 0; i+1 < len(m.Content); i += 2 {
+		if m.Content[i].Value == key {
+			if m.Content[i+1].Kind == yaml.MappingNode {
+				return m.Content[i+1]
+			}
+
+			child := &yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
+			m.Content[i+1] = child
+
+			return child
+		}
+	}
+
+	child := &yaml.Node{Kind: yaml.MappingNode, Tag: "!!map"}
+	setMapChild(m, key, child)
+
+	return child
+}
+
+// setMapChild sets key=val in mapping m, replacing an existing value in place
+// (preserving its position) or appending a new key/value pair.
+func setMapChild(m *yaml.Node, key string, val *yaml.Node) {
+	for i := 0; i+1 < len(m.Content); i += 2 {
+		if m.Content[i].Value == key {
+			m.Content[i+1] = val
+			return
+		}
+	}
+
+	m.Content = append(m.Content,
+		&yaml.Node{Kind: yaml.ScalarNode, Tag: "!!str", Value: key},
+		val,
+	)
+}
+
+// atomicWriteFile writes data to path atomically: a temp file in the same
+// directory (so the rename cannot cross filesystems), fsync'd and closed, then
+// renamed over the target. mode is applied to the temp file before the rename.
+func atomicWriteFile(path string, data []byte, mode fs.FileMode) error {
+	dir := filepath.Dir(path)
+
+	tmp, err := os.CreateTemp(dir, "."+filepath.Base(path)+".tmp-*")
+	if err != nil {
+		return err
+	}
+
+	tmpName := tmp.Name()
+	// Best-effort cleanup: harmless no-op after a successful rename.
+	defer func() { _ = os.Remove(tmpName) }()
+
+	if _, err = tmp.Write(data); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+
+	if err = tmp.Sync(); err != nil {
+		_ = tmp.Close()
+		return err
+	}
+
+	if err = tmp.Close(); err != nil {
+		return err
+	}
+
+	if err = os.Chmod(tmpName, mode); err != nil {
+		return err
+	}
+
+	return os.Rename(tmpName, path)
 }
 
 // ToJSON returns the current config as JSON bytes (for API responses or logging).
