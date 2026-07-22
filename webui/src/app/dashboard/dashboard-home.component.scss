@@ -3,7 +3,7 @@
 }
 
 .overview {
-  animation: dashboard-rise 0.2s ease;
+  animation: bm-rise 0.2s ease;
 }
 
 .stat-grid {
@@ -51,12 +51,16 @@
     &.good {
       color: #3fb950;
     }
+
+    &.bad {
+      color: #e5484d;
+    }
   }
 }
 
 .overview-grid {
   display: grid;
-  grid-template-columns: 1.4fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
   align-items: stretch;
 }
@@ -112,7 +116,7 @@
 
 .health-row {
   display: grid;
-  grid-template-columns: 9px 1fr auto;
+  grid-template-columns: 10px 1fr auto;
   align-items: center;
   gap: 12px;
   padding: 9px 12px;
@@ -141,28 +145,32 @@
     &.error {
       color: #e5484d;
     }
+
+    &.degraded {
+      color: #d29922;
+    }
   }
 }
 
 .health-dot {
-  width: 9px;
-  height: 9px;
+  --status-color: var(--faint);
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
-  background: var(--faint);
+  background: var(--status-color);
+  box-shadow: 0 0 7px color-mix(in srgb, var(--status-color) 40%, transparent);
 
   &.up {
-    background: #3fb950;
-    box-shadow: 0 0 7px #3fb95066;
+    --status-color: #3fb950;
+  }
+
+  &.degraded {
+    --status-color: #d29922;
   }
 
   &.down,
   &.error {
-    background: #e5484d;
-  }
-
-  &.inactive,
-  &.unknown {
-    background: var(--faint);
+    --status-color: #e5484d;
   }
 }
 
@@ -277,13 +285,6 @@
   }
 }
 
-@keyframes dashboard-rise {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
-  }
-}
-
 @media (max-width: 760px) {
   .stat-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -295,12 +296,6 @@
 }
 
 @media (max-width: 430px) {
-  .stat-grid {
-    grid-template-columns: 1fr;
-    gap: 10px;
-    margin-bottom: 16px;
-  }
-
   .stat-card strong {
     font-size: 23px;
   }

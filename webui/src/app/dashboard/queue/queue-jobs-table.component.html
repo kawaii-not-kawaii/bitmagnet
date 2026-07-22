@@ -7,11 +7,10 @@
         <tr>
           <th>ID</th>
           <th>{{ t("dashboard.queues.queue") }}</th>
-          <th>{{ t("dashboard.queues.priority") }}</th>
+          <th>Prio</th>
           <th>{{ t("general.status") }}</th>
-          <th>{{ t("general.error") }}</th>
-          <th>{{ t("dashboard.queues.created_at") }}</th>
-          <th>{{ t("dashboard.queues.ran_at") }}</th>
+          <th>Created</th>
+          <th>Ran</th>
         </tr>
       </thead>
       <tbody>
@@ -19,6 +18,7 @@
           <tr
             class="job-row"
             [class.expanded]="expandedId === item.id"
+            [attr.aria-expanded]="expandedId === item.id"
             tabindex="0"
             (click)="toggleQueueJobId(item.id)"
             (keydown.enter)="toggleQueueJobId(item.id)"
@@ -31,18 +31,8 @@
                 t("dashboard.queues." + item.status)
               }}</span>
             </td>
-            <td class="error-cell">
-              @if (item.error) {
-                <span>{{ item.error | slice: 0 : 24 }}</span>
-                @if (item.error.length > 24) {
-                  <span>…</span>
-                }
-              } @else {
-                <span class="empty">—</span>
-              }
-            </td>
             <td class="time">{{ item.createdAt | timeAgo }}</td>
-            <td class="time">
+            <td class="time ran-at">
               @if (item.ranAt; as ranAt) {
                 {{ ranAt | timeAgo }}
               } @else {
@@ -52,23 +42,18 @@
           </tr>
           @if (expandedId === item.id) {
             <tr class="detail-row">
-              <td colspan="7">
+              <td colspan="6">
                 <div class="item-detail">
-                  <div class="detail-heading">
+                  <div class="detail-id">
                     <span>ID</span>
+                    <code>{{ item.id }}</code>
                     <button
                       type="button"
                       [cdkCopyToClipboard]="item.id"
                       [title]="t('torrents.copy_to_clipboard')"
                     >
-                      {{ item.id }} <b>copy</b>
+                      copy
                     </button>
-                  </div>
-                  <div class="detail-meta">
-                    <span>Created {{ item.createdAt | timeAgo }}</span>
-                    @if (item.ranAt; as ranAt) {
-                      <span>Ran {{ ranAt | timeAgo }}</span>
-                    }
                   </div>
                   <div class="detail-heading">
                     <span>{{ t("dashboard.queues.payload") }}</span>
@@ -100,7 +85,7 @@
           }
         } @empty {
           <tr class="empty-row">
-            <td colspan="7">No queue jobs match the current filters.</td>
+            <td colspan="6">No queue jobs match the current filters.</td>
           </tr>
         }
       </tbody>

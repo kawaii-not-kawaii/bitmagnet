@@ -14,7 +14,12 @@
 
       <label class="priority-field">
         <span>Priority</span>
-        <input type="number" min="0" step="1" [(ngModel)]="priority" />
+        <input
+          type="number"
+          value="0"
+          readonly
+          title="Batch job priority is fixed at 0 by the backend"
+        />
       </label>
 
       <button

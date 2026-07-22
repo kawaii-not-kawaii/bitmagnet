@@ -3,7 +3,7 @@
 }
 
 .metrics {
-  animation: metrics-rise 0.2s ease;
+  animation: bm-rise 0.2s ease;
 }
 
 .filter-bar {
@@ -204,13 +204,6 @@
         600 22px/1 "JetBrains Mono",
         monospace;
     }
-  }
-}
-
-@keyframes metrics-rise {
-  from {
-    opacity: 0;
-    transform: translateY(4px);
   }
 }
 

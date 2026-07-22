@@ -16,6 +16,10 @@
             dashboard.summary.indexedLastHour >=
             dashboard.summary.indexedPreviousHour
           "
+          [class.bad]="
+            dashboard.summary.indexedLastHour <
+            dashboard.summary.indexedPreviousHour
+          "
           >{{
             indexedTrend(
               dashboard.summary.indexedLastHour,

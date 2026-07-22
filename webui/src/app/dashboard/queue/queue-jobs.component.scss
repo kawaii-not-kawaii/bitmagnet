@@ -3,7 +3,7 @@
 }
 
 .jobs {
-  animation: bm-fade 0.2s ease;
+  animation: bm-rise 0.2s ease;
 }
 
 .jobs-toolbar {
@@ -221,7 +221,6 @@
 
 app-paginator {
   display: block;
-  margin-top: 14px;
 }
 
 @keyframes spin {
