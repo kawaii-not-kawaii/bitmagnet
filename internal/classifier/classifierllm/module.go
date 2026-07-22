@@ -47,6 +47,7 @@ func RegistryConfig(cfg classifier.LlmConfig) llm.RegistryConfig {
 		if name == "" {
 			name = "default"
 		}
+
 		providers[name] = llm.ProviderConfig{
 			BaseURL: cfg.ProviderBaseURL,
 			Model:   cfg.ProviderModel,

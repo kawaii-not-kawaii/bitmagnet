@@ -82,33 +82,41 @@ func (s *Stats) Record(observation Observation) {
 	bucket.completionTokens += observation.CompletionTokens
 	bucket.durationSeconds += seconds
 	bucket.maxDuration = max(bucket.maxDuration, seconds)
+
 	if observation.Failed {
 		bucket.failures++
 	}
+
 	for _, contentType := range observation.ContentTypes {
 		if bucket.distribution == nil {
 			bucket.distribution = make(map[string]int)
 		}
+
 		bucket.distribution[contentType]++
 	}
 
 	latencyIndex := len(latencyBounds)
+
 	for i, bound := range latencyBounds {
 		if seconds <= bound {
 			latencyIndex = i
 			break
 		}
 	}
+
 	bucket.latencies[latencyIndex]++
 
 	status := "success"
 	if observation.Failed {
 		status = "error"
+
 		ClassificationErrors.WithLabelValues(observation.Provider, "request").Inc()
 	}
+
 	ClassificationDuration.WithLabelValues(observation.Provider, status).Observe(seconds)
 	ClassificationTokens.WithLabelValues(observation.Provider, "prompt").Add(float64(observation.PromptTokens))
-	ClassificationTokens.WithLabelValues(observation.Provider, "completion").Add(float64(observation.CompletionTokens))
+	ClassificationTokens.WithLabelValues(observation.Provider, "completion").
+		Add(float64(observation.CompletionTokens))
 	ClassificationBatchSize.Observe(float64(observation.Classifications))
 }
 
@@ -130,6 +138,7 @@ func (s *Stats) Snapshot(now time.Time) StatsSnapshot {
 		requestCount int
 		failureCount int
 	)
+
 	result.Distribution = make(map[string]int)
 
 	for i := range s.buckets {
@@ -137,6 +146,7 @@ func (s *Stats) Snapshot(now time.Time) StatsSnapshot {
 		if bucket.minute < cutoff {
 			continue
 		}
+
 		result.Matched += bucket.matched
 		result.PromptTokens += bucket.promptTokens
 		result.CompletionTokens += bucket.completionTokens
@@ -144,15 +154,18 @@ func (s *Stats) Snapshot(now time.Time) StatsSnapshot {
 		maxDuration = max(maxDuration, bucket.maxDuration)
 		requestCount += bucket.requests
 		failureCount += bucket.failures
+
 		for contentType, count := range bucket.distribution {
 			result.Distribution[contentType] += count
 		}
+
 		for j, count := range bucket.latencies {
 			latencies[j] += count
 		}
 	}
 
 	window := min(now.Sub(s.startedAt), 24*time.Hour)
+
 	result.WindowSeconds = max(1, int(window.Seconds()))
 	if requestCount == 0 {
 		return result
@@ -163,17 +176,20 @@ func (s *Stats) Snapshot(now time.Time) StatsSnapshot {
 	result.ErrorRate = 100 * float64(failureCount) / float64(requestCount)
 
 	target := int(math.Ceil(float64(requestCount) * 0.95))
+
 	seen := 0
 	for i, count := range latencies {
 		seen += count
 		if seen < target {
 			continue
 		}
+
 		if i < len(latencyBounds) {
 			result.P95Latency = latencyBounds[i]
 		} else {
 			result.P95Latency = maxDuration
 		}
+
 		break
 	}
 

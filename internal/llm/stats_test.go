@@ -6,6 +6,8 @@ import (
 )
 
 func TestStatsSnapshotAggregatesCurrentWindow(t *testing.T) {
+	t.Parallel()
+
 	now := time.Now()
 	stats := NewStats()
 	stats.startedAt = now.Add(-time.Hour)
@@ -39,9 +41,11 @@ func TestStatsSnapshotAggregatesCurrentWindow(t *testing.T) {
 	if got.Matched != 3 || got.PromptTokens != 30 || got.CompletionTokens != 13 {
 		t.Fatalf("unexpected totals: %+v", got)
 	}
+
 	if got.AverageLatency != 2 || got.P95Latency != 3 || got.ErrorRate != 50 {
 		t.Fatalf("unexpected request metrics: %+v", got)
 	}
+
 	if got.Distribution["movie"] != 2 || got.Distribution["tv_show"] != 1 {
 		t.Fatalf("unexpected distribution: %+v", got.Distribution)
 	}

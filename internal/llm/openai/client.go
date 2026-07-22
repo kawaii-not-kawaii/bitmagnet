@@ -125,6 +125,7 @@ func (c *client) Classify(ctx context.Context, input llm.ClassifyInput) (*llm.Cl
 	}
 
 	startedAt := time.Now()
+
 	raw, err := c.doRequestRaw(ctx, reqBytes)
 	if err != nil {
 		c.observe(startedAt, raw, nil, true)
@@ -136,12 +137,14 @@ func (c *client) Classify(ctx context.Context, input llm.ClassifyInput) (*llm.Cl
 		c.observe(startedAt, raw, nil, true)
 		return nil, fmt.Errorf("%w: %w", llm.ErrInvalidJSON, err)
 	}
+
 	if result.ContentType == "" {
 		c.observe(startedAt, raw, nil, true)
 		return nil, llm.ErrNoResult
 	}
 
 	c.observe(startedAt, raw, []string{result.ContentType}, false)
+
 	return &result, nil
 }
 
@@ -207,6 +210,7 @@ func (c *client) BatchClassify(ctx context.Context, inputs []llm.ClassifyInput) 
 	}
 
 	startedAt := time.Now()
+
 	raw, err := c.doRequestRaw(ctx, reqBytes)
 	if err != nil {
 		c.observe(startedAt, raw, nil, true)
@@ -215,11 +219,13 @@ func (c *client) BatchClassify(ctx context.Context, inputs []llm.ClassifyInput) 
 
 	results, err := ParseBatchResponse(raw.content)
 	contentTypes := make([]string, 0, len(results))
+
 	if err == nil {
 		for _, result := range results {
 			contentTypes = append(contentTypes, result.ContentType)
 		}
 	}
+
 	c.observe(startedAt, raw, contentTypes, err != nil)
 
 	return results, err
@@ -294,6 +300,7 @@ func (c *client) observe(startedAt time.Time, response rawResponse, contentTypes
 	if c.config.Observe == nil {
 		return
 	}
+
 	c.config.Observe(llm.Observation{
 		Provider:         c.config.Name,
 		At:               time.Now(),

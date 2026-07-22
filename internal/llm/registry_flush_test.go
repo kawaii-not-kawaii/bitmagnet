@@ -268,7 +268,9 @@ func TestUpdateAndFlushAppliesRuntimeConfig(t *testing.T) {
 	t.Parallel()
 
 	path := filepath.Join(t.TempDir(), "config.yml")
+
 	var factoryConfig RegistryConfig
+
 	registry := NewRegistry(
 		RegistryConfig{Enabled: false},
 		func(name string, _ ProviderConfig, cfg RegistryConfig) Provider {
@@ -289,18 +291,22 @@ func TestUpdateAndFlushAppliesRuntimeConfig(t *testing.T) {
 	if err := registry.UpdateAndFlush(cfg); err != nil {
 		t.Fatalf("UpdateAndFlush: %v", err)
 	}
+
 	if len(registry.All()) != 1 {
 		t.Fatalf("provider was not enabled: %+v", registry.All())
 	}
+
 	if factoryConfig.BatchSize != 7 || factoryConfig.Interval != 3*time.Second {
 		t.Fatalf("factory received stale registry config: %+v", factoryConfig)
 	}
+
 	if !strings.Contains(readBack(t, path), "enabled: true") {
 		t.Fatalf("enabled state was not persisted:\n%s", readBack(t, path))
 	}
 
 	cfg.Enabled = false
 	registry.Update(cfg)
+
 	if len(registry.All()) != 0 {
 		t.Fatalf("provider was not disabled: %+v", registry.All())
 	}
