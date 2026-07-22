@@ -4,6 +4,7 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/bitmagnet-io/bitmagnet/internal/blocking"
 	"github.com/bitmagnet-io/bitmagnet/internal/client"
+	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
 	rootconfig "github.com/bitmagnet-io/bitmagnet/internal/config"
 	"github.com/bitmagnet-io/bitmagnet/internal/config/configfx"
 	"github.com/bitmagnet-io/bitmagnet/internal/database/dao"
@@ -119,7 +120,7 @@ type Params struct {
 	TorrentMetricsClient lazy.Lazy[torrentmetrics.Client]
 	Processor            lazy.Lazy[processor.Processor]
 	BlockingManager      lazy.Lazy[blocking.Manager]
-	ClientConfig         client.Config
+	ClientConfig         *concurrency.AtomicValue[client.Config]
 	ResolvedConfig       rootconfig.ResolvedConfig
 }
 

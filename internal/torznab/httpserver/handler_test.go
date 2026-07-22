@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
 	"github.com/bitmagnet-io/bitmagnet/internal/lazy"
 	"github.com/bitmagnet-io/bitmagnet/internal/model"
 	"github.com/bitmagnet-io/bitmagnet/internal/torznab"
@@ -37,6 +38,7 @@ type testHarness struct {
 	clientMock       *torznab_mocks.Client
 	responseRecorder *httptest.ResponseRecorder
 	engine           *gin.Engine
+	config           *concurrency.AtomicValue[torznab.Config]
 }
 
 func newTestHarness(t *testing.T) *testHarness {
@@ -47,8 +49,11 @@ func newTestHarness(t *testing.T) *testHarness {
 		return clientMock, nil
 	})
 
+	cfg := &concurrency.AtomicValue[torznab.Config]{}
+	cfg.Set(testCfg)
+
 	engine := gin.New()
-	err := httpserver.New(lazyClient, testCfg).Apply(engine)
+	err := httpserver.New(lazyClient, cfg).Apply(engine)
 
 	require.NoError(t, err)
 
@@ -57,6 +62,7 @@ func newTestHarness(t *testing.T) *testHarness {
 		clientMock:       clientMock,
 		responseRecorder: httptest.NewRecorder(),
 		engine:           engine,
+		config:           cfg,
 	}
 }
 
@@ -206,4 +212,45 @@ func TestSearch(t *testing.T) {
 			assert.Equal(t, string(resultXML), h.responseRecorder.Body.String())
 		})
 	}
+}
+
+// TestLiveApply_ProfileAddedAtRuntime is the torznab live-apply guarantee: the
+// handler reads the config behind the AtomicValue per request, so a profile
+// added by a runtime config update is served without a restart — and it is
+// default-merged at use-time, so a raw (unmerged) value set by a future config
+// mutation still gets defaults applied.
+func TestLiveApply_ProfileAddedAtRuntime(t *testing.T) {
+	t.Parallel()
+
+	h := newTestHarness(t)
+
+	// The profile does not exist at startup.
+	req, err := http.NewRequestWithContext(
+		context.Background(),
+		http.MethodGet,
+		"/torznab/added/api?t=caps",
+		nil,
+	)
+	require.NoError(t, err)
+
+	h.engine.ServeHTTP(h.responseRecorder, req)
+	assert.Equal(t, http.StatusNotFound, h.responseRecorder.Code)
+
+	// Add it at runtime — deliberately WITHOUT MergeDefaults, as a raw value
+	// from a config mutation would arrive.
+	h.config.Set(torznab.Config{
+		Profiles: []torznab.Profile{
+			{ID: "added", Title: "Added at runtime"},
+		},
+	})
+
+	rec := httptest.NewRecorder()
+	h.engine.ServeHTTP(rec, req)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	// Use-time MergeDefaults filled the limits the raw profile omitted.
+	expected := torznab.Profile{ID: "added", Title: "Added at runtime"}.MergeDefaults()
+	expectedXML, err := expected.Caps().XML()
+	require.NoError(t, err)
+	assert.Equal(t, string(expectedXML), rec.Body.String())
 }
