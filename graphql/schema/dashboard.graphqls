@@ -19,6 +19,8 @@ type DashboardMutation {
 }
 
 type DashboardLlmConnectionResult {
+  ok: Boolean!
+  error: String
   connected: Boolean!
   latencySeconds: Float!
 }
@@ -27,6 +29,9 @@ type DashboardLlmBenchmark {
   sampleSize: Int!
   successes: Int!
   failures: Int!
+  matched: Int!
+  unmatched: Int!
+  errored: Int!
   averageLatencySeconds: Float!
   throughputPerSecond: Float!
   distribution: [DashboardLlmBenchmarkDistribution!]!

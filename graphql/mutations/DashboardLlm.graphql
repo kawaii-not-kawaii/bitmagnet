@@ -1,6 +1,8 @@
 mutation DashboardLlmTestConnection {
   dashboard {
     testLlmConnection {
+      ok
+      error
       connected
       latencySeconds
     }
@@ -13,6 +15,9 @@ mutation DashboardLlmRunBenchmark($sampleSize: Int!) {
       sampleSize
       successes
       failures
+      matched
+      unmatched
+      errored
       averageLatencySeconds
       throughputPerSecond
       distribution {

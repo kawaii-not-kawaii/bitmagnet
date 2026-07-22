@@ -1,22 +1,19 @@
 package llmbenchcmd
 
 import (
-	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
+	"os"
+
 	"github.com/bitmagnet-io/bitmagnet/internal/database/dao"
 	"github.com/bitmagnet-io/bitmagnet/internal/lazy"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 	"github.com/urfave/cli/v2"
 	"go.uber.org/fx"
-	"go.uber.org/zap"
 )
 
 type Params struct {
 	fx.In
-	Classifier lazy.Lazy[classifier.Runner]
-	Dao        lazy.Lazy[*dao.Query]
-	Providers  map[string]llm.Provider
-	Logger     *zap.SugaredLogger
-	Config     classifier.Config
+	Dao       lazy.Lazy[*dao.Query]
+	Providers map[string]llm.Provider
 }
 
 type Result struct {
@@ -52,22 +49,23 @@ func New(p Params) Result {
 			Action: func(ctx *cli.Context) error {
 				count := ctx.Int("count")
 				result, err := RunBenchmark(ctx.Context, BenchmarkParams{
-					Classifier: p.Classifier,
-					Dao:        p.Dao,
-					Providers:  p.Providers,
-					Logger:     p.Logger,
-					Config:     p.Config,
+					Dao:       p.Dao,
+					Providers: p.Providers,
 				}, count, BenchmarkOptions{
 					Concurrency: ctx.Int("concurrency"),
 					Random:      ctx.Bool("random"),
+					Progress:    os.Stderr,
 				})
 				if err != nil {
 					return err
 				}
+
 				if ctx.Bool("json") {
 					return PrintJSON(result)
 				}
+
 				PrintSummary(result)
+
 				return nil
 			},
 		},

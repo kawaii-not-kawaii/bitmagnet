@@ -51,6 +51,9 @@ type DashboardLlmBenchmark struct {
 	SampleSize            int                                 `json:"sampleSize"`
 	Successes             int                                 `json:"successes"`
 	Failures              int                                 `json:"failures"`
+	Matched               int                                 `json:"matched"`
+	Unmatched             int                                 `json:"unmatched"`
+	Errored               int                                 `json:"errored"`
 	AverageLatencySeconds float64                             `json:"averageLatencySeconds"`
 	ThroughputPerSecond   float64                             `json:"throughputPerSecond"`
 	Distribution          []DashboardLlmBenchmarkDistribution `json:"distribution"`
@@ -62,6 +65,8 @@ type DashboardLlmBenchmarkDistribution struct {
 }
 
 type DashboardLlmConnectionResult struct {
+	Ok             bool    `json:"ok"`
+	Error          *string `json:"error,omitempty"`
 	Connected      bool    `json:"connected"`
 	LatencySeconds float64 `json:"latencySeconds"`
 }

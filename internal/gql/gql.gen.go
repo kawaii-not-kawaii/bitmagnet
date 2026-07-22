@@ -142,10 +142,13 @@ type ComplexityRoot struct {
 	DashboardLlmBenchmark struct {
 		AverageLatencySeconds func(childComplexity int) int
 		Distribution          func(childComplexity int) int
+		Errored               func(childComplexity int) int
 		Failures              func(childComplexity int) int
+		Matched               func(childComplexity int) int
 		SampleSize            func(childComplexity int) int
 		Successes             func(childComplexity int) int
 		ThroughputPerSecond   func(childComplexity int) int
+		Unmatched             func(childComplexity int) int
 	}
 
 	DashboardLlmBenchmarkDistribution struct {
@@ -155,7 +158,9 @@ type ComplexityRoot struct {
 
 	DashboardLlmConnectionResult struct {
 		Connected      func(childComplexity int) int
+		Error          func(childComplexity int) int
 		LatencySeconds func(childComplexity int) int
+		Ok             func(childComplexity int) int
 	}
 
 	DashboardMutation struct {
@@ -980,12 +985,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DashboardLlmBenchmark.Distribution(childComplexity), true
 
+	case "DashboardLlmBenchmark.errored":
+		if e.complexity.DashboardLlmBenchmark.Errored == nil {
+			break
+		}
+
+		return e.complexity.DashboardLlmBenchmark.Errored(childComplexity), true
+
 	case "DashboardLlmBenchmark.failures":
 		if e.complexity.DashboardLlmBenchmark.Failures == nil {
 			break
 		}
 
 		return e.complexity.DashboardLlmBenchmark.Failures(childComplexity), true
+
+	case "DashboardLlmBenchmark.matched":
+		if e.complexity.DashboardLlmBenchmark.Matched == nil {
+			break
+		}
+
+		return e.complexity.DashboardLlmBenchmark.Matched(childComplexity), true
 
 	case "DashboardLlmBenchmark.sampleSize":
 		if e.complexity.DashboardLlmBenchmark.SampleSize == nil {
@@ -1008,6 +1027,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DashboardLlmBenchmark.ThroughputPerSecond(childComplexity), true
 
+	case "DashboardLlmBenchmark.unmatched":
+		if e.complexity.DashboardLlmBenchmark.Unmatched == nil {
+			break
+		}
+
+		return e.complexity.DashboardLlmBenchmark.Unmatched(childComplexity), true
+
 	case "DashboardLlmBenchmarkDistribution.contentType":
 		if e.complexity.DashboardLlmBenchmarkDistribution.ContentType == nil {
 			break
@@ -1029,12 +1055,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DashboardLlmConnectionResult.Connected(childComplexity), true
 
+	case "DashboardLlmConnectionResult.error":
+		if e.complexity.DashboardLlmConnectionResult.Error == nil {
+			break
+		}
+
+		return e.complexity.DashboardLlmConnectionResult.Error(childComplexity), true
+
 	case "DashboardLlmConnectionResult.latencySeconds":
 		if e.complexity.DashboardLlmConnectionResult.LatencySeconds == nil {
 			break
 		}
 
 		return e.complexity.DashboardLlmConnectionResult.LatencySeconds(childComplexity), true
+
+	case "DashboardLlmConnectionResult.ok":
+		if e.complexity.DashboardLlmConnectionResult.Ok == nil {
+			break
+		}
+
+		return e.complexity.DashboardLlmConnectionResult.Ok(childComplexity), true
 
 	case "DashboardMutation.runLlmBenchmark":
 		if e.complexity.DashboardMutation.RunLlmBenchmark == nil {
@@ -3021,6 +3061,8 @@ type DashboardMutation {
 }
 
 type DashboardLlmConnectionResult {
+  ok: Boolean!
+  error: String
   connected: Boolean!
   latencySeconds: Float!
 }
@@ -3029,6 +3071,9 @@ type DashboardLlmBenchmark {
   sampleSize: Int!
   successes: Int!
   failures: Int!
+  matched: Int!
+  unmatched: Int!
+  errored: Int!
   averageLatencySeconds: Float!
   throughputPerSecond: Float!
   distribution: [DashboardLlmBenchmarkDistribution!]!
@@ -6810,6 +6855,138 @@ func (ec *executionContext) fieldContext_DashboardLlmBenchmark_failures(_ contex
 	return fc, nil
 }
 
+func (ec *executionContext) _DashboardLlmBenchmark_matched(ctx context.Context, field graphql.CollectedField, obj *gen.DashboardLlmBenchmark) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DashboardLlmBenchmark_matched(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Matched, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DashboardLlmBenchmark_matched(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DashboardLlmBenchmark",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DashboardLlmBenchmark_unmatched(ctx context.Context, field graphql.CollectedField, obj *gen.DashboardLlmBenchmark) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DashboardLlmBenchmark_unmatched(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Unmatched, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DashboardLlmBenchmark_unmatched(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DashboardLlmBenchmark",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DashboardLlmBenchmark_errored(ctx context.Context, field graphql.CollectedField, obj *gen.DashboardLlmBenchmark) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DashboardLlmBenchmark_errored(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Errored, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DashboardLlmBenchmark_errored(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DashboardLlmBenchmark",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DashboardLlmBenchmark_averageLatencySeconds(ctx context.Context, field graphql.CollectedField, obj *gen.DashboardLlmBenchmark) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DashboardLlmBenchmark_averageLatencySeconds(ctx, field)
 	if err != nil {
@@ -7036,6 +7213,91 @@ func (ec *executionContext) fieldContext_DashboardLlmBenchmarkDistribution_count
 	return fc, nil
 }
 
+func (ec *executionContext) _DashboardLlmConnectionResult_ok(ctx context.Context, field graphql.CollectedField, obj *gen.DashboardLlmConnectionResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DashboardLlmConnectionResult_ok(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Ok, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(bool)
+	fc.Result = res
+	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DashboardLlmConnectionResult_ok(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DashboardLlmConnectionResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _DashboardLlmConnectionResult_error(ctx context.Context, field graphql.CollectedField, obj *gen.DashboardLlmConnectionResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DashboardLlmConnectionResult_error(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Error, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*string)
+	fc.Result = res
+	return ec.marshalOString2ᚖstring(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DashboardLlmConnectionResult_error(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DashboardLlmConnectionResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DashboardLlmConnectionResult_connected(ctx context.Context, field graphql.CollectedField, obj *gen.DashboardLlmConnectionResult) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DashboardLlmConnectionResult_connected(ctx, field)
 	if err != nil {
@@ -7163,6 +7425,10 @@ func (ec *executionContext) fieldContext_DashboardMutation_testLlmConnection(_ c
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
+			case "ok":
+				return ec.fieldContext_DashboardLlmConnectionResult_ok(ctx, field)
+			case "error":
+				return ec.fieldContext_DashboardLlmConnectionResult_error(ctx, field)
 			case "connected":
 				return ec.fieldContext_DashboardLlmConnectionResult_connected(ctx, field)
 			case "latencySeconds":
@@ -7219,6 +7485,12 @@ func (ec *executionContext) fieldContext_DashboardMutation_runLlmBenchmark(ctx c
 				return ec.fieldContext_DashboardLlmBenchmark_successes(ctx, field)
 			case "failures":
 				return ec.fieldContext_DashboardLlmBenchmark_failures(ctx, field)
+			case "matched":
+				return ec.fieldContext_DashboardLlmBenchmark_matched(ctx, field)
+			case "unmatched":
+				return ec.fieldContext_DashboardLlmBenchmark_unmatched(ctx, field)
+			case "errored":
+				return ec.fieldContext_DashboardLlmBenchmark_errored(ctx, field)
 			case "averageLatencySeconds":
 				return ec.fieldContext_DashboardLlmBenchmark_averageLatencySeconds(ctx, field)
 			case "throughputPerSecond":
@@ -22452,6 +22724,21 @@ func (ec *executionContext) _DashboardLlmBenchmark(ctx context.Context, sel ast.
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "matched":
+			out.Values[i] = ec._DashboardLlmBenchmark_matched(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "unmatched":
+			out.Values[i] = ec._DashboardLlmBenchmark_unmatched(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "errored":
+			out.Values[i] = ec._DashboardLlmBenchmark_errored(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "averageLatencySeconds":
 			out.Values[i] = ec._DashboardLlmBenchmark_averageLatencySeconds(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
@@ -22545,6 +22832,13 @@ func (ec *executionContext) _DashboardLlmConnectionResult(ctx context.Context, s
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("DashboardLlmConnectionResult")
+		case "ok":
+			out.Values[i] = ec._DashboardLlmConnectionResult_ok(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "error":
+			out.Values[i] = ec._DashboardLlmConnectionResult_error(ctx, field, obj)
 		case "connected":
 			out.Values[i] = ec._DashboardLlmConnectionResult_connected(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

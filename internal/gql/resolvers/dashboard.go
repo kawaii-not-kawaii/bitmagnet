@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/gqlmodel/gen"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
+	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmbench"
 	"github.com/bitmagnet-io/bitmagnet/internal/model"
 )
 
@@ -88,7 +88,9 @@ func (r *Resolver) dashboardQuery(ctx context.Context) (gen.DashboardQuery, erro
 func (r *Resolver) testDashboardLlmConnection(ctx context.Context) (gen.DashboardLlmConnectionResult, error) {
 	_, provider, err := r.dashboardProvider()
 	if err != nil {
-		return gen.DashboardLlmConnectionResult{}, err
+		message := err.Error()
+
+		return gen.DashboardLlmConnectionResult{Error: &message}, nil
 	}
 
 	startedAt := time.Now()
@@ -98,105 +100,44 @@ func (r *Resolver) testDashboardLlmConnection(ctx context.Context) (gen.Dashboar
 		ContentTypes: strings.Join(model.ContentTypeNames(), ", "),
 	})
 	if err != nil {
-		return gen.DashboardLlmConnectionResult{}, fmt.Errorf("dashboard: test LLM connection: %w", err)
+		message := fmt.Errorf("dashboard: test LLM connection: %w", err).Error()
+
+		return gen.DashboardLlmConnectionResult{Error: &message}, nil
 	}
 
 	return gen.DashboardLlmConnectionResult{
+		Ok:             true,
 		Connected:      true,
 		LatencySeconds: time.Since(startedAt).Seconds(),
 	}, nil
 }
 
 func (r *Resolver) runDashboardLlmBenchmark(ctx context.Context, sampleSize int) (gen.DashboardLlmBenchmark, error) {
-	if sampleSize < 1 || sampleSize > 100 {
-		return gen.DashboardLlmBenchmark{}, fmt.Errorf(
-			"dashboard: benchmark sample size must be between 1 and 100",
-		)
-	}
-
-	_, provider, err := r.dashboardProvider()
+	providerName, provider, err := r.dashboardProvider()
 	if err != nil {
 		return gen.DashboardLlmBenchmark{}, err
 	}
 
-	torrents, err := r.Dao.Torrent.WithContext(ctx).Preload(r.Dao.Torrent.Files).Limit(sampleSize).Find()
+	result, err := llmbench.Run(
+		ctx,
+		providerName,
+		provider,
+		sampleSize,
+		llmbench.LoadFromDAO(r.Dao),
+		llmbench.Options{Concurrency: r.LlmRegistry.Config().BatchSize},
+	)
 	if err != nil {
-		return gen.DashboardLlmBenchmark{}, fmt.Errorf("dashboard: load benchmark torrents: %w", err)
+		return gen.DashboardLlmBenchmark{}, fmt.Errorf("dashboard: run LLM benchmark: %w", err)
 	}
-
-	if len(torrents) == 0 {
-		return gen.DashboardLlmBenchmark{}, fmt.Errorf("dashboard: no torrents available for benchmark")
-	}
-
-	type benchmarkSample struct {
-		result   *llm.ClassifyResult
-		duration float64
-	}
-
-	contentTypes := strings.Join(model.ContentTypeNames(), ", ")
-	results := make(chan benchmarkSample, len(torrents))
-
-	var wg sync.WaitGroup
-
-	concurrency := min(max(1, r.LlmRegistry.Config().BatchSize), 10)
-	semaphore := make(chan struct{}, concurrency)
-	startedAt := time.Now()
-
-	for _, torrent := range torrents {
-		wg.Add(1)
-
-		go func(torrent *model.Torrent) {
-			defer wg.Done()
-			semaphore <- struct{}{}
-
-			defer func() { <-semaphore }()
-
-			files := make([]string, 0, min(len(torrent.Files), 20))
-
-			for i, file := range torrent.Files {
-				if i == 20 {
-					break
-				}
-
-				files = append(files, file.Path)
-			}
-
-			classifyStartedAt := time.Now()
-
-			result, classifyErr := provider.Classify(ctx, llm.ClassifyInput{
-				Name:         torrent.Name,
-				Files:        files,
-				ContentTypes: contentTypes,
-			})
-			if classifyErr != nil {
-				results <- benchmarkSample{duration: time.Since(classifyStartedAt).Seconds()}
-				return
-			}
-			results <- benchmarkSample{result: result, duration: time.Since(classifyStartedAt).Seconds()}
-		}(torrent)
-	}
-
-	wg.Wait()
-	close(results)
 
 	distributionCounts := make(map[string]int)
-	successes := 0
-
-	latencySum := 0.0
-	for sample := range results {
-		latencySum += sample.duration
-
-		if sample.result == nil {
-			continue
+	for _, classification := range result.Classifications {
+		if classification.ContentType != "" {
+			distributionCounts[classification.ContentType]++
 		}
-
-		successes++
-		distributionCounts[sample.result.ContentType]++
 	}
 
-	duration := time.Since(startedAt).Seconds()
-
-	distribution := make([]gen.DashboardLlmBenchmarkDistribution, 0, len(distributionCounts))
+	distribution := make([]gen.DashboardLlmBenchmarkDistribution, 0, 16)
 	for contentType, count := range distributionCounts {
 		distribution = append(
 			distribution,
@@ -204,17 +145,19 @@ func (r *Resolver) runDashboardLlmBenchmark(ctx context.Context, sampleSize int)
 		)
 	}
 
-	sort.Slice(
-		distribution,
-		func(i, j int) bool { return distribution[i].Count > distribution[j].Count },
-	)
+	sort.Slice(distribution, func(i, j int) bool {
+		return distribution[i].Count > distribution[j].Count
+	})
 
 	return gen.DashboardLlmBenchmark{
-		SampleSize:            len(torrents),
-		Successes:             successes,
-		Failures:              len(torrents) - successes,
-		AverageLatencySeconds: latencySum / float64(len(torrents)),
-		ThroughputPerSecond:   float64(len(torrents)) / max(duration, 0.001),
+		SampleSize:            result.TorrentCount,
+		Successes:             result.Successes,
+		Failures:              result.Failures,
+		Matched:               result.Matched,
+		Unmatched:             result.Unmatched,
+		Errored:               result.Errored,
+		AverageLatencySeconds: result.AvgPerTorrent.Seconds(),
+		ThroughputPerSecond:   result.Throughput,
 		Distribution:          distribution,
 	}, nil
 }
