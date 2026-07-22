@@ -17,7 +17,7 @@ import (
 )
 
 type testSection struct {
-	Count   int           `validate:"gte=1"`
+	Count   int           `validate:"min=1"`
 	Timeout time.Duration `validate:"gt=0"`
 }
 
@@ -39,8 +39,13 @@ func TestSetSection_RejectsBeforeSideEffects(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
+
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			const originalFile = "sample:\n  count: 2\n  timeout: 1s\n"
+
 			path := filepath.Join(t.TempDir(), "config.yml")
 			if err := os.WriteFile(path, []byte(originalFile), 0o644); err != nil {
 				t.Fatalf("seed config: %v", err)
@@ -52,7 +57,7 @@ func TestSetSection_RejectsBeforeSideEffects(t *testing.T) {
 				Key: "sample",
 				Apply: func(any) (func(), error) {
 					calls++
-					return nil, nil
+					return func() {}, nil
 				},
 			}})
 
@@ -89,18 +94,26 @@ func TestSetSection_OutcomesAndVisibility(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
+
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
 			path := filepath.Join(t.TempDir(), "config.yml")
 			initial := testSection{Count: 1, Timeout: time.Second}
 			want := testSection{Count: 7, Timeout: 45 * time.Second}
-			var applied any
-			var liveAppliers []LiveApplier
+
+			var (
+				applied      any
+				liveAppliers []LiveApplier
+			)
+
 			if tt.live {
 				liveAppliers = []LiveApplier{{
 					Key: "sample",
 					Apply: func(value any) (func(), error) {
 						applied = value
-						return nil, nil
+						return func() {}, nil
 					},
 				}}
 			}
@@ -132,6 +145,7 @@ func TestSetSection_OutcomesAndVisibility(t *testing.T) {
 			if err != nil {
 				t.Fatalf("read config: %v", err)
 			}
+
 			for _, fragment := range []string{"count: 7", "timeout: 45s"} {
 				if !strings.Contains(string(contents), fragment) {
 					t.Errorf("persisted config missing %q:\n%s", fragment, contents)
@@ -165,7 +179,11 @@ func TestSetSection_SectionErrors(t *testing.T) {
 	}
 
 	for _, tt := range tests {
+		tt := tt
+
 		t.Run(tt.key, func(t *testing.T) {
+			t.Parallel()
+
 			_, err := applier.SetSection(tt.key, map[string]any{"Count": 2, "Timeout": "2s"})
 			if !errors.Is(err, tt.want) {
 				t.Fatalf("SetSection error = %v, want %v", err, tt.want)
@@ -179,7 +197,9 @@ func TestSetSection_PersistenceFailureLeavesLiveApply(t *testing.T) {
 
 	initial := testSection{Count: 1, Timeout: time.Second}
 	want := testSection{Count: 4, Timeout: 4 * time.Second}
+
 	var liveValue any
+
 	afterCalls := 0
 	path := filepath.Join(t.TempDir(), "missing", "config.yml")
 	applier, resolved := newTestApplier(path, map[string]any{"sample": initial}, []LiveApplier{{

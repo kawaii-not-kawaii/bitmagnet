@@ -22,6 +22,7 @@ func encodeValue(v reflect.Value) any {
 		if v.IsNil() {
 			return nil
 		}
+
 		v = v.Elem()
 	}
 
@@ -32,13 +33,16 @@ func encodeValue(v reflect.Value) any {
 	switch v.Kind() {
 	case reflect.Struct:
 		encoded := make(map[string]any, v.NumField())
+
 		for i := range v.NumField() {
 			field := v.Type().Field(i)
 			if field.PkgPath != "" {
 				continue
 			}
+
 			encoded[strcase.ToSnake(field.Name)] = encodeValue(v.Field(i))
 		}
+
 		return encoded
 	case reflect.Map:
 		if v.IsNil() {
@@ -46,27 +50,34 @@ func encodeValue(v reflect.Value) any {
 		}
 		if v.Type().Key().Kind() == reflect.String {
 			encoded := make(map[string]any, v.Len())
+
 			iterator := v.MapRange()
 			for iterator.Next() {
 				encoded[iterator.Key().String()] = encodeValue(iterator.Value())
 			}
+
 			return encoded
 		}
 
 		encoded := make(map[any]any, v.Len())
+
 		iterator := v.MapRange()
 		for iterator.Next() {
 			encoded[iterator.Key().Interface()] = encodeValue(iterator.Value())
 		}
+
 		return encoded
 	case reflect.Array, reflect.Slice:
 		if v.Kind() == reflect.Slice && v.IsNil() {
 			return nil
 		}
+
 		encoded := make([]any, v.Len())
+
 		for i := range v.Len() {
 			encoded[i] = encodeValue(v.Index(i))
 		}
+
 		return encoded
 	default:
 		return v.Interface()

@@ -26,7 +26,7 @@ type Params struct {
 type Result struct {
 	fx.Out
 	Registry    *llm.Registry           `optional:"true"`
-	LiveApplier configapply.LiveApplier `                group:"config_live_appliers"`
+	LiveApplier configapply.LiveApplier `group:"config_live_appliers"`
 	// LlmProviders is a static snapshot of the providers built at startup,
 	// kept for one-shot CLI consumers (llm-bench). The live path — anything
 	// that must observe runtime config updates — reads Registry.All() at

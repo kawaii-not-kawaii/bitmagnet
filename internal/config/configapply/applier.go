@@ -86,11 +86,13 @@ func (a *Applier) SetSection(key string, raw any) (Outcome, error) {
 	if targetType == nil {
 		targetType = reflect.TypeOf(node.Value)
 	}
+
 	if targetType == nil {
 		return Outcome{}, fmt.Errorf("configapply: section %q: missing value type", key)
 	}
 
 	decodedValue := reflect.New(targetType)
+
 	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		Result:      decodedValue.Interface(),
 		ErrorUnused: true,
@@ -102,6 +104,7 @@ func (a *Applier) SetSection(key string, raw any) (Outcome, error) {
 	if err != nil {
 		return Outcome{}, fmt.Errorf("configapply: decode section %q: %w", key, err)
 	}
+
 	if err = decoder.Decode(raw); err != nil {
 		return Outcome{}, fmt.Errorf("configapply: decode section %q: %w", key, err)
 	}
@@ -128,6 +131,7 @@ func (a *Applier) SetSection(key string, raw any) (Outcome, error) {
 	writeErr := configwrite.WriteSection(string(a.path), []string{key}, encodeSection(decoded))
 	if writeErr == nil {
 		resolved := a.resolved.Get()
+
 		nodeMap := make(map[string]config.ResolvedNode, len(resolved.NodeMap))
 		for nodeKey, resolvedNode := range resolved.NodeMap {
 			nodeMap[nodeKey] = resolvedNode
@@ -142,6 +146,7 @@ func (a *Applier) SetSection(key string, raw any) (Outcome, error) {
 	}
 
 	a.mutex.Unlock()
+
 	if after != nil {
 		after()
 	}

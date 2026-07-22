@@ -89,6 +89,7 @@ func TestNew_RegistryAlwaysConstructed_LiveEnable(t *testing.T) {
 	if err != nil {
 		t.Fatalf("apply runtime classifier config: %v", err)
 	}
+
 	after()
 
 	if res.Registry.Get("late") == nil {
