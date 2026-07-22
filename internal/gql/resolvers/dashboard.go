@@ -90,7 +90,7 @@ func (r *Resolver) testDashboardLlmConnection(ctx context.Context) (gen.Dashboar
 	if err != nil {
 		message := err.Error()
 
-		return gen.DashboardLlmConnectionResult{ //nolint:nilerr // connection failure is the payload, not a resolver error
+		return gen.DashboardLlmConnectionResult{ //nolint:nilerr // failure is the payload
 			Error: &message,
 		}, nil
 	}
@@ -104,7 +104,7 @@ func (r *Resolver) testDashboardLlmConnection(ctx context.Context) (gen.Dashboar
 	if err != nil {
 		message := fmt.Errorf("dashboard: test LLM connection: %w", err).Error()
 
-		return gen.DashboardLlmConnectionResult{ //nolint:nilerr // connection failure is the payload, not a resolver error
+		return gen.DashboardLlmConnectionResult{ //nolint:nilerr // failure is the payload
 			Error: &message,
 		}, nil
 	}
