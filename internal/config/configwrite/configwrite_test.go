@@ -51,6 +51,7 @@ func TestWriteSection_TopLevelSection(t *testing.T) {
 tmdb:
   api_key: old
 `
+
 	path := writeTemp(t, "config.yml", original)
 
 	err := WriteSection(path, []string{"tmdb"}, map[string]any{
@@ -85,6 +86,7 @@ func TestWriteSection_NestedKeyPath(t *testing.T) {
   llm:
     provider: old
 `
+
 	path := writeTemp(t, "config.yml", original)
 
 	err := WriteSection(path, []string{"classifier", "llm"}, map[string]any{"provider": "new"})
@@ -114,6 +116,7 @@ dht:
   bootstrap: router.example.com
   port: 3334
 `
+
 	path := writeTemp(t, "config.yml", original)
 
 	if err := WriteSection(path, []string{"tmdb"}, map[string]any{"enabled": true}); err != nil {
