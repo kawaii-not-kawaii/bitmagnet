@@ -1,3 +1,16 @@
+mutation DashboardLlmSetConfig($value: JSON!) {
+  config {
+    setSection(input: { key: "classifier", value: $value }) {
+      applied
+      section {
+        key
+        runtimeChangeable
+        value
+      }
+    }
+  }
+}
+
 mutation DashboardLlmTestConnection {
   dashboard {
     testLlmConnection {

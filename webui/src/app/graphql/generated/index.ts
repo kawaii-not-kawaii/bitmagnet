@@ -143,20 +143,17 @@ export type ContentTypeFacetInput = {
   filter?: InputMaybe<Array<InputMaybe<ContentType>>>;
 };
 
-export type DashboardLlm = {
-  __typename?: 'DashboardLlm';
-  metrics: DashboardLlmMetrics;
-  state: DashboardLlmState;
-};
-
 export type DashboardLlmBenchmark = {
   __typename?: 'DashboardLlmBenchmark';
   averageLatencySeconds: Scalars['Float']['output'];
   distribution: Array<DashboardLlmBenchmarkDistribution>;
+  errored: Scalars['Int']['output'];
   failures: Scalars['Int']['output'];
+  matched: Scalars['Int']['output'];
   sampleSize: Scalars['Int']['output'];
   successes: Scalars['Int']['output'];
   throughputPerSecond: Scalars['Float']['output'];
+  unmatched: Scalars['Int']['output'];
 };
 
 export type DashboardLlmBenchmarkDistribution = {
@@ -165,59 +162,18 @@ export type DashboardLlmBenchmarkDistribution = {
   count: Scalars['Int']['output'];
 };
 
-export type DashboardLlmConfigInput = {
-  apiKey?: InputMaybe<Scalars['String']['input']>;
-  baseUrl: Scalars['String']['input'];
-  batchSize: Scalars['Int']['input'];
-  enabled: Scalars['Boolean']['input'];
-  intervalSeconds: Scalars['Int']['input'];
-  maxContext: Scalars['Int']['input'];
-  maxTokens: Scalars['Int']['input'];
-  model: Scalars['String']['input'];
-  providerName: Scalars['String']['input'];
-  timeoutSeconds: Scalars['Int']['input'];
-};
-
 export type DashboardLlmConnectionResult = {
   __typename?: 'DashboardLlmConnectionResult';
   connected: Scalars['Boolean']['output'];
+  error?: Maybe<Scalars['String']['output']>;
   latencySeconds: Scalars['Float']['output'];
-};
-
-export type DashboardLlmMetrics = {
-  __typename?: 'DashboardLlmMetrics';
-  averageLatencySeconds: Scalars['Float']['output'];
-  completionTokens: Scalars['Int']['output'];
-  distribution: Array<DashboardLlmBenchmarkDistribution>;
-  errorRate: Scalars['Float']['output'];
-  matched: Scalars['Int']['output'];
-  p95LatencySeconds: Scalars['Float']['output'];
-  promptTokens: Scalars['Int']['output'];
-  throughputPerSecond: Scalars['Float']['output'];
-  unknownBacklog: Scalars['Int']['output'];
-  windowSeconds: Scalars['Int']['output'];
-};
-
-export type DashboardLlmState = {
-  __typename?: 'DashboardLlmState';
-  apiKeySet: Scalars['Boolean']['output'];
-  baseUrl: Scalars['String']['output'];
-  batchSize: Scalars['Int']['output'];
-  enabled: Scalars['Boolean']['output'];
-  intervalSeconds: Scalars['Int']['output'];
-  maxContext: Scalars['Int']['output'];
-  maxTokens: Scalars['Int']['output'];
-  model: Scalars['String']['output'];
-  providerName: Scalars['String']['output'];
-  running: Scalars['Boolean']['output'];
-  timeoutSeconds: Scalars['Int']['output'];
+  ok: Scalars['Boolean']['output'];
 };
 
 export type DashboardMutation = {
   __typename?: 'DashboardMutation';
   runLlmBenchmark: DashboardLlmBenchmark;
   testLlmConnection: DashboardLlmConnectionResult;
-  updateLlm: DashboardLlmState;
 };
 
 
@@ -225,14 +181,8 @@ export type DashboardMutationRunLlmBenchmarkArgs = {
   sampleSize: Scalars['Int']['input'];
 };
 
-
-export type DashboardMutationUpdateLlmArgs = {
-  input: DashboardLlmConfigInput;
-};
-
 export type DashboardQuery = {
   __typename?: 'DashboardQuery';
-  llm: DashboardLlm;
   summary: DashboardSummary;
 };
 
@@ -399,6 +349,7 @@ export type LanguageInfo = {
 
 export type LlmClassificationEvent = {
   __typename?: 'LlmClassificationEvent';
+  completionTokens: Scalars['Int']['output'];
   contentType: Scalars['String']['output'];
   durationMs: Scalars['Int']['output'];
   episode: Scalars['Int']['output'];
@@ -406,6 +357,7 @@ export type LlmClassificationEvent = {
   infoHash: Scalars['String']['output'];
   languages: Array<Scalars['String']['output']>;
   outcome: LlmClassificationOutcome;
+  promptTokens: Scalars['Int']['output'];
   provider: Scalars['String']['output'];
   season: Scalars['Int']['output'];
   timestamp: Scalars['DateTime']['output'];
@@ -448,6 +400,7 @@ export type LlmQueryStatsArgs = {
 export type LlmStats = {
   __typename?: 'LlmStats';
   attempted: Scalars['Int']['output'];
+  completionTokens: Scalars['Int']['output'];
   concurrency: Scalars['Int']['output'];
   errored: Scalars['Int']['output'];
   inFlight: Scalars['Int']['output'];
@@ -456,6 +409,7 @@ export type LlmStats = {
   matched: Scalars['Int']['output'];
   oldestBuffered?: Maybe<Scalars['DateTime']['output']>;
   perProvider: Array<LlmProviderStats>;
+  promptTokens: Scalars['Int']['output'];
   queuePending: Scalars['Int']['output'];
   skipped: Scalars['Int']['output'];
   successRate: Scalars['Float']['output'];
@@ -1126,24 +1080,24 @@ export type ClientSendToMutationVariables = Exact<{
 
 export type ClientSendToMutation = { __typename?: 'Mutation', client: { __typename?: 'ClientMutation', sendTo?: void | null } };
 
-export type DashboardLlmUpdateMutationVariables = Exact<{
-  input: DashboardLlmConfigInput;
+export type DashboardLlmSetConfigMutationVariables = Exact<{
+  value: Scalars['JSON']['input'];
 }>;
 
 
-export type DashboardLlmUpdateMutation = { __typename?: 'Mutation', dashboard: { __typename?: 'DashboardMutation', updateLlm: { __typename?: 'DashboardLlmState', enabled: boolean, running: boolean, providerName: string, baseUrl: string, model: string, apiKeySet: boolean, batchSize: number, maxContext: number, maxTokens: number, intervalSeconds: number, timeoutSeconds: number } } };
+export type DashboardLlmSetConfigMutation = { __typename?: 'Mutation', config: { __typename?: 'ConfigMutation', setSection: { __typename?: 'SetConfigSectionResult', applied: ConfigRuntimeChangeability, section: { __typename?: 'ConfigSection', key: string, runtimeChangeable: ConfigRuntimeChangeability, value: Record<string, unknown> } } } };
 
 export type DashboardLlmTestConnectionMutationVariables = Exact<{ [key: string]: never; }>;
 
 
-export type DashboardLlmTestConnectionMutation = { __typename?: 'Mutation', dashboard: { __typename?: 'DashboardMutation', testLlmConnection: { __typename?: 'DashboardLlmConnectionResult', connected: boolean, latencySeconds: number } } };
+export type DashboardLlmTestConnectionMutation = { __typename?: 'Mutation', dashboard: { __typename?: 'DashboardMutation', testLlmConnection: { __typename?: 'DashboardLlmConnectionResult', ok: boolean, error?: string | null, connected: boolean, latencySeconds: number } } };
 
 export type DashboardLlmRunBenchmarkMutationVariables = Exact<{
   sampleSize: Scalars['Int']['input'];
 }>;
 
 
-export type DashboardLlmRunBenchmarkMutation = { __typename?: 'Mutation', dashboard: { __typename?: 'DashboardMutation', runLlmBenchmark: { __typename?: 'DashboardLlmBenchmark', sampleSize: number, successes: number, failures: number, averageLatencySeconds: number, throughputPerSecond: number, distribution: Array<{ __typename?: 'DashboardLlmBenchmarkDistribution', contentType: string, count: number }> } } };
+export type DashboardLlmRunBenchmarkMutation = { __typename?: 'Mutation', dashboard: { __typename?: 'DashboardMutation', runLlmBenchmark: { __typename?: 'DashboardLlmBenchmark', sampleSize: number, successes: number, failures: number, matched: number, unmatched: number, errored: number, averageLatencySeconds: number, throughputPerSecond: number, distribution: Array<{ __typename?: 'DashboardLlmBenchmarkDistribution', contentType: string, count: number }> } } };
 
 export type QueueEnqueueReprocessTorrentsBatchMutationVariables = Exact<{
   input: QueueEnqueueReprocessTorrentsBatchInput;
@@ -1202,10 +1156,13 @@ export type SendToConfigQueryVariables = Exact<{ [key: string]: never; }>;
 
 export type SendToConfigQuery = { __typename?: 'Query', sendToConfig: { __typename?: 'ClientSendToConfigQuery', enabled: boolean, sendTo: Array<ClientId> } };
 
-export type DashboardDataQueryVariables = Exact<{ [key: string]: never; }>;
+export type DashboardDataQueryVariables = Exact<{
+  eventLimit?: InputMaybe<Scalars['Int']['input']>;
+  windowMinutes?: InputMaybe<Scalars['Int']['input']>;
+}>;
 
 
-export type DashboardDataQuery = { __typename?: 'Query', dashboard: { __typename?: 'DashboardQuery', summary: { __typename?: 'DashboardSummary', totalTorrents: number, torrentsToday: number, indexedLastHour: number, indexedPreviousHour: number, classifiedPercent: number, queueProcessed: number, queuePending: number, queueFailed: number }, llm: { __typename?: 'DashboardLlm', state: { __typename?: 'DashboardLlmState', enabled: boolean, running: boolean, providerName: string, baseUrl: string, model: string, apiKeySet: boolean, batchSize: number, maxContext: number, maxTokens: number, intervalSeconds: number, timeoutSeconds: number }, metrics: { __typename?: 'DashboardLlmMetrics', windowSeconds: number, matched: number, promptTokens: number, completionTokens: number, averageLatencySeconds: number, p95LatencySeconds: number, throughputPerSecond: number, errorRate: number, unknownBacklog: number, distribution: Array<{ __typename?: 'DashboardLlmBenchmarkDistribution', contentType: string, count: number }> } } } };
+export type DashboardDataQuery = { __typename?: 'Query', dashboard: { __typename?: 'DashboardQuery', summary: { __typename?: 'DashboardSummary', totalTorrents: number, torrentsToday: number, indexedLastHour: number, indexedPreviousHour: number, classifiedPercent: number, queueProcessed: number, queuePending: number, queueFailed: number } }, llm: { __typename?: 'LlmQuery', events: Array<{ __typename?: 'LlmClassificationEvent', timestamp: string, infoHash: string, torrentName: string, provider: string, durationMs: number, outcome: LlmClassificationOutcome, promptTokens: number, completionTokens: number, contentType: string, title: string, year: number, season: number, episode: number, languages: Array<string>, error: string }>, stats: { __typename?: 'LlmStats', attempted: number, matched: number, unmatched: number, errored: number, skipped: number, promptTokens: number, completionTokens: number, successRate: number, inFlight: number, concurrency: number, windowStart: string, oldestBuffered?: string | null, windowAttempted: number, latencyP50Ms: number, latencyP95Ms: number, throughputPerMinute: number, queuePending: number, perProvider: Array<{ __typename?: 'LlmProviderStats', provider: string, attempted: number, matched: number, unmatched: number, errored: number }> } }, config: { __typename?: 'ConfigQuery', sections: Array<{ __typename?: 'ConfigSection', key: string, runtimeChangeable: ConfigRuntimeChangeability, value: Record<string, unknown> }> } };
 
 export type HealthCheckQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1511,21 +1468,16 @@ export const ClientSendToDocument = gql`
       super(apollo);
     }
   }
-export const DashboardLlmUpdateDocument = gql`
-    mutation DashboardLlmUpdate($input: DashboardLlmConfigInput!) {
-  dashboard {
-    updateLlm(input: $input) {
-      enabled
-      running
-      providerName
-      baseUrl
-      model
-      apiKeySet
-      batchSize
-      maxContext
-      maxTokens
-      intervalSeconds
-      timeoutSeconds
+export const DashboardLlmSetConfigDocument = gql`
+    mutation DashboardLlmSetConfig($value: JSON!) {
+  config {
+    setSection(input: {key: "classifier", value: $value}) {
+      applied
+      section {
+        key
+        runtimeChangeable
+        value
+      }
     }
   }
 }
@@ -1534,8 +1486,8 @@ export const DashboardLlmUpdateDocument = gql`
   @Injectable({
     providedIn: 'root'
   })
-  export class DashboardLlmUpdateGQL extends Apollo.Mutation<DashboardLlmUpdateMutation, DashboardLlmUpdateMutationVariables> {
-    override document = DashboardLlmUpdateDocument;
+  export class DashboardLlmSetConfigGQL extends Apollo.Mutation<DashboardLlmSetConfigMutation, DashboardLlmSetConfigMutationVariables> {
+    override document = DashboardLlmSetConfigDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
@@ -1545,6 +1497,8 @@ export const DashboardLlmTestConnectionDocument = gql`
     mutation DashboardLlmTestConnection {
   dashboard {
     testLlmConnection {
+      ok
+      error
       connected
       latencySeconds
     }
@@ -1569,6 +1523,9 @@ export const DashboardLlmRunBenchmarkDocument = gql`
       sampleSize
       successes
       failures
+      matched
+      unmatched
+      errored
       averageLatencySeconds
       throughputPerSecond
       distribution {
@@ -1736,7 +1693,7 @@ export const SendToConfigDocument = gql`
     }
   }
 export const DashboardDataDocument = gql`
-    query DashboardData {
+    query DashboardData($eventLimit: Int = 500, $windowMinutes: Int = 15) {
   dashboard {
     summary {
       totalTorrents
@@ -1748,35 +1705,57 @@ export const DashboardDataDocument = gql`
       queuePending
       queueFailed
     }
-    llm {
-      state {
-        enabled
-        running
-        providerName
-        baseUrl
-        model
-        apiKeySet
-        batchSize
-        maxContext
-        maxTokens
-        intervalSeconds
-        timeoutSeconds
-      }
-      metrics {
-        windowSeconds
+  }
+  llm {
+    events(limit: $eventLimit) {
+      timestamp
+      infoHash
+      torrentName
+      provider
+      durationMs
+      outcome
+      promptTokens
+      completionTokens
+      contentType
+      title
+      year
+      season
+      episode
+      languages
+      error
+    }
+    stats(windowMinutes: $windowMinutes) {
+      attempted
+      matched
+      unmatched
+      errored
+      skipped
+      promptTokens
+      completionTokens
+      successRate
+      perProvider {
+        provider
+        attempted
         matched
-        promptTokens
-        completionTokens
-        averageLatencySeconds
-        p95LatencySeconds
-        throughputPerSecond
-        errorRate
-        unknownBacklog
-        distribution {
-          contentType
-          count
-        }
+        unmatched
+        errored
       }
+      inFlight
+      concurrency
+      windowStart
+      oldestBuffered
+      windowAttempted
+      latencyP50Ms
+      latencyP95Ms
+      throughputPerMinute
+      queuePending
+    }
+  }
+  config {
+    sections {
+      key
+      runtimeChangeable
+      value
     }
   }
 }

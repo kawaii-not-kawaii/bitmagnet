@@ -1,228 +1,452 @@
-@if (llm$ | async; as llm) {
-  <section class="llm-screen" aria-label="LLM engine configuration and metrics">
-    <article class="panel settings-panel">
-      <header>
+@if (view$ | async; as vm) {
+  <section class="llm-screen" aria-label="LLM matching engine console">
+    <article class="panel status-panel">
+      <div class="engine-status">
+        <span
+          class="status-dot"
+          [class.running]="
+            form.controls.enabled.value && !!form.controls.baseUrl.value
+          "
+          [class.disabled]="!form.controls.enabled.value"
+          aria-hidden="true"
+        ></span>
         <div>
-          <strong>Matching engine</strong>
-          <span>OpenAI-compatible classifier</span>
-        </div>
-        <label class="toggle">
-          <input type="checkbox" [formControl]="form.controls.enabled" />
-          <i aria-hidden="true"></i>
-          <span>{{
-            form.controls.enabled.value ? "Enabled" : "Disabled"
-          }}</span>
-        </label>
-      </header>
-
-      <form [formGroup]="form" (ngSubmit)="save()">
-        <div class="status-strip">
-          <span
-            class="status-dot"
-            [class.running]="llm.state.running"
-            [class.disabled]="!llm.state.enabled"
-          ></span>
-          <div>
-            <strong>{{
-              !llm.state.enabled
-                ? "Engine disabled"
-                : llm.state.running
-                  ? "Engine running"
-                  : "Engine stopped"
-            }}</strong>
-            <span>{{ llm.state.providerName }} · {{ llm.state.model }}</span>
-          </div>
-        </div>
-
-        <div class="fields">
-          <label>
-            <span>Provider name</span>
-            <input type="text" formControlName="providerName" />
-          </label>
-          <label>
-            <span>Base URL</span>
-            <input type="url" formControlName="baseUrl" />
-          </label>
-          <label>
-            <span>Model</span>
-            <input type="text" formControlName="model" />
-          </label>
-          <label>
-            <span>API key</span>
-            <input
-              type="password"
-              formControlName="apiKey"
-              [placeholder]="
-                llm.state.apiKeySet
-                  ? 'Key saved · leave blank to keep'
-                  : 'Optional'
+          <div class="status-title">
+            <strong>Matching engine</strong>
+            <span
+              [class.running]="
+                form.controls.enabled.value && !!form.controls.baseUrl.value
               "
-              autocomplete="new-password"
-            />
-          </label>
-          <label>
-            <span>Batch size</span>
-            <input type="number" min="1" formControlName="batchSize" />
-          </label>
-          <label>
-            <span>Max context</span>
-            <input type="number" min="1" formControlName="maxContext" />
-          </label>
-          <label>
-            <span>Max tokens</span>
-            <input type="number" min="1" formControlName="maxTokens" />
-          </label>
-          <label>
-            <span>Interval (seconds)</span>
-            <input type="number" min="0" formControlName="intervalSeconds" />
-          </label>
-          <label>
-            <span>Timeout (seconds)</span>
-            <input type="number" min="1" formControlName="timeoutSeconds" />
-          </label>
-        </div>
-
-        <div class="form-actions">
-          <button
-            type="button"
-            class="secondary"
-            [disabled]="testing || !llm.state.enabled"
-            (click)="testConnection()"
-          >
-            {{ testing ? "Testing…" : "Test connection" }}
-          </button>
-          <button type="submit" class="primary" [disabled]="saving">
-            {{ saving ? "Saving…" : "Save changes" }}
-          </button>
-        </div>
-        @if (connectionResult; as connection) {
-          <p class="action-result" [class.good]="connection.connected">
-            {{ connection.connected ? "Connected" : "Connection failed" }} ·
-            {{ connection.latencySeconds | number: "1.2-2" }}s
+            >
+              {{
+                !form.controls.enabled.value
+                  ? "Stopped"
+                  : form.controls.baseUrl.value
+                    ? "Running"
+                    : "Stopped"
+              }}
+            </span>
+          </div>
+          <p>
+            {{ form.controls.model.value || "No model configured" }} ·
+            <span>{{
+              form.controls.baseUrl.value || "No endpoint configured"
+            }}</span>
           </p>
-        }
-        @if (saveMessage) {
-          <p class="action-result good">{{ saveMessage }}</p>
-        }
-      </form>
+        </div>
+      </div>
+      <div class="status-actions">
+        <span
+          class="freshness"
+          [class.fresh]="pollFresh"
+          [attr.title]="
+            lastPollResponseAt
+              ? 'Last response ' + (lastPollResponseAt | date: 'mediumTime')
+              : 'Waiting for first response'
+          "
+        >
+          <i aria-hidden="true"></i>
+          {{ pollFresh ? "polling every 3s" : "poll stalled" }}
+        </span>
+        <span class="live-apply">live-apply · no restart</span>
+        <label class="toggle">
+          <input
+            type="checkbox"
+            [formControl]="form.controls.enabled"
+            (change)="toggleEnabled()"
+          />
+          <i aria-hidden="true"></i>
+          <span>Enabled</span>
+        </label>
+      </div>
     </article>
 
-    <div class="metrics-column">
-      <article class="panel live-panel">
+    <p class="explainer">
+      Runs as the fallback when rule-based classification leaves a torrent
+      <b>unknown</b>. Works with any OpenAI-compatible endpoint — llama.cpp,
+      Ollama, vLLM, or OpenAI.
+    </p>
+
+    <section class="count-grid" aria-label="LLM classification totals">
+      <article class="count-card">
+        <span>Attempted (15m)</span>
+        <strong>{{ vm.stats.windowAttempted | number }}</strong>
+        <small>{{ vm.stats.attempted | number }} since start</small>
+      </article>
+      <article class="count-card good">
+        <span>Matched</span>
+        <strong>{{ vm.stats.matched | number }}</strong>
+        <small>{{ vm.stats.successRate | percent: "1.1-1" }} success</small>
+      </article>
+      <article class="count-card neutral">
+        <span>Unmatched</span>
+        <strong>{{ vm.stats.unmatched | number }}</strong>
+        <small>
+          {{
+            (vm.stats.attempted ? vm.stats.unmatched / vm.stats.attempted : 0)
+              | percent: "1.1-1"
+          }}
+          · left unknown
+        </small>
+      </article>
+      <article class="count-card bad">
+        <span>Errored</span>
+        <strong>{{ vm.stats.errored | number }}</strong>
+        <small>
+          {{
+            (vm.stats.attempted ? vm.stats.errored / vm.stats.attempted : 0)
+              | percent: "1.1-1"
+          }}
+          · see feed
+        </small>
+      </article>
+    </section>
+
+    <section class="insight-grid">
+      <article class="panel capacity-card">
         <header>
-          <div>
-            <strong>Live metrics</strong>
-            <span
-              >Last
-              {{ llm.metrics.windowSeconds / 60 | number: "1.0-0" }}m</span
-            >
-          </div>
-          <span class="live"><i></i> live</span>
+          <strong>Throughput &amp; capacity</strong>
+          <span>
+            @if (vm.windowTruncated) {
+              buffer covers since
+              {{ vm.windowCoverageStart | date: "shortTime" }}
+            } @else {
+              rolling 15m window
+            }
+          </span>
         </header>
-        <div class="metric-grid">
-          <div>
-            <span>Matched</span>
-            <strong>{{ llm.metrics.matched | number }}</strong>
-          </div>
+        <div class="vitals">
           <div>
             <span>Throughput</span>
-            <strong>{{
-              llm.metrics.throughputPerSecond | number: "1.1-2"
-            }}</strong>
-            <small>/ sec</small>
+            <strong
+              >{{ vm.stats.throughputPerMinute | number: "1.1-1" }}/min</strong
+            >
           </div>
           <div>
-            <span>Avg latency</span>
-            <strong>{{
-              llm.metrics.averageLatencySeconds | number: "1.2-2"
-            }}</strong>
-            <small>sec</small>
+            <span>Latency p50</span>
+            <strong>{{ vm.latencyP50 }}</strong>
           </div>
           <div>
-            <span>P95 latency</span>
-            <strong>{{
-              llm.metrics.p95LatencySeconds | number: "1.2-2"
-            }}</strong>
-            <small>sec</small>
+            <span>Latency p95</span>
+            <strong>{{ vm.latencyP95 }}</strong>
           </div>
           <div>
-            <span>Error rate</span>
-            <strong>{{ llm.metrics.errorRate | percent: "1.1-1" }}</strong>
+            <span>{{
+              vm.windowTruncated ? "Buffered success" : "Success (15m)"
+            }}</span>
+            <strong>{{ vm.windowSuccessRate | percent: "1.1-1" }}</strong>
           </div>
-          <div>
-            <span>Unknown backlog</span>
-            <strong>{{ llm.metrics.unknownBacklog | number }}</strong>
+        </div>
+        <div class="slots">
+          <div class="slot-heading">
+            <span>Slots in use</span>
+            <strong
+              >{{ vm.stats.inFlight }} / {{ vm.stats.concurrency }}</strong
+            >
           </div>
-          <div>
-            <span>Prompt tokens</span>
-            <strong>{{ llm.metrics.promptTokens | number }}</strong>
+          <div class="slot-gauge" aria-label="LLM classification slots">
+            @for (active of vm.slots; track $index) {
+              <i [class.active]="active"></i>
+            } @empty {
+              <span>No concurrency configured</span>
+            }
           </div>
-          <div>
-            <span>Completion tokens</span>
-            <strong>{{ llm.metrics.completionTokens | number }}</strong>
-          </div>
+          <p [class.warning]="vm.utilization >= 0.8">
+            {{ vm.utilization | percent: "1.0-0" }} utilization ·
+            {{ vm.capacityStatus }}
+          </p>
         </div>
       </article>
 
-      <article class="panel distribution-panel">
-        <header>
-          <div>
-            <strong>Classification distribution</strong>
-            <span>Successful matches in this window</span>
+      <article class="panel providers-card">
+        <header><strong>By provider</strong></header>
+        <div
+          class="provider-table"
+          role="table"
+          aria-label="LLM provider statistics"
+        >
+          <div class="provider-row provider-head" role="row">
+            <span role="columnheader">Provider</span>
+            <span role="columnheader">Matched</span>
+            <span role="columnheader">Rate</span>
+            <span role="columnheader">p50</span>
           </div>
-        </header>
-        <div class="distribution">
-          @for (entry of llm.metrics.distribution; track entry.contentType) {
-            <div class="distribution-row">
-              <span>{{ entry.contentType }}</span>
-              <div>
-                <i
-                  [style.width]="
-                    distributionWidth(entry.count, llm.metrics.distribution)
-                  "
-                ></i>
-              </div>
-              <b>{{ entry.count | number }}</b>
+          @for (provider of vm.providers; track provider.provider) {
+            <div class="provider-row" role="row">
+              <span role="cell" [title]="provider.label">{{
+                provider.label
+              }}</span>
+              <b role="cell">{{ provider.matched | number }}</b>
+              <b role="cell" class="rate">{{
+                provider.rate | percent: "1.1-1"
+              }}</b>
+              <b role="cell" class="latency">{{ provider.latencyP50 }}</b>
             </div>
           } @empty {
-            <p class="empty">No classifications recorded in this window.</p>
+            <p class="empty">No provider activity recorded.</p>
           }
         </div>
-      </article>
-
-      <article class="panel benchmark-panel">
-        <header>
+        <footer>
           <div>
-            <strong>Dry-run benchmark</strong>
-            <span>Classify a random sample of 20 unknown torrents</span>
+            <span>Unknown backlog</span>
+            <strong>{{ vm.stats.queuePending | number }}</strong>
           </div>
+          <p>
+            @if (vm.drainRatePerHour > 0) {
+              clearing ~{{ vm.drainRatePerHour | number: "1.0-0" }}/hr · ETA ~{{
+                vm.etaHours | number: "1.0-0"
+              }}h
+            } @else {
+              awaiting throughput data
+            }
+          </p>
+        </footer>
+      </article>
+    </section>
+
+    <article class="panel feed-card">
+      <header>
+        <strong>Recent classifications</strong>
+        <div>
+          <span class="freshness" [class.fresh]="pollFresh">
+            <i aria-hidden="true"></i>
+            {{ pollFresh ? "live · polled every 3s" : "poll stalled" }}
+          </span>
+          <span>ring buffer · last 500</span>
+        </div>
+      </header>
+      <nav class="feed-filters" aria-label="Classification outcome filter">
+        @for (filter of filters; track filter.key) {
           <button
             type="button"
-            [disabled]="benchmarking || !llm.state.enabled"
+            [class.active]="feedFilter === filter.key"
+            (click)="selectFilter(filter.key)"
+          >
+            {{ filter.label }}
+            <b>{{ vm.counts[filter.key] }}</b>
+          </button>
+        }
+      </nav>
+      <div class="feed-list">
+        @for (event of filteredEvents(vm.events); track eventKey(event)) {
+          <button
+            type="button"
+            class="feed-row"
+            [class.expanded]="openEvent === eventKey(event)"
+            [attr.aria-expanded]="openEvent === eventKey(event)"
+            (click)="toggleEvent(event)"
+          >
+            <span
+              class="outcome"
+              [class.matched]="event.outcome === 'MATCHED'"
+              [class.unmatched]="event.outcome === 'UNMATCHED'"
+              [class.error]="event.outcome === 'ERROR'"
+              [class.skipped]="event.outcome === 'SKIPPED'"
+              >{{ event.outcome }}</span
+            >
+            <span class="event-title">
+              <strong>{{ event.torrentName }}</strong>
+              <small>
+                {{ event.infoHash }} ·
+                {{ event.timestamp | date: "MMM d, HH:mm:ss" }}
+              </small>
+            </span>
+            <span class="event-provider">
+              <strong>{{ event.provider || "no provider" }}</strong>
+              <small>{{ formatDuration(event.durationMs) }}</small>
+            </span>
+            <span class="chevron" aria-hidden="true">
+              {{ openEvent === eventKey(event) ? "▴" : "▾" }}
+            </span>
+          </button>
+          @if (openEvent === eventKey(event)) {
+            <div class="event-detail">
+              @if (event.outcome === "MATCHED") {
+                <span class="detail-label">Parsed result</span>
+                <div class="parsed-grid">
+                  <div>
+                    <span>Content type</span
+                    ><strong>{{ event.contentType || "—" }}</strong>
+                  </div>
+                  <div>
+                    <span>Base title</span
+                    ><strong>{{ event.title || "—" }}</strong>
+                  </div>
+                  <div>
+                    <span>Year</span><strong>{{ event.year || "—" }}</strong>
+                  </div>
+                  <div>
+                    <span>Languages</span
+                    ><strong>{{ event.languages.join(", ") || "—" }}</strong>
+                  </div>
+                  <div>
+                    <span>Episodes</span
+                    ><strong>{{ episodeLabel(event) }}</strong>
+                  </div>
+                  <div>
+                    <span>Info hash</span><strong>{{ event.infoHash }}</strong>
+                  </div>
+                </div>
+              } @else if (event.outcome === "ERROR") {
+                <span class="detail-label error">Error</span>
+                <pre>{{ event.error || "No error detail was recorded." }}</pre>
+              } @else if (event.outcome === "UNMATCHED") {
+                <p>
+                  No confident match returned — the torrent is left
+                  <b>unknown</b>
+                  and remains in the backlog for a later attempt.
+                </p>
+              } @else {
+                <p>
+                  Classification was skipped because no LLM provider was
+                  available.
+                </p>
+              }
+            </div>
+          }
+        } @empty {
+          <p class="feed-empty">No events match this filter.</p>
+        }
+      </div>
+    </article>
+
+    <section class="management-grid">
+      <article class="panel management-card benchmark-card">
+        <header><strong>Benchmark</strong></header>
+        <p>
+          Classify a sample of unknown torrents without writing results —
+          measure latency and accuracy before a full run.
+        </p>
+        <div class="benchmark-action">
+          <label>
+            <span>Sample size</span>
+            <input
+              type="number"
+              min="1"
+              max="500"
+              [formControl]="benchmarkSampleSize"
+            />
+          </label>
+          <button
+            type="button"
+            class="accent"
+            [disabled]="benchmarking || !form.controls.enabled.value"
             (click)="runBenchmark()"
           >
-            {{ benchmarking ? "Running…" : "Run benchmark" }}
+            ▶ {{ benchmarking ? "Running…" : "Run benchmark" }}
           </button>
-        </header>
+        </div>
         @if (benchmark; as result) {
           <div class="benchmark-results">
-            <div>
-              <span>Success</span><b>{{ result.successes }}</b>
-            </div>
-            <div>
-              <span>Failed</span><b>{{ result.failures }}</b>
-            </div>
-            <div>
-              <span>Avg latency</span
-              ><b>{{ result.averageLatencySeconds | number: "1.2-2" }}s</b>
-            </div>
-            <div>
-              <span>Throughput</span
-              ><b>{{ result.throughputPerSecond | number: "1.1-2" }}/s</b>
-            </div>
+            <span
+              >success <b class="good">{{ result.successes }}</b></span
+            >
+            <span
+              >fail <b class="bad">{{ result.failures }}</b></span
+            >
+            <span
+              >avg
+              <b>{{ result.averageLatencySeconds | number: "1.2-2" }}s</b></span
+            >
+            <span
+              >throughput
+              <b>{{ result.throughputPerSecond | number: "1.1-2" }}/s</b></span
+            >
+          </div>
+          <span class="detail-label">Content-type distribution</span>
+          <div class="distribution">
+            @for (entry of result.distribution; track entry.contentType) {
+              <div>
+                <span>{{ entry.contentType }}</span>
+                <i
+                  ><b
+                    [style.width]="
+                      distributionWidth(entry.count, result.distribution)
+                    "
+                  ></b
+                ></i>
+                <strong>{{ entry.count }}</strong>
+              </div>
+            } @empty {
+              <p class="empty">No successful classifications.</p>
+            }
           </div>
         }
       </article>
-    </div>
+
+      <article class="panel management-card config-card">
+        <header><strong>Configuration</strong></header>
+        <form [formGroup]="form" (ngSubmit)="save()">
+          <div class="fields">
+            <label>
+              <span>Provider name</span>
+              <input type="text" formControlName="providerName" />
+            </label>
+            <label>
+              <span>Base URL</span>
+              <input type="url" formControlName="baseUrl" />
+            </label>
+            <label>
+              <span>Model</span>
+              <input type="text" formControlName="model" />
+            </label>
+            <label>
+              <span>API key <small>· redacted by the API</small></span>
+              <input type="text" formControlName="apiKey" autocomplete="off" />
+            </label>
+            <div class="numeric-fields">
+              <label>
+                <span>Batch size</span>
+                <input type="number" min="1" formControlName="batchSize" />
+              </label>
+              <label>
+                <span>Max context</span>
+                <input type="number" min="1" formControlName="maxContext" />
+              </label>
+              <label>
+                <span>Max tokens</span>
+                <input type="number" min="1" formControlName="maxTokens" />
+              </label>
+              <label>
+                <span>Interval (s)</span>
+                <input
+                  type="number"
+                  min="0"
+                  formControlName="intervalSeconds"
+                />
+              </label>
+              <label>
+                <span>Timeout (s)</span>
+                <input type="number" min="1" formControlName="timeoutSeconds" />
+              </label>
+            </div>
+          </div>
+          <div class="form-actions">
+            <button
+              type="button"
+              [class.connected]="testState === 'ok'"
+              [class.failed]="testState === 'error'"
+              [disabled]="
+                testState === 'testing' || !form.controls.enabled.value
+              "
+              (click)="testConnection()"
+            >
+              {{ testState === "testing" ? "Testing…" : "Test connection" }}
+            </button>
+            <button type="submit" class="accent" [disabled]="saving">
+              {{ saving ? "Saving…" : "Save changes" }}
+            </button>
+          </div>
+          @if (connectionMessage) {
+            <p class="action-result" [class.good]="testState === 'ok'">
+              {{ connectionMessage }}
+            </p>
+          }
+          @if (saveMessage) {
+            <p class="action-result good">{{ saveMessage }}</p>
+          }
+        </form>
+      </article>
+    </section>
   </section>
 }
