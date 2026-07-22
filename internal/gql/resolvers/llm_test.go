@@ -39,6 +39,7 @@ func TestLlmQuery_Events(t *testing.T) {
 	})
 
 	limit := 1
+
 	events, err := (&llmQueryResolver{&Resolver{LlmRecorder: recorder}}).Events(
 		context.Background(),
 		&gen.LlmQuery{},
@@ -105,6 +106,7 @@ func TestLlmQuery_Stats(t *testing.T) {
 		buckets: []queuemetrics.Bucket{{Count: 7}},
 	}
 	windowMinutes := 15
+
 	stats, err := (&llmQueryResolver{&Resolver{
 		LlmRecorder:        recorder,
 		QueueMetricsClient: queueMetrics,
