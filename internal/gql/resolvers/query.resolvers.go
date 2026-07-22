@@ -143,6 +143,11 @@ func (r *queryResolver) Config(ctx context.Context) (gen.ConfigQuery, error) {
 	return gen.ConfigQuery{Sections: sections}, nil
 }
 
+// Llm is the resolver for the llm field.
+func (r *queryResolver) Llm(ctx context.Context) (gen.LlmQuery, error) {
+	return gen.LlmQuery{}, nil
+}
+
 // Files is the resolver for the files field.
 func (r *torrentQueryResolver) Files(ctx context.Context, obj *gqlmodel.TorrentQuery, input gqlmodel.TorrentFilesQueryInput) (query.GenericResult[model.TorrentFile], error) {
 	return gqlmodel.TorrentQuery{

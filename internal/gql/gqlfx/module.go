@@ -3,6 +3,7 @@ package gqlfx
 import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/bitmagnet-io/bitmagnet/internal/blocking"
+	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
 	"github.com/bitmagnet-io/bitmagnet/internal/client"
 	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
 	rootconfig "github.com/bitmagnet-io/bitmagnet/internal/config"
@@ -17,6 +18,7 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/resolvers"
 	"github.com/bitmagnet-io/bitmagnet/internal/health"
 	"github.com/bitmagnet-io/bitmagnet/internal/lazy"
+	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmobs"
 	"github.com/bitmagnet-io/bitmagnet/internal/metrics/queuemetrics"
 	"github.com/bitmagnet-io/bitmagnet/internal/metrics/torrentmetrics"
 	"github.com/bitmagnet-io/bitmagnet/internal/processor"
@@ -95,6 +97,8 @@ func New() fx.Option {
 							ResolvedConfig:       p.ResolvedConfig,
 							Changeability:        p.Changeability,
 							Applier:              p.Applier,
+							LlmRecorder:          p.LlmRecorder,
+							ClassifierConfig:     p.ClassifierConfig,
 						}, nil
 					}),
 				}
@@ -127,6 +131,8 @@ type Params struct {
 	ResolvedConfig       *concurrency.AtomicValue[rootconfig.ResolvedConfig]
 	Changeability        configapply.Changeability
 	Applier              *configapply.Applier
+	LlmRecorder          *llmobs.Recorder
+	ClassifierConfig     classifier.Config
 }
 
 type Result struct {

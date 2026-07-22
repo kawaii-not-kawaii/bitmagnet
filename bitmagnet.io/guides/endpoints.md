@@ -49,3 +49,64 @@ mutation {
 ```
 
 The response contains the updated section with sensitive values redacted. `applied` is `LIVE_APPLY_AVAILABLE` when supported settings took effect immediately, or `RESTART_REQUIRED` when the change was persisted for the next restart. See [Runtime configuration API]({% link setup/configuration.md %}#runtime-configuration-api) for supported and restricted sections.
+
+### Inspecting LLM classifications
+
+`llm.events` returns recent LLM classification attempts newest first. The optional limit is capped by the 500-event in-memory buffer:
+
+```graphql
+query {
+  llm {
+    events(limit: 20) {
+      timestamp
+      infoHash
+      torrentName
+      provider
+      durationMs
+      outcome
+      contentType
+      title
+      year
+      season
+      episode
+      languages
+      error
+    }
+  }
+}
+```
+
+`llm.stats` combines process-lifetime counts, windowed latency and throughput, provider counts, current classifier utilization, and the pending classification queue. The window defaults to 15 minutes:
+
+```graphql
+query {
+  llm {
+    stats(windowMinutes: 15) {
+      attempted
+      matched
+      unmatched
+      errored
+      skipped
+      successRate
+      perProvider {
+        provider
+        attempted
+        matched
+        unmatched
+        errored
+      }
+      inFlight
+      concurrency
+      windowStart
+      oldestBuffered
+      windowAttempted
+      latencyP50Ms
+      latencyP95Ms
+      throughputPerMinute
+      queuePending
+    }
+  }
+}
+```
+
+`oldestBuffered` is set when the 500-event buffer does not cover the full requested window. Both queries use the same API-key authentication as other GraphQL queries.

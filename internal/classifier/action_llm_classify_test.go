@@ -1,12 +1,17 @@
 package classifier
 
 import (
+	"context"
+	"errors"
 	"testing"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier/classification"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
+	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmobs"
 	"github.com/bitmagnet-io/bitmagnet/internal/model"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"go.uber.org/zap"
 )
 
 // TestApplyLLMResult_Language locks in the contract that the Language field
@@ -114,6 +119,7 @@ func TestApplyLLMResult_Language(t *testing.T) {
 					LanguageMulti: tc.preExistingMulti,
 				},
 			}
+
 			if len(tc.preExistingLangs) > 0 {
 				cl.Languages = make(model.Languages)
 				for _, l := range tc.preExistingLangs {
@@ -200,6 +206,132 @@ func TestSanitizeTag(t *testing.T) {
 					model.ValidateTagName(got),
 					"sanitizeTag output must always satisfy ValidateTagName",
 				)
+			}
+		})
+	}
+}
+
+type llmActionTestProvider struct {
+	result *llm.ClassifyResult
+	err    error
+}
+
+func (llmActionTestProvider) Name() string {
+	return "test"
+}
+
+func (p llmActionTestProvider) Classify(
+	context.Context,
+	llm.ClassifyInput,
+) (*llm.ClassifyResult, error) {
+	return p.result, p.err
+}
+
+func TestLLMClassifyRecordingPreservesBehavior(t *testing.T) {
+	t.Parallel()
+
+	providerErr := errors.New("provider unavailable")
+	matchedResult := &llm.ClassifyResult{
+		ContentType: "movie",
+		Title:       "Example",
+		Year:        2024,
+		Season:      1,
+		Episode:     2,
+		Language:    []string{"en", "es"},
+	}
+	cases := []struct {
+		name        string
+		providers   map[string]llm.Provider
+		wantOutcome llmobs.Outcome
+		wantError   string
+	}{
+		{
+			name: "matched",
+			providers: map[string]llm.Provider{
+				"test": llmActionTestProvider{result: matchedResult},
+			},
+			wantOutcome: llmobs.OutcomeMatched,
+		},
+		{
+			name: "unmatched",
+			providers: map[string]llm.Provider{
+				"test": llmActionTestProvider{result: &llm.ClassifyResult{}},
+			},
+			wantOutcome: llmobs.OutcomeUnmatched,
+		},
+		{
+			name: "error",
+			providers: map[string]llm.Provider{
+				"test": llmActionTestProvider{err: providerErr},
+			},
+			wantOutcome: llmobs.OutcomeError,
+			wantError:   providerErr.Error(),
+		},
+		{
+			name:        "skipped",
+			wantOutcome: llmobs.OutcomeSkipped,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+
+			compiled, err := (llmClassifyAction{}).compileAction(compilerContext{
+				source: llmClassifyActionName,
+				path:   []string{"workflows", "test"},
+			})
+			require.NoError(t, err)
+
+			torrent := model.Torrent{Name: "Example.Torrent"}
+			run := func(recorder *llmobs.Recorder) (classification.Result, error) {
+				logger := zap.NewNop().Sugar()
+
+				return compiled.run(executionContext{
+					Context: context.Background(),
+					dependencies: dependencies{
+						llmProviders: func() map[string]llm.Provider {
+							return tc.providers
+						},
+						recorder: recorder,
+						_logger:  logger,
+						logger:   logger,
+					},
+					torrent: torrent,
+				})
+			}
+
+			withoutRecorderResult, withoutRecorderErr := run(nil)
+			recorder := llmobs.New()
+			withRecorderResult, withRecorderErr := run(recorder)
+
+			assert.Equal(t, withoutRecorderResult, withRecorderResult)
+			assert.Equal(t, withoutRecorderErr, withRecorderErr)
+
+			events := recorder.Events(1)
+			require.Len(t, events, 1)
+
+			event := events[0]
+			assert.Equal(t, tc.wantOutcome, event.Outcome)
+			assert.Equal(t, torrent.InfoHash.String(), event.InfoHash)
+			assert.Equal(t, torrent.Name, event.TorrentName)
+			assert.Equal(t, tc.wantError, event.Error)
+			assert.Zero(t, recorder.Stats(0).InFlight)
+
+			if tc.wantOutcome == llmobs.OutcomeSkipped {
+				assert.Empty(t, event.Provider)
+				assert.Zero(t, event.Duration)
+			} else {
+				assert.Equal(t, "test", event.Provider)
+			}
+
+			if tc.wantOutcome == llmobs.OutcomeMatched {
+				assert.Equal(t, matchedResult.ContentType, event.ContentType)
+				assert.Equal(t, matchedResult.Title, event.Title)
+				assert.Equal(t, matchedResult.Year, event.Year)
+				assert.Equal(t, matchedResult.Season, event.Season)
+				assert.Equal(t, matchedResult.Episode, event.Episode)
+				assert.Equal(t, matchedResult.Language, event.Languages)
 			}
 		})
 	}
