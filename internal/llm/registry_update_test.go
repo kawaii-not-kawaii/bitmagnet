@@ -156,12 +156,14 @@ func TestRegistry_DisabledSkipsProviderConstruction(t *testing.T) {
 
 	cfg.Enabled = true
 	registry.Update(cfg)
+
 	if factoryCalls != len(cfg.Providers) {
 		t.Fatalf("enabled update built %d providers, want %d", factoryCalls, len(cfg.Providers))
 	}
 
 	cfg.Enabled = false
 	registry.Update(cfg)
+
 	if len(registry.All()) != 0 {
 		t.Fatalf("disabled update left providers: %v", registry.All())
 	}

@@ -15,7 +15,7 @@ type testProvider struct {
 	calls atomic.Int64
 }
 
-func (p *testProvider) Name() string { return "test" }
+func (*testProvider) Name() string { return "test" }
 
 func (p *testProvider) Classify(_ context.Context, input llm.ClassifyInput) (*llm.ClassifyResult, error) {
 	p.calls.Add(1)

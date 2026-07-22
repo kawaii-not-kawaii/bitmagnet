@@ -65,6 +65,7 @@ func NewRegistry(cfg RegistryConfig, factory ProviderFactory, configPath string)
 		configPath: configPath,
 		providers:  make(map[string]Provider, len(cfg.Providers)),
 	}
+
 	if cfg.Enabled {
 		for name, pCfg := range cfg.Providers {
 			r.providers[name] = factory(name, pCfg, cfg)
@@ -122,6 +123,7 @@ func (r *Registry) Swap(cfg RegistryConfig) (drain func()) {
 	old := r.providers
 
 	newProviders := make(map[string]Provider, len(cfg.Providers))
+
 	if cfg.Enabled {
 		for name, pCfg := range cfg.Providers {
 			newProviders[name] = r.factory(name, pCfg, cfg)

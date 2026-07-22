@@ -73,6 +73,7 @@ func LoadFromDAO(d *dao.Query) Loader {
 		}
 
 		torrents := make([]model.Torrent, 0, MaxSampleSize)
+
 		for _, torrent := range rows {
 			torrents = append(torrents, *torrent)
 		}
@@ -104,6 +105,7 @@ func Run(
 	}
 
 	torrents := make([]model.Torrent, 0, MaxSampleSize)
+
 	for i, torrent := range loaded {
 		if i == count {
 			break
@@ -193,6 +195,7 @@ func classifyOne(ctx context.Context, provider llm.Provider, torrent model.Torre
 	}
 
 	files := make([]string, 0, maxFiles)
+
 	for i, file := range torrent.Files {
 		if i == maxFiles {
 			break
@@ -200,6 +203,7 @@ func classifyOne(ctx context.Context, provider llm.Provider, torrent model.Torre
 
 		files = append(files, file.Path)
 	}
+
 	input.Files = files
 
 	started := time.Now()

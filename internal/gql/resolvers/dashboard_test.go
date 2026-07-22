@@ -92,6 +92,7 @@ func TestDashboardLlmConnectionWithoutProvider(t *testing.T) {
 	t.Parallel()
 
 	registry := llm.NewRegistry(llm.RegistryConfig{}, nil, "")
+
 	result, err := (&Resolver{LlmRegistry: registry}).testDashboardLlmConnection(context.Background())
 	if err != nil {
 		t.Fatalf("testDashboardLlmConnection: %v", err)

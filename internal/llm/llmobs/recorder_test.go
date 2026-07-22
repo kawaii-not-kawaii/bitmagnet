@@ -374,6 +374,7 @@ func TestRecorder_Prometheus(t *testing.T) {
 	r.Record(Event{Provider: "beta", Outcome: OutcomeUnmatched, Duration: 3 * time.Second})
 
 	registry := prometheus.NewPedanticRegistry()
+
 	for _, collector := range r.Collectors() {
 		if err := registry.Register(collector); err != nil {
 			t.Fatalf("register collector: %v", err)
@@ -392,6 +393,7 @@ func TestRecorder_Prometheus(t *testing.T) {
 	for _, family := range families {
 		for _, metric := range family.GetMetric() {
 			labels := make(map[string]string, len(metric.GetLabel()))
+
 			for _, label := range metric.GetLabel() {
 				labels[label.GetName()] = label.GetValue()
 			}

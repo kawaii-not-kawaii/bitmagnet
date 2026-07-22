@@ -90,7 +90,9 @@ func (r *Resolver) testDashboardLlmConnection(ctx context.Context) (gen.Dashboar
 	if err != nil {
 		message := err.Error()
 
-		return gen.DashboardLlmConnectionResult{Error: &message}, nil
+		return gen.DashboardLlmConnectionResult{
+			Error: &message,
+		}, nil //nolint:nilerr // connection failure is the payload, not a resolver error
 	}
 
 	startedAt := time.Now()
@@ -102,7 +104,9 @@ func (r *Resolver) testDashboardLlmConnection(ctx context.Context) (gen.Dashboar
 	if err != nil {
 		message := fmt.Errorf("dashboard: test LLM connection: %w", err).Error()
 
-		return gen.DashboardLlmConnectionResult{Error: &message}, nil
+		return gen.DashboardLlmConnectionResult{
+			Error: &message,
+		}, nil //nolint:nilerr // connection failure is the payload, not a resolver error
 	}
 
 	return gen.DashboardLlmConnectionResult{
@@ -131,6 +135,7 @@ func (r *Resolver) runDashboardLlmBenchmark(ctx context.Context, sampleSize int)
 	}
 
 	distributionCounts := make(map[string]int)
+
 	for _, classification := range result.Classifications {
 		if classification.ContentType != "" {
 			distributionCounts[classification.ContentType]++

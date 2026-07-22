@@ -96,6 +96,7 @@ func TestNew_RegistryAlwaysConstructed_LiveToggle(t *testing.T) {
 	if res.Registry.Get("late") == nil {
 		t.Fatal("provider enabled at runtime not present in registry")
 	}
+
 	after, err = res.LiveApplier.Apply(classifier.Config{Llm: classifier.LlmConfig{
 		Enabled:         false,
 		ProviderName:    "late",

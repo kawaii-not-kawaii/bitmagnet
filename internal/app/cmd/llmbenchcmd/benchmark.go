@@ -39,6 +39,7 @@ func RunBenchmark(
 	for name := range params.Providers {
 		names = append(names, name)
 	}
+
 	sort.Strings(names)
 
 	d, err := params.Dao.Get()
@@ -78,6 +79,7 @@ func PrintSummary(result *BenchmarkResult) {
 	fmt.Fprintf(os.Stdout, "\nClassification Distribution:\n")
 
 	distribution := make(map[string]int)
+
 	for _, classification := range result.Classifications {
 		if classification.ContentType != "" {
 			distribution[classification.ContentType]++

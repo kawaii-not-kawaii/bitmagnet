@@ -318,6 +318,7 @@ func TestLLMClassifyRecordingPreservesBehavior(t *testing.T) {
 			assert.Equal(t, torrent.InfoHash.String(), event.InfoHash)
 			assert.Equal(t, torrent.Name, event.TorrentName)
 			assert.Equal(t, tc.wantError, event.Error)
+
 			if tc.wantOutcome == llmobs.OutcomeMatched {
 				assert.Equal(t, matchedResult.PromptTokens, event.PromptTokens)
 				assert.Equal(t, matchedResult.CompletionTokens, event.CompletionTokens)
@@ -325,6 +326,7 @@ func TestLLMClassifyRecordingPreservesBehavior(t *testing.T) {
 				assert.Zero(t, event.PromptTokens)
 				assert.Zero(t, event.CompletionTokens)
 			}
+
 			assert.Zero(t, recorder.Stats(0).InFlight)
 
 			if tc.wantOutcome == llmobs.OutcomeSkipped {

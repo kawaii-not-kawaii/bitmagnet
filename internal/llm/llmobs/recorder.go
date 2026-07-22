@@ -219,6 +219,7 @@ func (r *Recorder) Stats(window time.Duration) Stats {
 	}
 
 	slices.Sort(durations)
+
 	stats.LatencyP50 = nearestRank(durations, 50)
 	stats.LatencyP95 = nearestRank(durations, 95)
 
