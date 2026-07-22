@@ -30,6 +30,32 @@ func (r *clientMutationResolver) SendTo(ctx context.Context, obj *gqlmodel.Clien
 		})
 }
 
+// SetSection is the resolver for the setSection field.
+func (r *configMutationResolver) SetSection(ctx context.Context, obj *gen.ConfigMutation, input gen.SetConfigSectionInput) (gen.SetConfigSectionResult, error) {
+	if err := requireConfigAdmin(ctx); err != nil {
+		return gen.SetConfigSectionResult{}, err
+	}
+
+	outcome, err := r.Applier.SetSection(input.Key, input.Value)
+	if err != nil {
+		return gen.SetConfigSectionResult{}, configMutationError(input.Key, err)
+	}
+
+	applied := gen.ConfigRuntimeChangeabilityRestartRequired
+	if outcome.Live {
+		applied = gen.ConfigRuntimeChangeabilityLiveApplyAvailable
+	}
+
+	return gen.SetConfigSectionResult{
+		Section: gen.ConfigSection{
+			Key:               outcome.Key,
+			RuntimeChangeable: configRuntimeChangeability(r.Changeability, outcome.Key),
+			Value:             gqlmodel.Redact(outcome.Value),
+		},
+		Applied: applied,
+	}, nil
+}
+
 // Torrent is the resolver for the torrent field.
 func (r *mutationResolver) Torrent(ctx context.Context) (gqlmodel.TorrentMutation, error) {
 	return gqlmodel.TorrentMutation{}, nil
@@ -43,6 +69,11 @@ func (r *mutationResolver) Queue(ctx context.Context) (gqlmodel.QueueMutation, e
 // Client is the resolver for the client field.
 func (r *mutationResolver) Client(ctx context.Context) (gqlmodel.ClientMutation, error) {
 	return gqlmodel.ClientMutation{}, nil
+}
+
+// Config is the resolver for the config field.
+func (r *mutationResolver) Config(ctx context.Context) (gen.ConfigMutation, error) {
+	return gen.ConfigMutation{}, nil
 }
 
 // Delete is the resolver for the delete field.
@@ -94,6 +125,9 @@ func (r *torrentMutationResolver) Reprocess(ctx context.Context, obj *gqlmodel.T
 // ClientMutation returns gql.ClientMutationResolver implementation.
 func (r *Resolver) ClientMutation() gql.ClientMutationResolver { return &clientMutationResolver{r} }
 
+// ConfigMutation returns gql.ConfigMutationResolver implementation.
+func (r *Resolver) ConfigMutation() gql.ConfigMutationResolver { return &configMutationResolver{r} }
+
 // Mutation returns gql.MutationResolver implementation.
 func (r *Resolver) Mutation() gql.MutationResolver { return &mutationResolver{r} }
 
@@ -101,5 +135,6 @@ func (r *Resolver) Mutation() gql.MutationResolver { return &mutationResolver{r}
 func (r *Resolver) TorrentMutation() gql.TorrentMutationResolver { return &torrentMutationResolver{r} }
 
 type clientMutationResolver struct{ *Resolver }
+type configMutationResolver struct{ *Resolver }
 type mutationResolver struct{ *Resolver }
 type torrentMutationResolver struct{ *Resolver }

@@ -86,6 +86,24 @@ In order of precedence, configuration values will be read from:
 {: .warning }
 Environment variables can be used to configure simple scalar types (strings, numbers, booleans) and slice types (arrays). For more complex configuration types such as maps you'll have to use YAML configuration. **bitmagnet** will exit with an error if it's unable to parse a provided configuration value.
 
+## Runtime configuration API
+
+The `config.setSection` GraphQL mutation replaces one complete top-level configuration section. The submitted value is decoded and validated before any change is made. On success, supported settings are applied to the running process and the whole section is persisted to `config.yml`. The write is atomic, preserves comments and ordering in other sections, and writes field names in `snake_case`.
+
+The response reports whether the section took effect immediately:
+
+- `tmdb`, `torznab`, and `client` apply live.
+- `log` applies its level live; other logging settings take effect after restart.
+- `classifier` swaps its LLM provider configuration live; other classifier settings take effect after restart.
+- Every other section is persisted and returns `RESTART_REQUIRED`.
+
+The connection-critical sections `postgres`, `auth`, `http_server`, and `dht_server` cannot be changed through this API. This prevents an API request from locking the operator out of the database or server.
+
+{: .warning }
+Environment variables still have the highest precedence at startup. If an environment variable overrides a value persisted by the API, the effective value after restart will come from the environment and may differ from the value applied at runtime.
+
+See the [GraphQL endpoint guide]({% link guides/endpoints.md %}#updating-configuration) for an example request.
+
 ## Authentication
 
 The GraphQL API and the web UI require an API key. This protects not just the settings you can read, but every mutation — deleting torrents, purging queues, managing the blocklist — which were previously open to anyone who could reach the port.

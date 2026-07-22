@@ -83,6 +83,45 @@ func TestSetSection_RejectsBeforeSideEffects(t *testing.T) {
 	}
 }
 
+type casedSection struct {
+	APIKey  string
+	MaxSize int `validate:"min=0"`
+}
+
+// TestSetSection_AcceptsFieldAndSnakeCaseKeys: operators reach for either the
+// Go field names (what the settings read query returns) or snake_case (what
+// config.yml uses) — the decoder accepts both.
+func TestSetSection_AcceptsFieldAndSnakeCaseKeys(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		raw  map[string]any
+	}{
+		{name: "go field names", raw: map[string]any{"APIKey": "k", "MaxSize": float64(5)}},
+		{name: "snake_case keys", raw: map[string]any{"api_key": "k", "max_size": float64(5)}},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			path := filepath.Join(t.TempDir(), "config.yml")
+			applier, _ := newTestApplier(path, map[string]any{"cased": casedSection{}}, nil)
+
+			outcome, err := applier.SetSection("cased", tt.raw)
+			if err != nil {
+				t.Fatalf("SetSection: %v", err)
+			}
+
+			want := casedSection{APIKey: "k", MaxSize: 5}
+			if !reflect.DeepEqual(outcome.Value, want) {
+				t.Fatalf("decoded %#v, want %#v", outcome.Value, want)
+			}
+		})
+	}
+}
+
 func TestSetSection_OutcomesAndVisibility(t *testing.T) {
 	t.Parallel()
 

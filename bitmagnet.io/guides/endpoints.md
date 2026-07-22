@@ -19,3 +19,36 @@ redirect_from:
 - `/metrics` - Prometheus metrics (see [the observability guide](/guides/observability-telemetry.html))
 - `/debug/pprof/*` - Go pprof profiling endpoints (see [the observability guide](/guides/observability-telemetry.html))
 - `/status` - Health check/status endpoint
+
+## GraphQL
+
+The `/graphql` endpoint accepts authenticated GraphQL requests and provides the GraphiQL browser interface. Requests require the configured API key with admin access; see [Authentication]({% link setup/configuration.md %}#authentication).
+
+### Updating configuration
+
+`config.setSection` replaces a whole configuration section. For example:
+
+```graphql
+mutation {
+  config {
+    setSection(
+      input: {
+        key: "tmdb"
+        value: {
+          enabled: true
+          api_key: "your-tmdb-api-key"
+        }
+      }
+    ) {
+      section {
+        key
+        runtimeChangeable
+        value
+      }
+      applied
+    }
+  }
+}
+```
+
+The response contains the updated section with sensitive values redacted. `applied` is `LIVE_APPLY_AVAILABLE` when supported settings took effect immediately, or `RESTART_REQUIRED` when the change was persisted for the next restart. See [Runtime configuration API]({% link setup/configuration.md %}#runtime-configuration-api) for supported and restricted sections.
