@@ -292,6 +292,74 @@ export type LanguageInfo = {
   name: Scalars['String']['output'];
 };
 
+export type LlmClassificationEvent = {
+  __typename?: 'LlmClassificationEvent';
+  contentType: Scalars['String']['output'];
+  durationMs: Scalars['Int']['output'];
+  episode: Scalars['Int']['output'];
+  error: Scalars['String']['output'];
+  infoHash: Scalars['String']['output'];
+  languages: Array<Scalars['String']['output']>;
+  outcome: LlmClassificationOutcome;
+  provider: Scalars['String']['output'];
+  season: Scalars['Int']['output'];
+  timestamp: Scalars['DateTime']['output'];
+  title: Scalars['String']['output'];
+  torrentName: Scalars['String']['output'];
+  year: Scalars['Int']['output'];
+};
+
+export type LlmClassificationOutcome =
+  | 'ERROR'
+  | 'MATCHED'
+  | 'SKIPPED'
+  | 'UNMATCHED';
+
+export type LlmProviderStats = {
+  __typename?: 'LlmProviderStats';
+  attempted: Scalars['Int']['output'];
+  errored: Scalars['Int']['output'];
+  matched: Scalars['Int']['output'];
+  provider: Scalars['String']['output'];
+  unmatched: Scalars['Int']['output'];
+};
+
+export type LlmQuery = {
+  __typename?: 'LlmQuery';
+  events: Array<LlmClassificationEvent>;
+  stats: LlmStats;
+};
+
+
+export type LlmQueryEventsArgs = {
+  limit?: InputMaybe<Scalars['Int']['input']>;
+};
+
+
+export type LlmQueryStatsArgs = {
+  windowMinutes?: InputMaybe<Scalars['Int']['input']>;
+};
+
+export type LlmStats = {
+  __typename?: 'LlmStats';
+  attempted: Scalars['Int']['output'];
+  concurrency: Scalars['Int']['output'];
+  errored: Scalars['Int']['output'];
+  inFlight: Scalars['Int']['output'];
+  latencyP50Ms: Scalars['Int']['output'];
+  latencyP95Ms: Scalars['Int']['output'];
+  matched: Scalars['Int']['output'];
+  oldestBuffered?: Maybe<Scalars['DateTime']['output']>;
+  perProvider: Array<LlmProviderStats>;
+  queuePending: Scalars['Int']['output'];
+  skipped: Scalars['Int']['output'];
+  successRate: Scalars['Float']['output'];
+  throughputPerMinute: Scalars['Float']['output'];
+  unmatched: Scalars['Int']['output'];
+  windowAttempted: Scalars['Int']['output'];
+  windowStart: Scalars['DateTime']['output'];
+};
+
 export type MetadataSource = {
   __typename?: 'MetadataSource';
   key: Scalars['String']['output'];
@@ -315,6 +383,7 @@ export type Query = {
   __typename?: 'Query';
   config: ConfigQuery;
   health: HealthQuery;
+  llm: LlmQuery;
   queue: QueueQuery;
   sendToConfig: ClientSendToConfigQuery;
   torrent: TorrentQuery;

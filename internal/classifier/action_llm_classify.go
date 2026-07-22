@@ -2,9 +2,11 @@ package classifier
 
 import (
 	"strings"
+	"time"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier/classification"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
+	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmobs"
 	"github.com/bitmagnet-io/bitmagnet/internal/model"
 )
 
@@ -31,6 +33,11 @@ func (llmClassifyAction) compileAction(ctx compilerContext) (action, error) {
 	return action{
 		run: func(ctx executionContext) (classification.Result, error) {
 			cl := ctx.result
+			event := llmobs.Event{
+				Timestamp:   time.Now(),
+				InfoHash:    ctx.torrent.InfoHash.String(),
+				TorrentName: ctx.torrent.Name,
+			}
 
 			// Only classify if content type is not yet determined
 			if cl.ContentType.Valid {
@@ -45,6 +52,9 @@ func (llmClassifyAction) compileAction(ctx compilerContext) (action, error) {
 			}
 
 			if len(providers) == 0 {
+				event.Outcome = llmobs.OutcomeSkipped
+				ctx.recorder.Record(event)
+
 				ctx.logger.Warn("no llm providers configured, skipping llm classification")
 				return cl, classification.RuntimeError{
 					Cause: classification.ErrUnmatched,
@@ -58,6 +68,7 @@ func (llmClassifyAction) compileAction(ctx compilerContext) (action, error) {
 				provider = p
 				break
 			}
+			event.Provider = provider.Name()
 
 			// Build input from torrent
 			input := llm.ClassifyInput{
@@ -78,8 +89,16 @@ func (llmClassifyAction) compileAction(ctx compilerContext) (action, error) {
 			}
 
 			// Call LLM
+			done := ctx.recorder.Begin()
+			started := time.Now()
 			result, err := provider.Classify(ctx, input)
+			event.Duration = time.Since(started)
+			done()
+
 			if err != nil {
+				event.Outcome = llmobs.OutcomeError
+				event.Error = err.Error()
+				ctx.recorder.Record(event)
 				ctx.logger.Warnw("llm classification failed",
 					"provider", provider.Name(),
 					"error", err)
@@ -91,6 +110,18 @@ func (llmClassifyAction) compileAction(ctx compilerContext) (action, error) {
 
 			// Apply result
 			cl = applyLLMResult(cl, result)
+			event.Outcome = llmobs.OutcomeMatched
+			if !usableLLMResult(result) {
+				event.Outcome = llmobs.OutcomeUnmatched
+			}
+
+			event.ContentType = result.ContentType
+			event.Title = result.Title
+			event.Year = result.Year
+			event.Season = result.Season
+			event.Episode = result.Episode
+			event.Languages = result.Language
+			ctx.recorder.Record(event)
 			ctx.logger.Infow("llm classification",
 				"provider", provider.Name(),
 				"content_type", result.ContentType,
@@ -193,6 +224,19 @@ func applyLLMResult(cl classification.Result, r *llm.ClassifyResult) classificat
 	}
 
 	return cl
+}
+
+func usableLLMResult(r *llm.ClassifyResult) bool {
+	return r.ContentType != "" ||
+		r.Title != "" ||
+		r.Year > 0 ||
+		r.Season > 0 && r.Episode > 0 ||
+		len(r.Language) > 0 ||
+		r.VideoResolution != "" ||
+		r.VideoSource != "" ||
+		r.VideoCodec != "" ||
+		r.ReleaseGroup != "" ||
+		len(r.Tags) > 0
 }
 
 func buildContentTypeList() string {

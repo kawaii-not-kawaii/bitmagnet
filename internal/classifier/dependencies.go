@@ -5,6 +5,7 @@ import (
 	"regexp"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
+	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmobs"
 	"github.com/bitmagnet-io/bitmagnet/internal/model"
 	"github.com/bitmagnet-io/bitmagnet/internal/tmdb"
 	"go.uber.org/zap"
@@ -17,6 +18,7 @@ type dependencies struct {
 	// llm.Registry.All), so runtime config updates are observed. May be nil
 	// when no registry is wired (e.g. tests without LLM).
 	llmProviders func() map[string]llm.Provider
+	recorder     *llmobs.Recorder
 	_logger      *zap.SugaredLogger
 	logger       *zap.SugaredLogger
 }

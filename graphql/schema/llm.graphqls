@@ -1,0 +1,54 @@
+enum LlmClassificationOutcome {
+  MATCHED
+  UNMATCHED
+  ERROR
+  SKIPPED
+}
+
+type LlmClassificationEvent {
+  timestamp: DateTime!
+  infoHash: String!
+  torrentName: String!
+  provider: String!
+  durationMs: Int!
+  outcome: LlmClassificationOutcome!
+  contentType: String!
+  title: String!
+  year: Int!
+  season: Int!
+  episode: Int!
+  languages: [String!]!
+  error: String!
+}
+
+type LlmProviderStats {
+  provider: String!
+  attempted: Int!
+  matched: Int!
+  unmatched: Int!
+  errored: Int!
+}
+
+type LlmStats {
+  attempted: Int!
+  matched: Int!
+  unmatched: Int!
+  errored: Int!
+  skipped: Int!
+  successRate: Float!
+  perProvider: [LlmProviderStats!]!
+  inFlight: Int!
+  concurrency: Int!
+  windowStart: DateTime!
+  oldestBuffered: DateTime
+  windowAttempted: Int!
+  latencyP50Ms: Int!
+  latencyP95Ms: Int!
+  throughputPerMinute: Float!
+  queuePending: Int!
+}
+
+type LlmQuery {
+  events(limit: Int): [LlmClassificationEvent!]!
+  stats(windowMinutes: Int): LlmStats!
+}
