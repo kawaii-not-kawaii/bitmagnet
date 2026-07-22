@@ -1,0 +1,32 @@
+<mat-card>
+  <h2 mat-dialog-title>API key required</h2>
+  <mat-dialog-content>
+    <p>
+      This bitmagnet server requires an API key. Paste your key below, or set
+      <code>auth.api_key</code> in the server config. If you did not set one, a
+      temporary key was printed to the server log at startup.
+    </p>
+    <form (ngSubmit)="save()">
+      <mat-form-field appearance="fill" class="api-key-field">
+        <mat-label>API key</mat-label>
+        <input
+          matInput
+          type="password"
+          autocomplete="off"
+          [formControl]="apiKey"
+          cdkFocusInitial
+        />
+      </mat-form-field>
+    </form>
+  </mat-dialog-content>
+  <mat-dialog-actions align="end">
+    <button
+      mat-raised-button
+      color="primary"
+      [disabled]="!apiKey.value.trim()"
+      (click)="save()"
+    >
+      Save
+    </button>
+  </mat-dialog-actions>
+</mat-card>
