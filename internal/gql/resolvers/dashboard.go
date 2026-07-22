@@ -7,20 +7,29 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bitmagnet-io/bitmagnet/internal/database/dao"
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/gqlmodel/gen"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmbench"
 	"github.com/bitmagnet-io/bitmagnet/internal/model"
 )
 
+// Planner cost budget for the dashboard's unqualified table counts. Full
+// counts of torrents/torrent_contents seq-scan tens of millions of rows and
+// took >20s on the reference deployment; past this budget budgeted_count()
+// returns the planner's estimate instead, which is fine for summary tiles.
+const dashboardCountBudget = 10_000
+
 func (r *Resolver) dashboardQuery(ctx context.Context) (gen.DashboardQuery, error) {
 	now := time.Now()
 	startOfDay := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 
-	total, err := r.Dao.Torrent.WithContext(ctx).Count()
+	totalResult, err := dao.BudgetedCount(r.Dao.Torrent.WithContext(ctx).UnderlyingDB(), dashboardCountBudget)
 	if err != nil {
 		return gen.DashboardQuery{}, fmt.Errorf("dashboard: count torrents: %w", err)
 	}
+
+	total := totalResult.Count
 
 	today, err := r.Dao.Torrent.WithContext(ctx).Where(r.Dao.Torrent.CreatedAt.Gte(startOfDay)).Count()
 	if err != nil {
@@ -40,10 +49,15 @@ func (r *Resolver) dashboardQuery(ctx context.Context) (gen.DashboardQuery, erro
 		return gen.DashboardQuery{}, fmt.Errorf("dashboard: count previous hour: %w", err)
 	}
 
-	classified, err := r.Dao.TorrentContent.WithContext(ctx).Count()
+	classifiedResult, err := dao.BudgetedCount(
+		r.Dao.TorrentContent.WithContext(ctx).UnderlyingDB(),
+		dashboardCountBudget,
+	)
 	if err != nil {
 		return gen.DashboardQuery{}, fmt.Errorf("dashboard: count classified torrents: %w", err)
 	}
+
+	classified := classifiedResult.Count
 
 	processed, err := r.Dao.QueueJob.WithContext(ctx).Where(
 		r.Dao.QueueJob.Status.Eq(string(model.QueueJobStatusProcessed)),
