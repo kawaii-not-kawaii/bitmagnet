@@ -47,13 +47,15 @@ export const appConfig: ApplicationConfig = {
 
       // On a 401 the credential is missing or rejected: flag it so the shell
       // can prompt for a key, rather than failing silently or with an opaque
-      // network error.
+      // network error. apollo-angular surfaces HTTP errors as Angular's
+      // HttpErrorResponse (`status`), while Apollo's own ServerError carries
+      // `statusCode` — accept either.
       const errorLink = onError(({ networkError }) => {
-        if (
-          networkError &&
-          "statusCode" in networkError &&
-          networkError.statusCode === 401
-        ) {
+        const status = networkError
+          ? ((networkError as { status?: number }).status ??
+            (networkError as { statusCode?: number }).statusCode)
+          : undefined;
+        if (status === 401) {
           auth.notifyAuthRequired();
         }
       });
