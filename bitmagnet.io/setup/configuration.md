@@ -8,7 +8,13 @@ nav_order: 2
 
 # Configuration
 
+{: .warning }
+**Breaking change: the GraphQL API and web UI now require authentication.** After upgrading, **bitmagnet** requires an API key for the web UI and the GraphQL API. If you don't set one, a temporary key is generated at startup and printed to the log — so nothing hard-breaks, but you must supply that key (or set your own) to use the web UI. See [Authentication](#authentication) below.
+
 **bitmagnet** exposes quite a few configuration options. You shouldn't have to worry about most of them, but they are available for tinkering. If you're using the [example docker-compose file]({% link setup/installation.md %}#docker) then things _should_ "just work". I'll only cover only some of the more important options here:
+
+- `auth.api_key`: The API key required to access the GraphQL API and web UI. If left empty (and `auth.disabled` is `false`), a random key is generated at startup and logged — see [Authentication](#authentication).
+- `auth.disabled` (default: `false`): Set to `true` to turn authentication off entirely. Only do this on a trusted network — it leaves the API and all mutations open to anyone who can reach the port.
 
 - `postgres.host`, `postgres.name` `postgres.user` `postgres.password` (default: `localhost`, `bitmagnet`, `postgres`, _empty_): Set these values to configure connection to your Postgres database.
 - `postgres.dsn`: Alternatively a Postgres Data Source Name (DSN) can be specified. If specified, all other `postgres.*` options are ignored.
@@ -79,6 +85,68 @@ In order of precedence, configuration values will be read from:
 
 {: .warning }
 Environment variables can be used to configure simple scalar types (strings, numbers, booleans) and slice types (arrays). For more complex configuration types such as maps you'll have to use YAML configuration. **bitmagnet** will exit with an error if it's unable to parse a provided configuration value.
+
+## Authentication
+
+The GraphQL API and the web UI require an API key. This protects not just the settings you can read, but every mutation — deleting torrents, purging queues, managing the blocklist — which were previously open to anyone who could reach the port.
+
+Authentication is **enabled by default**. There is no configuration in which the API is silently open; you either supply a key, use a generated one, or explicitly disable authentication.
+
+### Setting a key
+
+Set `auth.api_key` to any value you like:
+
+```yaml
+auth:
+  api_key: your-secret-key
+```
+
+or with an environment variable:
+
+```sh
+AUTH_API_KEY=your-secret-key
+```
+
+### If you don't set a key
+
+If authentication is enabled and no `auth.api_key` is set, **bitmagnet** generates a random key at startup and logs it, for example:
+
+```
+No auth.api_key configured; generated a temporary GraphQL API key for this session: k7Fq...redacted...
+Set auth.api_key in your config (or via the web UI) to make it permanent — the generated key changes on every restart
+```
+
+This means a fresh install works out of the box without leaving the API open — but the generated key **changes every time bitmagnet restarts**. Set `auth.api_key` to make it permanent.
+
+### Using the web UI
+
+When the web UI makes its first request to a server that requires a key, it prompts you to enter one. Paste the key from your config (or from the startup log) and it's stored in your browser. If authentication is disabled server-side, the web UI never prompts.
+
+### Using the API directly
+
+Send the key on every request in the `X-Api-Key` header (the same header the \*arr applications use):
+
+```sh
+curl -H "X-Api-Key: your-secret-key" http://localhost:3333/graphql ...
+```
+
+`Authorization: Bearer your-secret-key` is also accepted, if that fits your tooling better.
+
+### Disabling authentication
+
+On a trusted, isolated network you can turn authentication off:
+
+```yaml
+auth:
+  disabled: true
+```
+
+{: .warning }
+This leaves the GraphQL API **and all mutations** open to anyone who can reach the port. Only do this when the port is not otherwise exposed.
+
+### Torznab is not covered
+
+The `/torznab/*` endpoints are **not** affected by this setting — they remain unauthenticated so that Prowlarr and the \*arr applications continue to work with their own API-key scheme. If you expose Torznab, secure it by other means (a VPN, a reverse proxy, or firewall rules). Torznab-specific authentication is planned as a follow-up.
 
 ## VPN configuration
 

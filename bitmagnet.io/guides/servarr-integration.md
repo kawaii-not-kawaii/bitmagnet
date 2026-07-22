@@ -22,6 +22,9 @@ The required settings are fairly basic. Assuming you've adapted from the [exampl
 
 ![Prowlarr configure bitmagnet](/assets/images/prowlarr-2.png)
 
+{: .note }
+The GraphQL API key introduced for the web UI (see [Authentication]({% link setup/configuration.md %}#authentication)) does **not** apply to the Torznab endpoint, so this integration continues to work unchanged — you do not need to give Prowlarr a key. If you expose Torznab beyond a trusted network, secure it separately.
+
 [Depending on your Prowlarr configuration](https://wiki.servarr.com/prowlarr/settings#applications), the **bitmagnet** indexer should now be synced to your other \*arr applications. Alternatively, you can add **bitmagnet** as an indexer directly in those applications, following the same steps as above.
 
 If your **bitmagnet** indexer does not sync through to your apps, check the logs in Prowlarr for any errors and confirm your apps are not restricted to certain tags (e.g. for FlareSolverr).
