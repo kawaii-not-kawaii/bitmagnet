@@ -38,7 +38,7 @@
       </button>
     </article>
 
-    <article class="action-card danger-card">
+    <article class="action-card">
       <h2>Purge queue jobs</h2>
       <p>
         Permanently delete completed or failed jobs from a queue. This cannot be
@@ -48,13 +48,6 @@
       <fieldset>
         <legend>Queue</legend>
         <div class="segments">
-          <button
-            type="button"
-            [class.active]="purgeQueue === null"
-            (click)="purgeQueue = null; purgeStage = 'PENDING'"
-          >
-            All
-          </button>
           @for (queue of availableQueueNames; track queue) {
             <button
               type="button"

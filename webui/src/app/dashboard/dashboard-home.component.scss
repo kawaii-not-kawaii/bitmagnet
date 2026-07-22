@@ -214,6 +214,11 @@
 
   span {
     min-width: 0;
+    flex-basis: 0;
+
+    &.has-value {
+      min-width: 3%;
+    }
   }
 }
 

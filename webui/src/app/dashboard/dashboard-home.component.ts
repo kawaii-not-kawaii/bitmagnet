@@ -43,8 +43,4 @@ export class DashboardHomeComponent {
     const change = Math.round(((current - previous) / previous) * 100);
     return `${change >= 0 ? "↑" : "↓"} ${Math.abs(change)}% vs prev`;
   }
-
-  queueWidth(value: number, total: number) {
-    return `${total > 0 ? (100 * value) / total : 0}%`;
-  }
 }

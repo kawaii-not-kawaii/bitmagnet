@@ -2,121 +2,48 @@
   <app-document-title [parts]="[t('routes.jobs'), t('routes.queues')]" />
 
   <section class="jobs" aria-label="Queue jobs">
-    <div class="jobs-toolbar">
-      <button
-        type="button"
-        class="filter-button"
-        [class.active]="filtersOpen || activeFilterCount()"
-        (click)="filtersOpen = !filtersOpen"
-        aria-controls="queue-job-filters"
-        [attr.aria-expanded]="filtersOpen"
-      >
-        <b>＋</b> Filters
-        @if (activeFilterCount()) {
-          <span>{{ activeFilterCount() }}</span>
-        }
-      </button>
-
-      <label class="sort-control">
-        <span>{{ t("torrents.order_by") }}</span>
-        <select
-          [value]="controls.orderBy.field"
-          (change)="controller.selectOrderBy($any($event.target).value)"
-        >
-          @for (option of orderByOptions; track option.field) {
-            <option [value]="option.field">
-              {{ t("dashboard.queues." + option.field) }}
-            </option>
-          }
-        </select>
-      </label>
-
-      <button
-        type="button"
-        class="direction-button"
-        [title]="t('torrents.order_direction_toggle')"
-        (click)="controller.toggleOrderByDirection()"
-      >
-        {{ controls.orderBy.descending ? "↓" : "↑" }}
-      </button>
-
-      <button
-        type="button"
-        class="refresh-button"
-        [class.loading]="dataSource.loading$ | async"
-        (click)="dataSource.refresh()"
-        [title]="t('torrents.refresh')"
-        [attr.aria-label]="t('torrents.refresh')"
-      >
-        ↻
-      </button>
+    <div class="filter-groups" aria-label="Queue job filters">
+      @for (facet of facets$ | async; track facet.key) {
+        <fieldset>
+          <legend>{{ t("facets." + facet.key) }}</legend>
+          <div class="segments">
+            <button
+              type="button"
+              [class.active]="!facet.filter?.length"
+              (click)="controller.clearFilters(facet)"
+            >
+              All
+            </button>
+            @for (aggregation of facet.aggregations; track aggregation.value) {
+              <button
+                type="button"
+                [class.active]="facet.filter?.includes(aggregation.value)"
+                (click)="
+                  facet.filter?.includes(aggregation.value)
+                    ? controller.deactivateFilter(facet, aggregation.value)
+                    : controller.activateFilter(facet, aggregation.value)
+                "
+              >
+                {{ aggregation.label }}
+              </button>
+            }
+          </div>
+        </fieldset>
+      }
     </div>
 
-    <div class="jobs-layout">
-      @if (filtersOpen) {
-        <button
-          type="button"
-          class="filter-backdrop"
-          (click)="filtersOpen = false"
-          aria-label="Close filters"
-        ></button>
-      }
-      <aside
-        id="queue-job-filters"
-        class="filter-panel"
-        [class.open]="filtersOpen"
-        aria-label="Queue job filters"
-      >
-        <header>
-          <strong>Filters</strong>
-          <button
-            type="button"
-            (click)="filtersOpen = false"
-            aria-label="Close filters"
-          >
-            ✕
-          </button>
-        </header>
-        @for (facet of facets$ | async; track facet.key) {
-          <fieldset>
-            <legend>{{ t("facets." + facet.key) }}</legend>
-            @for (aggregation of facet.aggregations; track aggregation.value) {
-              <label>
-                <input
-                  type="checkbox"
-                  [checked]="facet.filter?.includes(aggregation.value)"
-                  (change)="
-                    $any($event.target).checked
-                      ? controller.activateFilter(facet, aggregation.value)
-                      : controller.deactivateFilter(facet, aggregation.value)
-                  "
-                />
-                <span class="checkbox">{{
-                  facet.filter?.includes(aggregation.value) ? "✓" : ""
-                }}</span>
-                <span>{{ aggregation.label }}</span>
-                <small>{{ aggregation.count | number }}</small>
-              </label>
-            } @empty {
-              <p>{{ t("general.none") }}</p>
-            }
-          </fieldset>
-        }
-      </aside>
-
-      <div class="jobs-results">
-        <app-queue-jobs-table [dataSource]="dataSource" />
-        <app-paginator
-          (paging)="controller.handlePageEvent($event)"
-          [page]="controls.page"
-          [pageSize]="controls.limit"
-          [pageSizes]="[20, 50, 100]"
-          [pageLength]="dataSource.result.items.length"
-          [totalLength]="dataSource.result.totalCount"
-          [totalIsEstimate]="false"
-          itemName="jobs"
-        />
-      </div>
+    <div class="jobs-results">
+      <app-queue-jobs-table [dataSource]="dataSource" />
+      <app-paginator
+        (paging)="controller.handlePageEvent($event)"
+        [page]="controls.page"
+        [pageSize]="controls.limit"
+        [pageSizes]="[20, 50, 100]"
+        [pageLength]="dataSource.result.items.length"
+        [totalLength]="dataSource.result.totalCount"
+        [totalIsEstimate]="false"
+        itemName="jobs"
+      />
     </div>
   </section>
 </ng-container>

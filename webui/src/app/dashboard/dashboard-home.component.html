@@ -87,28 +87,21 @@
           <a routerLink="/queues/visualize">View all →</a>
         </header>
         <div class="queue-body">
-          @let queueTotal =
-            dashboard.summary.queueProcessed +
-            dashboard.summary.queuePending +
-            dashboard.summary.queueFailed;
           <div class="queue-bar" aria-label="Queue status distribution">
             <span
               class="processed"
-              [style.width]="
-                queueWidth(dashboard.summary.queueProcessed, queueTotal)
-              "
+              [class.has-value]="dashboard.summary.queueProcessed > 0"
+              [style.flex-grow]="dashboard.summary.queueProcessed"
             ></span>
             <span
               class="pending"
-              [style.width]="
-                queueWidth(dashboard.summary.queuePending, queueTotal)
-              "
+              [class.has-value]="dashboard.summary.queuePending > 0"
+              [style.flex-grow]="dashboard.summary.queuePending"
             ></span>
             <span
               class="failed"
-              [style.width]="
-                queueWidth(dashboard.summary.queueFailed, queueTotal)
-              "
+              [class.has-value]="dashboard.summary.queueFailed > 0"
+              [style.flex-grow]="dashboard.summary.queueFailed"
             ></span>
           </div>
           <div class="queue-row">

@@ -21,7 +21,7 @@ export class QueueAdminComponent {
 
   protected readonly availableQueueNames = availableQueueNames;
   protected orphans = false;
-  protected purgeQueue: string | null = null;
+  protected purgeQueue = availableQueueNames[0];
   protected enqueueStage: "PENDING" | "REQUESTING" | "DONE" = "PENDING";
   protected purgeStage: "PENDING" | "CONFIRMING" | "REQUESTING" | "DONE" =
     "PENDING";

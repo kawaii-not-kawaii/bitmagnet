@@ -12,7 +12,6 @@ import { QueueJobsDatasource } from "./queue-jobs.datasource";
 import {
   FacetInfo,
   facets,
-  orderByOptions,
   QueueJobsController,
   QueueJobsControls,
 } from "./queue-jobs.controller";
@@ -42,7 +41,6 @@ export class QueueJobsComponent {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   facets$: Observable<FacetInfo<any>[]>;
   protected controls: QueueJobsControls;
-  protected filtersOpen = false;
 
   constructor() {
     this.facets$ = this.controller.controls$.pipe(
@@ -65,16 +63,7 @@ export class QueueJobsComponent {
     });
   }
 
-  protected activeFilterCount() {
-    return (
-      (this.controls.facets.queue.filter?.length ?? 0) +
-      (this.controls.facets.status.filter?.length ?? 0)
-    );
-  }
-
   refresh() {
     this.dataSource.refresh();
   }
-
-  protected readonly orderByOptions = orderByOptions;
 }
