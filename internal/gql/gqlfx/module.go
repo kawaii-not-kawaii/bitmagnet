@@ -121,7 +121,7 @@ type Params struct {
 	Processor            lazy.Lazy[processor.Processor]
 	BlockingManager      lazy.Lazy[blocking.Manager]
 	ClientConfig         *concurrency.AtomicValue[client.Config]
-	ResolvedConfig       rootconfig.ResolvedConfig
+	ResolvedConfig       *concurrency.AtomicValue[rootconfig.ResolvedConfig]
 }
 
 type Result struct {

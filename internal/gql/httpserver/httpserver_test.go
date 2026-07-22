@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"net/http/httptest"
+	"os"
 	"testing"
 
 	"github.com/99designs/gqlgen/graphql"
@@ -30,10 +31,15 @@ func (stubSchema) Exec(context.Context) graphql.ResponseHandler {
 	panic("stubSchema.Exec must not be called in these tests")
 }
 
+// gin.SetMode writes package-global state; calling it from parallel tests is a
+// data race. Set it once for the whole package instead.
+func TestMain(m *testing.M) {
+	gin.SetMode(gin.TestMode)
+	os.Exit(m.Run())
+}
+
 func applyBuilder(t *testing.T, a *auth.Authenticator) *gin.Engine {
 	t.Helper()
-
-	gin.SetMode(gin.TestMode)
 
 	b := builder{
 		schema: lazy.New(func() (graphql.ExecutableSchema, error) {

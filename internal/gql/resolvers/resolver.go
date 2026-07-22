@@ -30,5 +30,5 @@ type Resolver struct {
 	Processor            processor.Processor
 	BlockingManager      blocking.Manager
 	ClientConfig         *concurrency.AtomicValue[client.Config]
-	ResolvedConfig       config.ResolvedConfig
+	ResolvedConfig       *concurrency.AtomicValue[config.ResolvedConfig]
 }
