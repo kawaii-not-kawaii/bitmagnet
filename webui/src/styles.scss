@@ -46,6 +46,17 @@ html {
     --mat-sys-on-surface-variant: var(--dim);
     --mat-sys-outline: var(--border);
     --mat-sys-outline-variant: var(--border);
+    // selected mat-option rows
+    --mat-sys-primary-container: var(--surface2);
+    --mat-sys-on-primary-container: var(--text);
+    --mat-sys-secondary: var(--dim);
+    --mat-sys-on-secondary: var(--bg);
+    --mat-sys-secondary-container: var(--surface2);
+    --mat-sys-on-secondary-container: var(--text);
+    // snackbar + tooltip surfaces and snackbar action
+    --mat-sys-inverse-surface: var(--text);
+    --mat-sys-inverse-on-surface: var(--bg);
+    --mat-sys-inverse-primary: var(--accent);
   }
 }
 

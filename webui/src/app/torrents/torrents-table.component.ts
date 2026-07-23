@@ -68,6 +68,14 @@ export class TorrentsTableComponent implements OnInit {
     }));
   }
 
+  // Keyboard toggle for the row itself; Enter on nested controls (buttons,
+  // links) bubbles here too, so only act when the row is the actual target.
+  rowKeyToggle(event: Event, infoHash: string) {
+    if (event.target === event.currentTarget) {
+      this.toggleSelectedTorrent(infoHash);
+    }
+  }
+
   toggleSelection(event: Event, item: generated.TorrentContent) {
     event.stopPropagation();
     this.multiSelection.toggle(item.infoHash);

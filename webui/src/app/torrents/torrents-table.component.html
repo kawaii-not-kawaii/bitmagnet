@@ -18,7 +18,7 @@
           role="button"
           tabindex="0"
           (click)="toggleSelectedTorrent(item.infoHash)"
-          (keyup.enter)="toggleSelectedTorrent(item.infoHash)"
+          (keyup.enter)="rowKeyToggle($event, item.infoHash)"
         >
           <button
             type="button"
