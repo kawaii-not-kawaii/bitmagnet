@@ -1,11 +1,11 @@
 import { Component } from "@angular/core";
-import { AppModule } from "../app.module";
+import { MatCardModule } from "@angular/material/card";
+import { TranslocoDirective } from "@jsverse/transloco";
 import { DocumentTitleComponent } from "../layout/document-title.component";
 
 @Component({
   selector: "app-not-found",
-  standalone: true,
-  imports: [AppModule, DocumentTitleComponent],
+  imports: [MatCardModule, TranslocoDirective, DocumentTitleComponent],
   templateUrl: "./not-found.component.html",
   styleUrl: "./not-found.component.scss",
 })

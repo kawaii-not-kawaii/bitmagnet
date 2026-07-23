@@ -17,13 +17,13 @@ import { TranslocoService } from "@jsverse/transloco";
 import { FormControl } from "@angular/forms";
 import { SelectionModel } from "@angular/cdk/collections";
 import { Apollo } from "apollo-angular";
+import { AsyncPipe } from "@angular/common";
+import { TranslocoDirective } from "@jsverse/transloco";
 import { ErrorsService } from "../errors/errors.service";
-import { GraphQLModule } from "../graphql/graphql.module";
 import { PaginatorComponent } from "../paginator/paginator.component";
 import { UiPreferences } from "../layout/ui-preferences.service";
 import * as generated from "../graphql/generated";
 import { intParam, stringListParam, stringParam } from "../util/query-string";
-import { AppModule } from "../app.module";
 import { DocumentTitleComponent } from "../layout/document-title.component";
 import { IntEstimatePipe } from "../pipes/int-estimate.pipe";
 import { TorrentsBulkActionsComponent } from "./torrents-bulk-actions.component";
@@ -54,11 +54,10 @@ import {
   selector: "app-torrents-search",
   templateUrl: "./torrents-search.component.html",
   styleUrl: "./torrents-search.component.scss",
-  standalone: true,
   imports: [
-    AppModule,
+    AsyncPipe,
+    TranslocoDirective,
     DocumentTitleComponent,
-    GraphQLModule,
     PaginatorComponent,
     TorrentsBulkActionsComponent,
     TorrentsTableComponent,

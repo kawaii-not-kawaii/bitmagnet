@@ -3,9 +3,10 @@ import { Apollo } from "apollo-angular";
 import { TranslocoService } from "@jsverse/transloco";
 import { combineLatestWith, Observable } from "rxjs";
 import { map } from "rxjs/operators";
+import { AsyncPipe } from "@angular/common";
+import { TranslocoDirective } from "@jsverse/transloco";
 import { PaginatorComponent } from "../../paginator/paginator.component";
 import { ErrorsService } from "../../errors/errors.service";
-import { AppModule } from "../../app.module";
 import { DocumentTitleComponent } from "../../layout/document-title.component";
 import { QueueJobsTableComponent } from "./queue-jobs-table.component";
 import { QueueJobsDatasource } from "./queue-jobs.datasource";
@@ -18,9 +19,9 @@ import {
 
 @Component({
   selector: "app-queue-jobs",
-  standalone: true,
   imports: [
-    AppModule,
+    AsyncPipe,
+    TranslocoDirective,
     PaginatorComponent,
     QueueJobsTableComponent,
     DocumentTitleComponent,

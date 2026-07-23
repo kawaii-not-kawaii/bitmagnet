@@ -1,9 +1,10 @@
 import { Component, EventEmitter, Input, OnInit, Output } from "@angular/core";
 import { SelectionModel } from "@angular/cdk/collections";
+import { AsyncPipe, LowerCasePipe } from "@angular/common";
+import { TranslocoDirective } from "@jsverse/transloco";
 import { FilesizePipe } from "../pipes/filesize.pipe";
 import { TimeAgoPipe } from "../pipes/time-ago.pipe";
 import * as generated from "../graphql/generated";
-import { AppModule } from "../app.module";
 import { TorrentsSearchDatasource } from "./torrents-search.datasource";
 import { contentTypeInfo } from "./content-types";
 import { TorrentChipsComponent } from "./torrent-chips.component";
@@ -12,9 +13,10 @@ import { TorrentsSearchController } from "./torrents-search.controller";
 
 @Component({
   selector: "app-torrents-table",
-  standalone: true,
   imports: [
-    AppModule,
+    AsyncPipe,
+    LowerCasePipe,
+    TranslocoDirective,
     FilesizePipe,
     TimeAgoPipe,
     TorrentChipsComponent,
@@ -64,6 +66,14 @@ export class TorrentsTableComponent implements OnInit {
           ? undefined
           : { infoHash, tab: controls.selectedTorrent?.tab },
     }));
+  }
+
+  // Keyboard toggle for the row itself; Enter on nested controls (buttons,
+  // links) bubbles here too, so only act when the row is the actual target.
+  rowKeyToggle(event: Event, infoHash: string) {
+    if (event.target === event.currentTarget) {
+      this.toggleSelectedTorrent(infoHash);
+    }
   }
 
   toggleSelection(event: Event, item: generated.TorrentContent) {

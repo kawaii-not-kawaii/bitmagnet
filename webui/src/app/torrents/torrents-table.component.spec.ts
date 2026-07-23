@@ -5,7 +5,7 @@ import { Apollo } from "apollo-angular";
 import { Observable } from "rxjs";
 import { appConfig } from "../app.config";
 import { ErrorsService } from "../errors/errors.service";
-import { AppModule } from "../app.module";
+
 import { TorrentsSearchDatasource } from "./torrents-search.datasource";
 import { TorrentsTableComponent } from "./torrents-table.component";
 
@@ -16,7 +16,6 @@ describe("TorrentsTableComponent", () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       ...appConfig,
-      imports: [AppModule],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TorrentsTableComponent);

@@ -1,12 +1,10 @@
 import { Component, inject } from "@angular/core";
-import { AppModule } from "../app.module";
-import { HealthModule } from "../health/health.module";
+import { RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
 import { HealthService } from "../health/health.service";
 
 @Component({
   selector: "app-dashboard",
-  standalone: true,
-  imports: [AppModule, HealthModule],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: "./dashboard.component.html",
   styleUrl: "./dashboard.component.scss",
 })

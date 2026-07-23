@@ -1,4 +1,4 @@
-import { inject } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { Apollo } from "apollo-angular";
 import { BehaviorSubject, map } from "rxjs";
 import * as generated from "../graphql/generated";
@@ -45,6 +45,7 @@ const initialResult: Result = {
 
 const pollInterval = 10000;
 
+@Injectable({ providedIn: "root" })
 export class HealthService {
   private apollo = inject(Apollo);
 

@@ -3,8 +3,9 @@ import { format as formatDate } from "date-fns/format";
 import { Apollo } from "apollo-angular";
 import { Observable } from "rxjs";
 import { map } from "rxjs/operators";
+import { AsyncPipe, DecimalPipe } from "@angular/common";
+import { TranslocoDirective } from "@jsverse/transloco";
 import { ErrorsService } from "../../errors/errors.service";
-import { AppModule } from "../../app.module";
 import { DocumentTitleComponent } from "../../layout/document-title.component";
 import {
   BarChartBucket,
@@ -44,10 +45,15 @@ const statusOrder: QueueJobStatus[] = [
 
 @Component({
   selector: "app-queue-visualize",
-  standalone: true,
   templateUrl: "./queue-visualize.component.html",
   styleUrl: "./queue-visualize.component.scss",
-  imports: [AppModule, BarChartComponent, DocumentTitleComponent],
+  imports: [
+    AsyncPipe,
+    BarChartComponent,
+    DecimalPipe,
+    DocumentTitleComponent,
+    TranslocoDirective,
+  ],
 })
 export class QueueVisualizeComponent implements OnDestroy {
   private apollo = inject(Apollo);

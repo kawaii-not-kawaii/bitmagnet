@@ -14,7 +14,6 @@ import { ChartAdapter } from "./types";
 
 @Component({
   selector: "app-chart",
-  standalone: true,
   imports: [BaseChartDirective],
   templateUrl: "./chart.component.html",
   styleUrl: "./chart.component.scss",

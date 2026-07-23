@@ -1,7 +1,7 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 
 import { appConfig } from "../app.config";
-import { AppModule } from "../app.module";
+
 import { TorrentFilesTableComponent } from "./torrent-files-table.component";
 
 describe("TorrentFilesTableComponent", () => {
@@ -11,7 +11,6 @@ describe("TorrentFilesTableComponent", () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       ...appConfig,
-      imports: [AppModule],
     }).compileComponents();
 
     fixture = TestBed.createComponent(TorrentFilesTableComponent);

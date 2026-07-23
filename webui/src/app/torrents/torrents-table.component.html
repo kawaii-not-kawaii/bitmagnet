@@ -13,7 +13,13 @@
           (controller.selection$ | async)?.infoHash === item.infoHash
         "
       >
-        <div class="row-main" (click)="toggleSelectedTorrent(item.infoHash)">
+        <div
+          class="row-main"
+          role="button"
+          tabindex="0"
+          (click)="toggleSelectedTorrent(item.infoHash)"
+          (keyup.enter)="rowKeyToggle($event, item.infoHash)"
+        >
           <button
             type="button"
             class="row-check"
@@ -95,7 +101,7 @@
         }
       </article>
     } @empty {
-      @if (!(dataSource.loading$ | async)) {
+      @if ((dataSource.loading$ | async) === false) {
         <p class="empty-state">{{ t("general.none") }}</p>
       }
     }

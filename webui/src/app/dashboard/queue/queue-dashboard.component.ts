@@ -1,6 +1,5 @@
 import { Component, ViewChild } from "@angular/core";
-import { RouterOutlet } from "@angular/router";
-import { AppModule } from "../../app.module";
+import { RouterLink, RouterLinkActive, RouterOutlet } from "@angular/router";
 
 type Refreshable = {
   refresh: () => void;
@@ -8,8 +7,7 @@ type Refreshable = {
 
 @Component({
   selector: "app-queue-dashboard",
-  standalone: true,
-  imports: [AppModule],
+  imports: [RouterLink, RouterLinkActive, RouterOutlet],
   templateUrl: "./queue-dashboard.component.html",
   styleUrl: "./queue-dashboard.component.scss",
 })

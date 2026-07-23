@@ -192,10 +192,11 @@
               </button>
             }
           </div>
-          <label class="toggle-row">
+          <span class="toggle-row">
             <button
               type="button"
               role="switch"
+              aria-label="Hide adult content"
               [attr.aria-checked]="preferences.safeMode()"
               [class.active]="preferences.safeMode()"
               (click)="toggleSafeMode()"
@@ -203,7 +204,7 @@
               <span></span>
             </button>
             <span>Hide adult content <small>(XXX)</small></span>
-          </label>
+          </span>
         </section>
 
         <section>
