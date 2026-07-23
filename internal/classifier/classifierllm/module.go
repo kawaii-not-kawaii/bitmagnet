@@ -97,11 +97,13 @@ func New(p Params) Result {
 		p.Logger.Infof("llm provider '%s' ready: %s (batch=%d)", name, cfg.BaseURL, reg.BatchSize)
 
 		base := openai.New(openai.Config{
-			Name:    name,
-			BaseURL: cfg.BaseURL,
-			Model:   cfg.Model,
-			APIKey:  cfg.APIKey,
-			Timeout: timeout,
+			Name:       name,
+			BaseURL:    cfg.BaseURL,
+			Model:      cfg.Model,
+			APIKey:     cfg.APIKey,
+			Timeout:    timeout,
+			MaxContext: reg.MaxContext,
+			MaxTokens:  reg.MaxTokens,
 		})
 		if reg.BatchSize > 1 {
 			return openai.NewBatchClient(base, reg.BatchSize, flushAfter)

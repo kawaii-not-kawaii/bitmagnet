@@ -44,6 +44,10 @@ func (llmClassifyAction) compileAction(ctx compilerContext) (action, error) {
 				return cl, nil
 			}
 
+			if ctx.llmEnabled != nil && !ctx.llmEnabled() {
+				return cl, nil
+			}
+
 			// Get the providers current at classification time, so a runtime
 			// LLM config update is observed without recompiling the workflow.
 			var providers map[string]llm.Provider

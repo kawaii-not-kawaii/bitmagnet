@@ -150,12 +150,17 @@ func TestRegistry_DisabledSkipsProviderConstruction(t *testing.T) {
 		return &mockProvider{name: name}
 	}, "")
 
-	if factoryCalls != 0 || len(registry.All()) != 0 {
-		t.Fatalf("disabled startup built %d providers: %v", factoryCalls, registry.All())
+	if factoryCalls != 0 || len(registry.All()) != 0 || registry.Enabled() {
+		t.Fatalf("disabled startup state: calls=%d providers=%v enabled=%t",
+			factoryCalls, registry.All(), registry.Enabled())
 	}
 
 	cfg.Enabled = true
 	registry.Update(cfg)
+
+	if !registry.Enabled() {
+		t.Fatal("enabled update was not reflected by the registry accessor")
+	}
 
 	if factoryCalls != len(cfg.Providers) {
 		t.Fatalf("enabled update built %d providers, want %d", factoryCalls, len(cfg.Providers))
@@ -164,7 +169,7 @@ func TestRegistry_DisabledSkipsProviderConstruction(t *testing.T) {
 	cfg.Enabled = false
 	registry.Update(cfg)
 
-	if len(registry.All()) != 0 {
-		t.Fatalf("disabled update left providers: %v", registry.All())
+	if len(registry.All()) != 0 || registry.Enabled() {
+		t.Fatalf("disabled update state: providers=%v enabled=%t", registry.All(), registry.Enabled())
 	}
 }

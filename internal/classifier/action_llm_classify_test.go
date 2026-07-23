@@ -295,6 +295,9 @@ func TestLLMClassifyRecordingPreservesBehavior(t *testing.T) {
 						llmProviders: func() map[string]llm.Provider {
 							return tc.providers
 						},
+						llmEnabled: func() bool {
+							return true
+						},
 						recorder: recorder,
 						_logger:  logger,
 						logger:   logger,
@@ -346,4 +349,39 @@ func TestLLMClassifyRecordingPreservesBehavior(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestLLMClassifyDisabledDoesNotRecord(t *testing.T) {
+	t.Parallel()
+
+	compiled, err := (llmClassifyAction{}).compileAction(compilerContext{
+		source: llmClassifyActionName,
+		path:   []string{"workflows", "test"},
+	})
+	require.NoError(t, err)
+
+	recorder := llmobs.New()
+	logger := zap.NewNop().Sugar()
+	_, err = compiled.run(executionContext{
+		Context: context.Background(),
+		dependencies: dependencies{
+			llmEnabled: func() bool {
+				return false
+			},
+			llmProviders: func() map[string]llm.Provider {
+				return map[string]llm.Provider{
+					"test": llmActionTestProvider{
+						result: &llm.ClassifyResult{ContentType: "movie"},
+					},
+				}
+			},
+			recorder: recorder,
+			_logger:  logger,
+			logger:   logger,
+		},
+		torrent: model.Torrent{Name: "Disabled.Torrent"},
+	})
+	require.NoError(t, err)
+	assert.Empty(t, recorder.Events(1))
+	assert.Zero(t, recorder.Stats(0).Attempted)
 }

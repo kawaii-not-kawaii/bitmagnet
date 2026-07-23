@@ -70,6 +70,9 @@ func New(params Params) Result {
 
 					return params.LlmRegistry.All()
 				},
+				llmEnabled: func() bool {
+					return params.LlmRegistry == nil || params.LlmRegistry.Enabled()
+				},
 				recorder: params.Recorder,
 				_logger:  logger,
 				logger:   logger,

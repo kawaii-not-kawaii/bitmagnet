@@ -82,6 +82,23 @@ func TestParseBatchResponse_ResultsArray_OK(t *testing.T) {
 	}
 }
 
+func TestParseBatchResponse_FencedResultsArray_OK(t *testing.T) {
+	t.Parallel()
+
+	content := "```json\n" +
+		`{"results":[{"content_type":"movie","title":"A"},{"content_type":"tv_show","title":"B"}]}` +
+		"\n```"
+
+	results, err := ParseBatchResponse(content)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(results) != 2 || results[0].ContentType != "movie" || results[1].ContentType != "tv_show" {
+		t.Fatalf("fenced results = %#v", results)
+	}
+}
+
 // TestParseBatchResponse_BareArray_OK locks in the bare-array form.
 func TestParseBatchResponse_BareArray_OK(t *testing.T) {
 	t.Parallel()

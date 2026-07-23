@@ -294,6 +294,78 @@ func TestBuildRequest_IncludesAuth(t *testing.T) {
 	}
 }
 
+func TestBuildRequestTokenBudget(t *testing.T) {
+	t.Parallel()
+
+	for _, testCase := range []struct {
+		name       string
+		configured int
+		want       int
+	}{
+		{name: "configured", configured: 512, want: 512},
+		{name: "default", want: 256},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			client := &client{config: Config{Model: "test", MaxTokens: testCase.configured}}
+
+			data, err := client.buildRequest(llm.ClassifyInput{Name: "Test"})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			var request chatRequest
+			if err = json.Unmarshal(data, &request); err != nil {
+				t.Fatal(err)
+			}
+
+			if request.MaxTokens != testCase.want {
+				t.Errorf("max_tokens = %d, want %d", request.MaxTokens, testCase.want)
+			}
+		})
+	}
+}
+
+func TestBatchClassifyTokenBudgetAndResponseFormat(t *testing.T) {
+	t.Parallel()
+
+	requests := make(chan chatRequest, 1)
+
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+		var body chatRequest
+		if err := json.NewDecoder(request.Body).Decode(&body); err != nil {
+			t.Error(err)
+		}
+		requests <- body
+
+		response := makeChoiceResp(
+			`{"results":[{"content_type":"movie"},{"content_type":"tv_show"}]}`,
+		)
+		_ = json.NewEncoder(writer).Encode(response)
+	}))
+	defer server.Close()
+
+	client := New(Config{BaseURL: server.URL, Model: "test", MaxTokens: 512}).(*client)
+
+	_, err := client.BatchClassify(context.Background(), []llm.ClassifyInput{
+		{Name: "Movie"},
+		{Name: "Show"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	request := <-requests
+	if request.MaxTokens != 1024 {
+		t.Errorf("max_tokens = %d, want 1024", request.MaxTokens)
+	}
+
+	if request.ResponseFormat == nil || request.ResponseFormat.Type != "json_object" {
+		t.Errorf("response_format = %#v, want json_object", request.ResponseFormat)
+	}
+}
+
 func TestUserMessage_IncludesFiles(t *testing.T) {
 	t.Parallel()
 
@@ -304,7 +376,7 @@ func TestUserMessage_IncludesFiles(t *testing.T) {
 		Files: []string{"file1.mkv", "folder/file2.nfo"},
 	}
 
-	msg := c.buildUserMessage(input)
+	msg := c.buildUserMessage(input, c.buildSystemMessage(input))
 	if !strings.Contains(msg, "file1.mkv") {
 		t.Errorf("expected file1.mkv in message")
 	}
@@ -328,9 +400,72 @@ func TestUserMessage_FileLimit(t *testing.T) {
 
 	input := llm.ClassifyInput{Name: "Test", Files: files}
 
-	msg := c.buildUserMessage(input)
+	msg := c.buildUserMessage(input, c.buildSystemMessage(input))
 	if strings.Count(msg, "File: ") > 20 {
 		t.Errorf("too many files in message: got %d, want ≤20", strings.Count(msg, "File: "))
+	}
+}
+
+func TestUserMessageContextTrim(t *testing.T) {
+	t.Parallel()
+
+	client := &client{config: Config{SystemPrompt: "system", MaxContext: 24, MaxTokens: 8}}
+	input := llm.ClassifyInput{
+		Name: "Torrent Name Must Stay",
+		Files: []string{
+			"first-very-long-file-name.mkv",
+			"second-very-long-file-name.mkv",
+			"third-very-long-file-name.mkv",
+		},
+	}
+	systemMessage := client.buildSystemMessage(input)
+	message := client.buildUserMessage(input, systemMessage)
+
+	if message != client.buildUserMessage(input, systemMessage) {
+		t.Fatal("context trimming is not deterministic")
+	}
+
+	if !strings.Contains(message, input.Name) || !strings.Contains(message, "(+3 more files)") {
+		t.Fatalf("trimmed message = %q", message)
+	}
+
+	if strings.Contains(message, input.Files[2]) {
+		t.Fatalf("trimmed message kept trailing file: %q", message)
+	}
+
+	inputBudget := client.config.MaxContext - effectiveMaxTokens(client.config.MaxTokens)
+	if estimateTokens(systemMessage)+estimateTokens(message) > inputBudget {
+		t.Fatalf("trimmed message exceeds %d-token input budget: %q", inputBudget, message)
+	}
+}
+
+func TestUserMessageZeroContextKeepsCurrentLimit(t *testing.T) {
+	t.Parallel()
+
+	client := &client{config: Config{MaxContext: 0}}
+
+	files := make([]string, 50)
+	for index := range files {
+		files[index] = fmt.Sprintf("file-%d.mkv", index)
+	}
+
+	input := llm.ClassifyInput{Name: "Test", Files: files}
+
+	message := client.buildUserMessage(input, client.buildSystemMessage(input))
+	if strings.Count(message, "File: ") != 20 || !strings.Contains(message, "... and 30 more files") {
+		t.Fatalf("zero-context message changed current behavior: %q", message)
+	}
+
+	if strings.Contains(message, "(+30 more files)") {
+		t.Fatalf("zero context enabled capacity trimming: %q", message)
+	}
+}
+
+func TestEstimateTokensCJKByteBias(t *testing.T) {
+	t.Parallel()
+
+	if estimateTokens("电影标题") <= estimateTokens("abcd") {
+		t.Fatal("CJK bytes should estimate higher than the same number of ASCII characters")
 	}
 }
 
