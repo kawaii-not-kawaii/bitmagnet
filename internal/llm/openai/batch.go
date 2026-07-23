@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"sync"
 	"time"
 
@@ -241,6 +242,7 @@ func BatchClassifyJSONString(inputs []llm.ClassifyInput) string {
 // returns ErrInvalidJSON, which flush() routes to every pending caller so they
 // fall back to the upstream ErrUnmatched path instead of receiving wrong data.
 func ParseBatchResponse(content string) ([]*llm.ClassifyResult, error) {
+	content = stripMarkdownCodeFence(content)
 	// Try to parse as JSON object with "results" array
 	var wrapper struct {
 		Results []*llm.ClassifyResult `json:"results"`
@@ -258,4 +260,18 @@ func ParseBatchResponse(content string) ([]*llm.ClassifyResult, error) {
 
 	// Do NOT accept a single bare object: see function doc comment.
 	return nil, llm.ErrInvalidJSON
+}
+
+func stripMarkdownCodeFence(content string) string {
+	content = strings.TrimSpace(content)
+	if !strings.HasPrefix(content, "```") || !strings.HasSuffix(content, "```") {
+		return content
+	}
+
+	lineEnd := strings.IndexByte(content, '\n')
+	if lineEnd < 0 {
+		return content
+	}
+
+	return strings.TrimSpace(strings.TrimSuffix(content[lineEnd+1:], "```"))
 }

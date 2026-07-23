@@ -307,6 +307,14 @@ ${xv}`,kv=he`
       error
       connected
       latencySeconds
+      capacity {
+        source
+        contextPerRequest
+        maxCompletionTokens
+        slots
+        fits
+        message
+      }
     }
   }
 }

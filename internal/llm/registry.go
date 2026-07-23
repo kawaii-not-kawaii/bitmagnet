@@ -104,6 +104,14 @@ func (r *Registry) Config() RegistryConfig {
 	return r.config
 }
 
+// Enabled reports whether the current live configuration enables LLM providers.
+func (r *Registry) Enabled() bool {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	return r.config.Enabled
+}
+
 // Update replaces providers from a new config.
 // Existing providers not in the new config are removed.
 // New providers are created via the factory.

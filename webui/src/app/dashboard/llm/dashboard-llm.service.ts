@@ -31,6 +31,7 @@ export interface ClassifierConfigView {
   llmRaw: Record<string, unknown>;
   runtimeChangeable?: generated.ConfigRuntimeChangeability;
   enabled: boolean;
+  concurrency: number;
   providerName: string;
   baseUrl: string;
   model: string;
@@ -65,6 +66,7 @@ export interface LlmDashboardView {
 
 export interface LlmConfigFormValue {
   enabled: boolean;
+  concurrency: number;
   providerName: string;
   baseUrl: string;
   model: string;
@@ -171,6 +173,7 @@ export function mapClassifierConfig(
     raw,
     llmRaw,
     runtimeChangeable: section?.runtimeChangeable,
+    concurrency: numberValue(raw["Concurrency"], 10),
     enabled: booleanValue(llmRaw["Enabled"], false),
     providerName: stringValue(llmRaw["ProviderName"], "default"),
     baseUrl: stringValue(llmRaw["ProviderBaseURL"]),
@@ -190,6 +193,7 @@ export function buildClassifierConfigValue(
 ): Record<string, unknown> {
   return {
     ...config.raw,
+    Concurrency: value.concurrency,
     Llm: {
       ...config.llmRaw,
       Enabled: value.enabled,

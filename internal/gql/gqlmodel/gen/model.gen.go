@@ -65,10 +65,11 @@ type DashboardLlmBenchmarkDistribution struct {
 }
 
 type DashboardLlmConnectionResult struct {
-	Ok             bool    `json:"ok"`
-	Error          *string `json:"error,omitempty"`
-	Connected      bool    `json:"connected"`
-	LatencySeconds float64 `json:"latencySeconds"`
+	Ok             bool         `json:"ok"`
+	Error          *string      `json:"error,omitempty"`
+	Connected      bool         `json:"connected"`
+	LatencySeconds float64      `json:"latencySeconds"`
+	Capacity       *LlmCapacity `json:"capacity,omitempty"`
 }
 
 type DashboardMutation struct {
@@ -126,6 +127,15 @@ type LanguageAgg struct {
 type LanguageFacetInput struct {
 	Aggregate graphql.Omittable[*bool]             `json:"aggregate,omitempty"`
 	Filter    graphql.Omittable[[]model1.Language] `json:"filter,omitempty"`
+}
+
+type LlmCapacity struct {
+	Source              string `json:"source"`
+	ContextPerRequest   *int   `json:"contextPerRequest,omitempty"`
+	MaxCompletionTokens *int   `json:"maxCompletionTokens,omitempty"`
+	Slots               *int   `json:"slots,omitempty"`
+	Fits                *bool  `json:"fits,omitempty"`
+	Message             string `json:"message"`
 }
 
 type LlmClassificationEvent struct {

@@ -3,6 +3,8 @@ package resolvers
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"reflect"
 	"strings"
 	"testing"
@@ -46,9 +48,29 @@ func TestDashboardLlmConnection(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 
+			capacityServer := httptest.NewServer(http.HandlerFunc(
+				func(writer http.ResponseWriter, request *http.Request) {
+					if request.URL.Path != "/v1/slots" {
+						http.NotFound(writer, request)
+
+						return
+					}
+
+					_, _ = writer.Write([]byte(`[{"n_ctx":8192},{"n_ctx":8192}]`))
+				},
+			))
+			defer capacityServer.Close()
+
 			config := llm.RegistryConfig{
-				Enabled:   true,
-				Providers: map[string]llm.ProviderConfig{"test": {}},
+				Enabled:    true,
+				MaxContext: 8000,
+				MaxTokens:  512,
+				Providers: map[string]llm.ProviderConfig{
+					"test": {
+						BaseURL: capacityServer.URL,
+						Model:   "test",
+					},
+				},
 			}
 			registry := llm.NewRegistry(
 				config,
@@ -79,6 +101,14 @@ func TestDashboardLlmConnection(t *testing.T) {
 				}
 			} else if result.Error == nil || !strings.Contains(*result.Error, tc.wantError) {
 				t.Errorf("error = %v, want message containing %q", result.Error, tc.wantError)
+			}
+
+			if result.Capacity == nil ||
+				result.Capacity.Source != "slots" ||
+				result.Capacity.Fits == nil ||
+				*result.Capacity.Fits ||
+				!strings.Contains(result.Capacity.Message, "exceeds per-slot window") {
+				t.Errorf("capacity = %#v, want non-fitting slots result", result.Capacity)
 			}
 
 			if !reflect.DeepEqual(registry.Config(), before) {

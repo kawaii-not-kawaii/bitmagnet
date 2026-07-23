@@ -157,6 +157,7 @@ type ComplexityRoot struct {
 	}
 
 	DashboardLlmConnectionResult struct {
+		Capacity       func(childComplexity int) int
 		Connected      func(childComplexity int) int
 		Error          func(childComplexity int) int
 		LatencySeconds func(childComplexity int) int
@@ -222,6 +223,15 @@ type ComplexityRoot struct {
 	LanguageInfo struct {
 		ID   func(childComplexity int) int
 		Name func(childComplexity int) int
+	}
+
+	LlmCapacity struct {
+		ContextPerRequest   func(childComplexity int) int
+		Fits                func(childComplexity int) int
+		MaxCompletionTokens func(childComplexity int) int
+		Message             func(childComplexity int) int
+		Slots               func(childComplexity int) int
+		Source              func(childComplexity int) int
 	}
 
 	LlmClassificationEvent struct {
@@ -1048,6 +1058,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.DashboardLlmBenchmarkDistribution.Count(childComplexity), true
 
+	case "DashboardLlmConnectionResult.capacity":
+		if e.complexity.DashboardLlmConnectionResult.Capacity == nil {
+			break
+		}
+
+		return e.complexity.DashboardLlmConnectionResult.Capacity(childComplexity), true
+
 	case "DashboardLlmConnectionResult.connected":
 		if e.complexity.DashboardLlmConnectionResult.Connected == nil {
 			break
@@ -1297,6 +1314,48 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LanguageInfo.Name(childComplexity), true
+
+	case "LlmCapacity.contextPerRequest":
+		if e.complexity.LlmCapacity.ContextPerRequest == nil {
+			break
+		}
+
+		return e.complexity.LlmCapacity.ContextPerRequest(childComplexity), true
+
+	case "LlmCapacity.fits":
+		if e.complexity.LlmCapacity.Fits == nil {
+			break
+		}
+
+		return e.complexity.LlmCapacity.Fits(childComplexity), true
+
+	case "LlmCapacity.maxCompletionTokens":
+		if e.complexity.LlmCapacity.MaxCompletionTokens == nil {
+			break
+		}
+
+		return e.complexity.LlmCapacity.MaxCompletionTokens(childComplexity), true
+
+	case "LlmCapacity.message":
+		if e.complexity.LlmCapacity.Message == nil {
+			break
+		}
+
+		return e.complexity.LlmCapacity.Message(childComplexity), true
+
+	case "LlmCapacity.slots":
+		if e.complexity.LlmCapacity.Slots == nil {
+			break
+		}
+
+		return e.complexity.LlmCapacity.Slots(childComplexity), true
+
+	case "LlmCapacity.source":
+		if e.complexity.LlmCapacity.Source == nil {
+			break
+		}
+
+		return e.complexity.LlmCapacity.Source(childComplexity), true
 
 	case "LlmClassificationEvent.completionTokens":
 		if e.complexity.LlmClassificationEvent.CompletionTokens == nil {
@@ -3065,6 +3124,36 @@ type DashboardLlmConnectionResult {
   error: String
   connected: Boolean!
   latencySeconds: Float!
+
+  # Best-effort capacity discovery (slots/props/models probe chain).
+  # Null when the endpoint exposes nothing usable — never fails the test.
+  capacity: LlmCapacity
+}
+
+type LlmCapacity {
+  # Where the numbers came from:
+  # "slots" | "props" | "models" | "models.dev" | "unknown".
+  source: String!
+
+  # Usable context window per request. For llama.cpp-style backends this is
+  # the PER-SLOT n_ctx (ctx_size is divided across slots once -np is set) —
+  # the only number safe to tune max_context against.
+  contextPerRequest: Int
+
+  # Max completion tokens reported by the provider's model metadata, if any.
+  maxCompletionTokens: Int
+
+  # Slot count for local llama.cpp-style backends; null for hosted providers,
+  # where capacity is concurrent-call/rate-limit bound instead.
+  slots: Int
+
+  # Whether configured max_context + max_tokens fits contextPerRequest.
+  # Null when no window was detected.
+  fits: Boolean
+
+  # Human-readable capacity line, phrased slot-bound (local) or
+  # quota/cost-bound (hosted).
+  message: String!
 }
 
 type DashboardLlmBenchmark {
@@ -7386,6 +7475,61 @@ func (ec *executionContext) fieldContext_DashboardLlmConnectionResult_latencySec
 	return fc, nil
 }
 
+func (ec *executionContext) _DashboardLlmConnectionResult_capacity(ctx context.Context, field graphql.CollectedField, obj *gen.DashboardLlmConnectionResult) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_DashboardLlmConnectionResult_capacity(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Capacity, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*gen.LlmCapacity)
+	fc.Result = res
+	return ec.marshalOLlmCapacity2ᚖgithubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐLlmCapacity(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_DashboardLlmConnectionResult_capacity(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "DashboardLlmConnectionResult",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "source":
+				return ec.fieldContext_LlmCapacity_source(ctx, field)
+			case "contextPerRequest":
+				return ec.fieldContext_LlmCapacity_contextPerRequest(ctx, field)
+			case "maxCompletionTokens":
+				return ec.fieldContext_LlmCapacity_maxCompletionTokens(ctx, field)
+			case "slots":
+				return ec.fieldContext_LlmCapacity_slots(ctx, field)
+			case "fits":
+				return ec.fieldContext_LlmCapacity_fits(ctx, field)
+			case "message":
+				return ec.fieldContext_LlmCapacity_message(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LlmCapacity", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _DashboardMutation_testLlmConnection(ctx context.Context, field graphql.CollectedField, obj *gen.DashboardMutation) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_DashboardMutation_testLlmConnection(ctx, field)
 	if err != nil {
@@ -7433,6 +7577,8 @@ func (ec *executionContext) fieldContext_DashboardMutation_testLlmConnection(_ c
 				return ec.fieldContext_DashboardLlmConnectionResult_connected(ctx, field)
 			case "latencySeconds":
 				return ec.fieldContext_DashboardLlmConnectionResult_latencySeconds(ctx, field)
+			case "capacity":
+				return ec.fieldContext_DashboardLlmConnectionResult_capacity(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type DashboardLlmConnectionResult", field.Name)
 		},
@@ -8820,6 +8966,258 @@ func (ec *executionContext) fieldContext_LanguageInfo_name(_ context.Context, fi
 		Object:     "LanguageInfo",
 		Field:      field,
 		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LlmCapacity_source(ctx context.Context, field graphql.CollectedField, obj *gen.LlmCapacity) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmCapacity_source(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Source, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmCapacity_source(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmCapacity",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LlmCapacity_contextPerRequest(ctx context.Context, field graphql.CollectedField, obj *gen.LlmCapacity) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmCapacity_contextPerRequest(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ContextPerRequest, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmCapacity_contextPerRequest(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmCapacity",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LlmCapacity_maxCompletionTokens(ctx context.Context, field graphql.CollectedField, obj *gen.LlmCapacity) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmCapacity_maxCompletionTokens(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxCompletionTokens, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmCapacity_maxCompletionTokens(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmCapacity",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LlmCapacity_slots(ctx context.Context, field graphql.CollectedField, obj *gen.LlmCapacity) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmCapacity_slots(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Slots, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmCapacity_slots(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmCapacity",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LlmCapacity_fits(ctx context.Context, field graphql.CollectedField, obj *gen.LlmCapacity) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmCapacity_fits(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Fits, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*bool)
+	fc.Result = res
+	return ec.marshalOBoolean2ᚖbool(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmCapacity_fits(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmCapacity",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LlmCapacity_message(ctx context.Context, field graphql.CollectedField, obj *gen.LlmCapacity) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmCapacity_message(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Message, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmCapacity_message(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmCapacity",
+		Field:      field,
+		IsMethod:   false,
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type String does not have child fields")
@@ -22849,6 +23247,8 @@ func (ec *executionContext) _DashboardLlmConnectionResult(ctx context.Context, s
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "capacity":
+			out.Values[i] = ec._DashboardLlmConnectionResult_capacity(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -23400,6 +23800,58 @@ func (ec *executionContext) _LanguageInfo(ctx context.Context, sel ast.Selection
 			}
 		case "name":
 			out.Values[i] = ec._LanguageInfo_name(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var llmCapacityImplementors = []string{"LlmCapacity"}
+
+func (ec *executionContext) _LlmCapacity(ctx context.Context, sel ast.SelectionSet, obj *gen.LlmCapacity) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, llmCapacityImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LlmCapacity")
+		case "source":
+			out.Values[i] = ec._LlmCapacity_source(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "contextPerRequest":
+			out.Values[i] = ec._LlmCapacity_contextPerRequest(ctx, field, obj)
+		case "maxCompletionTokens":
+			out.Values[i] = ec._LlmCapacity_maxCompletionTokens(ctx, field, obj)
+		case "slots":
+			out.Values[i] = ec._LlmCapacity_slots(ctx, field, obj)
+		case "fits":
+			out.Values[i] = ec._LlmCapacity_fits(ctx, field, obj)
+		case "message":
+			out.Values[i] = ec._LlmCapacity_message(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -29450,6 +29902,13 @@ func (ec *executionContext) marshalOLanguageInfo2ᚖgithubᚗcomᚋbitmagnetᚑi
 		return graphql.Null
 	}
 	return ec._LanguageInfo(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOLlmCapacity2ᚖgithubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐLlmCapacity(ctx context.Context, sel ast.SelectionSet, v *gen.LlmCapacity) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LlmCapacity(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOQueueEnqueueReprocessTorrentsBatchInput2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋqueueᚋmanagerᚐEnqueueReprocessTorrentsBatchRequest(ctx context.Context, v any) (manager.EnqueueReprocessTorrentsBatchRequest, error) {

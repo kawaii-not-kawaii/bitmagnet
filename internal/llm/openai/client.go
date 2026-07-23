@@ -38,6 +38,10 @@ type Config struct {
 	SystemPrompt string
 	// UserPrompt is the user message template. Uses {{.Name}}, {{.Files}}, {{.ContentTypes}}.
 	UserPrompt string
+	// MaxContext is the configured per-request context budget. Zero disables trimming.
+	MaxContext int
+	// MaxTokens is the configured output budget. Zero defaults to 256.
+	MaxTokens int
 }
 
 func (c *Config) timeout() time.Duration {
@@ -188,11 +192,11 @@ func (c *client) BatchClassify(ctx context.Context, inputs []llm.ClassifyInput) 
 	}
 
 	req := chatRequest{
-		Model:       c.config.Model,
-		Messages:    messages,
-		Temperature: 0.1,
-		MaxTokens:   256 * len(inputs),
-		// No response_format — allow free JSON array output
+		Model:          c.config.Model,
+		Messages:       messages,
+		Temperature:    0.1,
+		MaxTokens:      effectiveMaxTokens(c.config.MaxTokens) * len(inputs),
+		ResponseFormat: &responseFormat{Type: "json_object"},
 	}
 
 	reqBytes, err := json.Marshal(req)
@@ -209,17 +213,17 @@ func (c *client) BatchClassify(ctx context.Context, inputs []llm.ClassifyInput) 
 }
 
 func (c *client) buildRequest(input llm.ClassifyInput) ([]byte, error) {
-	userContent := c.buildUserMessage(input)
+	systemContent := c.buildSystemMessage(input)
 	messages := []chatMessage{
-		{Role: "system", Content: c.buildSystemMessage(input)},
-		{Role: "user", Content: userContent},
+		{Role: "system", Content: systemContent},
+		{Role: "user", Content: c.buildUserMessage(input, systemContent)},
 	}
 
 	req := chatRequest{
 		Model:          c.config.Model,
 		Messages:       messages,
 		Temperature:    0.1,
-		MaxTokens:      c.estimateMaxTokens(input),
+		MaxTokens:      effectiveMaxTokens(c.config.MaxTokens),
 		ResponseFormat: &responseFormat{Type: "json_object"},
 	}
 
@@ -246,30 +250,68 @@ func (c *client) buildSystemMessage(input llm.ClassifyInput) string {
 	return fmt.Sprintf(defaultSystemPromptFmt, input.ContentTypes)
 }
 
-func (*client) buildUserMessage(input llm.ClassifyInput) string {
-	var b strings.Builder
+func (c *client) buildUserMessage(input llm.ClassifyInput, systemContent string) string {
+	included := min(len(input.Files), 20)
+	omitted := len(input.Files) - included
 
-	b.WriteString("Name: ")
-	b.WriteString(input.Name)
-	b.WriteByte('\n')
-
-	for i, f := range input.Files {
-		if i >= 20 {
-			b.WriteString(fmt.Sprintf("... and %d more files\n", len(input.Files)-20))
-			break
+	if c.config.MaxContext <= 0 {
+		marker := ""
+		if omitted > 0 {
+			marker = fmt.Sprintf("... and %d more files", omitted)
 		}
 
-		b.WriteString("File: ")
-		b.WriteString(f)
-		b.WriteByte('\n')
+		return renderUserMessage(input, included, marker)
 	}
 
-	return b.String()
+	inputBudget := c.config.MaxContext - effectiveMaxTokens(c.config.MaxTokens)
+
+	for {
+		marker := ""
+		if omitted > 0 {
+			marker = fmt.Sprintf("(+%d more files)", omitted)
+		}
+
+		message := renderUserMessage(input, included, marker)
+		if estimateTokens(systemContent)+estimateTokens(message) <= inputBudget || included == 0 {
+			return message
+		}
+
+		included--
+		omitted++
+	}
 }
 
-func (*client) estimateMaxTokens(input llm.ClassifyInput) int {
-	// Rough estimate: 256 tokens for output is typically enough for a single classification result.
-	_ = input
+func renderUserMessage(input llm.ClassifyInput, included int, marker string) string {
+	var builder strings.Builder
+
+	builder.WriteString("Name: ")
+	builder.WriteString(input.Name)
+	builder.WriteByte('\n')
+
+	for _, file := range input.Files[:included] {
+		builder.WriteString("File: ")
+		builder.WriteString(file)
+		builder.WriteByte('\n')
+	}
+
+	if marker != "" {
+		builder.WriteString(marker)
+		builder.WriteByte('\n')
+	}
+
+	return builder.String()
+}
+
+func estimateTokens(value string) int {
+	// ponytail: chars/4 estimate; wire /v1/tokenize if precision ever matters.
+	return (len(value) + 3) / 4
+}
+
+func effectiveMaxTokens(configured int) int {
+	if configured > 0 {
+		return configured
+	}
+
 	return 256
 }
 

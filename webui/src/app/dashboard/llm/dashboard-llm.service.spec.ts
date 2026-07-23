@@ -12,6 +12,7 @@ describe("DashboardLlmService mapping", () => {
     const view = mapDashboardLlmData(data, 123456);
 
     expect(view.lastPolledAt).toBe(123456);
+    expect(view.config.concurrency).toBe(10);
     expect(view.events.map((event) => event.torrentName)).toEqual([
       "Matched movie",
       "Unknown release",
@@ -47,6 +48,7 @@ describe("DashboardLlmService mapping", () => {
     const view = mapDashboardLlmData(dashboardData(), 123456);
     const value = buildClassifierConfigValue(view.config, {
       enabled: false,
+      concurrency: 6,
       providerName: " local ",
       baseUrl: " http://localhost:8080 ",
       model: " gemma-4 ",
@@ -58,7 +60,7 @@ describe("DashboardLlmService mapping", () => {
       timeoutSeconds: 45,
     });
 
-    expect(value["Concurrency"]).toBe(10);
+    expect(value["Concurrency"]).toBe(6);
     expect(value["Llm"]).toEqual(
       jasmine.objectContaining({
         Enabled: false,

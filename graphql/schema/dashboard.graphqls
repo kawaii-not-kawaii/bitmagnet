@@ -23,6 +23,36 @@ type DashboardLlmConnectionResult {
   error: String
   connected: Boolean!
   latencySeconds: Float!
+
+  # Best-effort capacity discovery (slots/props/models probe chain).
+  # Null when the endpoint exposes nothing usable — never fails the test.
+  capacity: LlmCapacity
+}
+
+type LlmCapacity {
+  # Where the numbers came from:
+  # "slots" | "props" | "models" | "models.dev" | "unknown".
+  source: String!
+
+  # Usable context window per request. For llama.cpp-style backends this is
+  # the PER-SLOT n_ctx (ctx_size is divided across slots once -np is set) —
+  # the only number safe to tune max_context against.
+  contextPerRequest: Int
+
+  # Max completion tokens reported by the provider's model metadata, if any.
+  maxCompletionTokens: Int
+
+  # Slot count for local llama.cpp-style backends; null for hosted providers,
+  # where capacity is concurrent-call/rate-limit bound instead.
+  slots: Int
+
+  # Whether configured max_context + max_tokens fits contextPerRequest.
+  # Null when no window was detected.
+  fits: Boolean
+
+  # Human-readable capacity line, phrased slot-bound (local) or
+  # quota/cost-bound (hosted).
+  message: String!
 }
 
 type DashboardLlmBenchmark {
