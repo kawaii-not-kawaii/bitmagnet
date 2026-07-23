@@ -130,12 +130,13 @@ type LanguageFacetInput struct {
 }
 
 type LlmCapacity struct {
-	Source              string `json:"source"`
-	ContextPerRequest   *int   `json:"contextPerRequest,omitempty"`
-	MaxCompletionTokens *int   `json:"maxCompletionTokens,omitempty"`
-	Slots               *int   `json:"slots,omitempty"`
-	Fits                *bool  `json:"fits,omitempty"`
-	Message             string `json:"message"`
+	Source                 string `json:"source"`
+	ContextPerRequest      *int   `json:"contextPerRequest,omitempty"`
+	MaxCompletionTokens    *int   `json:"maxCompletionTokens,omitempty"`
+	Slots                  *int   `json:"slots,omitempty"`
+	Fits                   *bool  `json:"fits,omitempty"`
+	RecommendedConcurrency *int   `json:"recommendedConcurrency,omitempty"`
+	Message                string `json:"message"`
 }
 
 type LlmClassificationEvent struct {

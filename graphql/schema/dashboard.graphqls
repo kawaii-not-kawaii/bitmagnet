@@ -50,6 +50,12 @@ type LlmCapacity {
   # Null when no window was detected.
   fits: Boolean
 
+  # Detected slot count as an UPPER bound for classifier concurrency
+  # (requests beyond it queue at the server; generation is often
+  # compute-bound below it — a ceiling to tune down from, not a target).
+  # Null for hosted providers, where concurrency is quota/cost bound.
+  recommendedConcurrency: Int
+
   # Human-readable capacity line, phrased slot-bound (local) or
   # quota/cost-bound (hosted).
   message: String!

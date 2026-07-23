@@ -457,6 +457,28 @@
               }
               {{ capacity.message }}
             </p>
+            @if (capacity.recommendedConcurrency; as slots) {
+              @if (form.controls.concurrency.value > slots) {
+                <p class="capacity-result warning">
+                  <span aria-hidden="true">⚠</span>
+                  concurrency {{ form.controls.concurrency.value }} exceeds the
+                  {{ slots }} available slots — excess requests queue at the
+                  server
+                </p>
+              } @else if (form.controls.concurrency.value !== slots) {
+                <p class="capacity-result">
+                  up to {{ slots }} slots available ·
+                  <button
+                    type="button"
+                    class="link-button"
+                    (click)="useRecommendedConcurrency(slots)"
+                  >
+                    use {{ slots }}
+                  </button>
+                  (ceiling — tune down if throughput drops)
+                </p>
+              }
+            }
           }
           @if (saveMessage) {
             <p class="action-result good">{{ saveMessage }}</p>
