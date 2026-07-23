@@ -1,11 +1,11 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { MatSnackBar } from "@angular/material/snack-bar";
 
 @Injectable({ providedIn: "root" })
 export class ErrorsService {
-  public readonly expiry = 1000 * 10;
+  private snackBar = inject(MatSnackBar);
 
-  constructor(private snackBar: MatSnackBar) {}
+  public readonly expiry = 1000 * 10;
 
   addError(message: string, expiry = this.expiry) {
     this.snackBar.open(message, "Dismiss", {

@@ -25,7 +25,10 @@ export class AppComponent {
     { initialValue: this.isAuthUrl(this.router.url) },
   );
 
-  constructor(iconRegistry: MatIconRegistry, domSanitizer: DomSanitizer) {
+  constructor() {
+    const iconRegistry = inject(MatIconRegistry);
+    const domSanitizer = inject(DomSanitizer);
+
     initializeIcons(iconRegistry, domSanitizer);
   }
 
