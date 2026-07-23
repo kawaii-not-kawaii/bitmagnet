@@ -5,7 +5,8 @@ import {
   numberAttribute,
   Output,
 } from "@angular/core";
-import { AppModule } from "../app.module";
+import { DecimalPipe } from "@angular/common";
+import { TranslocoDirective } from "@jsverse/transloco";
 import { IntEstimatePipe } from "../pipes/int-estimate.pipe";
 import type { PageEvent } from "./paginator.types";
 
@@ -13,7 +14,7 @@ import type { PageEvent } from "./paginator.types";
   selector: "app-paginator",
   templateUrl: "./paginator.component.html",
   styleUrls: ["./paginator.component.scss"],
-  imports: [AppModule, IntEstimatePipe],
+  imports: [DecimalPipe, TranslocoDirective, IntEstimatePipe],
 })
 export class PaginatorComponent {
   @Input({ transform: numberAttribute }) page = 1;

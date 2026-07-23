@@ -3,7 +3,7 @@ import { map, Observable } from "rxjs";
 import { Apollo } from "apollo-angular";
 import * as generated from "./generated";
 
-@Injectable()
+@Injectable({ providedIn: "root" })
 export class GraphQLService {
   constructor(private readonly apollo: Apollo) {}
 

@@ -5,7 +5,7 @@ import { Apollo } from "apollo-angular";
 import { Observable } from "rxjs";
 import { ErrorsService } from "../../errors/errors.service";
 import { appConfig } from "../../app.config";
-import { AppModule } from "../../app.module";
+
 import { QueueJobsDatasource } from "./queue-jobs.datasource";
 import { QueueJobsTableComponent } from "./queue-jobs-table.component";
 
@@ -16,7 +16,7 @@ describe("QueueJobsTableComponent", () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       ...appConfig,
-      imports: [AppModule],
+
     }).compileComponents();
 
     fixture = TestBed.createComponent(QueueJobsTableComponent);

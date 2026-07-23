@@ -1,11 +1,14 @@
+import { AsyncPipe, DatePipe, DecimalPipe, PercentPipe } from "@angular/common";
 import { Component, OnDestroy, inject } from "@angular/core";
-import { FormBuilder, Validators } from "@angular/forms";
+import {
+  FormBuilder,
+  ReactiveFormsModule,
+  Validators,
+} from "@angular/forms";
 import { Apollo } from "apollo-angular";
 import { finalize, tap } from "rxjs";
-import { AppModule } from "../../app.module";
 import { ErrorsService } from "../../errors/errors.service";
 import * as generated from "../../graphql/generated";
-import { GraphQLModule } from "../../graphql/graphql.module";
 import {
   DashboardLlmService,
   FeedFilter,
@@ -20,7 +23,7 @@ import {
 
 @Component({
   selector: "app-dashboard-llm",
-  imports: [AppModule, GraphQLModule],
+  imports: [AsyncPipe, DatePipe, DecimalPipe, PercentPipe, ReactiveFormsModule],
   providers: [DashboardLlmService],
   templateUrl: "./dashboard-llm.component.html",
   styleUrl: "./dashboard-llm.component.scss",

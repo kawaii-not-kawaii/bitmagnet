@@ -1,10 +1,10 @@
 import { Component, EventEmitter, inject, Input, Output } from "@angular/core";
 import { catchError, EMPTY, tap } from "rxjs";
-import { NgOptimizedImage } from "@angular/common";
+import { LowerCasePipe, NgOptimizedImage } from "@angular/common";
 import * as generated from "../graphql/generated";
+import { TranslocoDirective } from "@jsverse/transloco";
 import { GraphQLService } from "../graphql/graphql.service";
 import { ErrorsService } from "../errors/errors.service";
-import { AppModule } from "../app.module";
 import { TorrentFilesTableComponent } from "./torrent-files-table.component";
 import { TorrentEditTagsComponent } from "./torrent-edit-tags.component";
 import { TorrentTab, TorrentTabSelection } from "./torrents-search.controller";
@@ -15,7 +15,8 @@ import { TorrentReprocessComponent } from "./torrent-reprocess.component";
   templateUrl: "./torrent-content.component.html",
   styleUrl: "./torrent-content.component.scss",
   imports: [
-    AppModule,
+    LowerCasePipe,
+    TranslocoDirective,
     NgOptimizedImage,
     TorrentEditTagsComponent,
     TorrentFilesTableComponent,

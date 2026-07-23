@@ -6,17 +6,17 @@ import {
   OnInit,
   Output,
 } from "@angular/core";
-import { FormControl } from "@angular/forms";
+import { FormControl, ReactiveFormsModule } from "@angular/forms";
+import { TranslocoDirective } from "@jsverse/transloco";
 import { catchError, EMPTY, Observable, tap } from "rxjs";
 import * as generated from "../graphql/generated";
 import { ErrorsService } from "../errors/errors.service";
 import { GraphQLService } from "../graphql/graphql.service";
-import { AppModule } from "../app.module";
 import { TorrentReprocessComponent } from "./torrent-reprocess.component";
 
 @Component({
   selector: "app-torrents-bulk-actions",
-  imports: [AppModule, TorrentReprocessComponent],
+  imports: [ReactiveFormsModule, TranslocoDirective, TorrentReprocessComponent],
   templateUrl: "./torrents-bulk-actions.component.html",
   styleUrl: "./torrents-bulk-actions.component.scss",
 })

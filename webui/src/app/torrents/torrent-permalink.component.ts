@@ -1,9 +1,12 @@
 import { Component, inject, OnInit } from "@angular/core";
 import { ActivatedRoute, Router } from "@angular/router";
 import { Apollo } from "apollo-angular";
+import { MatCardModule } from "@angular/material/card";
+import { MatIconModule } from "@angular/material/icon";
+import { MatProgressBarModule } from "@angular/material/progress-bar";
+import { MatTooltipModule } from "@angular/material/tooltip";
+import { TranslocoDirective } from "@jsverse/transloco";
 import * as generated from "../graphql/generated";
-import { GraphQLModule } from "../graphql/graphql.module";
-import { AppModule } from "../app.module";
 import { DocumentTitleComponent } from "../layout/document-title.component";
 import { TorrentContentComponent } from "./torrent-content.component";
 import { contentTypeInfo } from "./content-types";
@@ -12,8 +15,11 @@ import { TorrentChipsComponent } from "./torrent-chips.component";
 @Component({
   selector: "app-torrent-permalink",
   imports: [
-    AppModule,
-    GraphQLModule,
+    MatCardModule,
+    MatIconModule,
+    MatProgressBarModule,
+    MatTooltipModule,
+    TranslocoDirective,
     TorrentContentComponent,
     TorrentChipsComponent,
     DocumentTitleComponent,

@@ -1,8 +1,9 @@
 import { Component, inject, OnDestroy } from "@angular/core";
 import { format as formatDate } from "date-fns/format";
+import { AsyncPipe, DecimalPipe } from "@angular/common";
+import { MatSelectModule } from "@angular/material/select";
 import { Apollo } from "apollo-angular";
 import { map } from "rxjs/operators";
-import { AppModule } from "../../app.module";
 import {
   BarChartBucket,
   BarChartComponent,
@@ -31,7 +32,7 @@ type MetricsView = {
   selector: "app-torrent-metrics",
   templateUrl: "./torrent-metrics.component.html",
   styleUrl: "./torrent-metrics.component.scss",
-  imports: [AppModule, BarChartComponent],
+  imports: [AsyncPipe, DecimalPipe, MatSelectModule, BarChartComponent],
 })
 export class TorrentMetricsComponent implements OnDestroy {
   private apollo = inject(Apollo);

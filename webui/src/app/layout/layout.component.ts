@@ -5,22 +5,26 @@ import {
   ViewChild,
   inject,
 } from "@angular/core";
-import { NavigationEnd, Router } from "@angular/router";
+import {
+  NavigationEnd,
+  Router,
+  RouterLink,
+  RouterLinkActive,
+} from "@angular/router";
 import { filter } from "rxjs";
 import { Title } from "@angular/platform-browser";
+import { TranslocoDirective } from "@jsverse/transloco";
 import { ThemeManager } from "../themes/theme-manager.service";
 import { VersionComponent } from "../version/version.component";
 import { TranslateManager } from "../i18n/translate-manager.service";
-import { HealthModule } from "../health/health.module";
 import { HealthService } from "../health/health.service";
-import { AppModule } from "../app.module";
 import { UiPreferences } from "./ui-preferences.service";
 
 @Component({
   selector: "app-layout",
   templateUrl: "./layout.component.html",
   styleUrl: "./layout.component.scss",
-  imports: [AppModule, HealthModule, VersionComponent],
+  imports: [RouterLink, RouterLinkActive, TranslocoDirective, VersionComponent],
 })
 export class LayoutComponent {
   themeManager = inject(ThemeManager);

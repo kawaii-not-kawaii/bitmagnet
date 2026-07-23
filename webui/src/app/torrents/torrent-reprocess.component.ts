@@ -1,13 +1,13 @@
 import { Component, EventEmitter, inject, Input, Output } from "@angular/core";
 import { Apollo } from "apollo-angular";
 import { map } from "rxjs/operators";
+import { TranslocoDirective } from "@jsverse/transloco";
 import * as generated from "../graphql/generated";
-import { AppModule } from "../app.module";
 import { ErrorsService } from "../errors/errors.service";
 
 @Component({
   selector: "app-torrent-reprocess",
-  imports: [AppModule],
+  imports: [TranslocoDirective],
   templateUrl: "./torrent-reprocess.component.html",
   styleUrl: "./torrent-reprocess.component.scss",
 })

@@ -6,19 +6,18 @@ import {
   OnInit,
   Output,
 } from "@angular/core";
-import { FormControl } from "@angular/forms";
-import { TranslocoService } from "@jsverse/transloco";
+import { FormControl, ReactiveFormsModule } from "@angular/forms";
+import { TranslocoDirective, TranslocoService } from "@jsverse/transloco";
 import { catchError, EMPTY, tap } from "rxjs";
 import { COMMA, ENTER } from "@angular/cdk/keycodes";
 import * as generated from "../graphql/generated";
-import { AppModule } from "../app.module";
 import { GraphQLService } from "../graphql/graphql.service";
 import { ErrorsService } from "../errors/errors.service";
 import normalizeTagInput from "../util/normalizeTagInput";
 
 @Component({
   selector: "app-torrent-edit-tags",
-  imports: [AppModule],
+  imports: [ReactiveFormsModule, TranslocoDirective],
   templateUrl: "./torrent-edit-tags.component.html",
   styleUrl: "./torrent-edit-tags.component.scss",
 })

@@ -1,9 +1,10 @@
 import { Component, EventEmitter, Input, OnInit, Output } from "@angular/core";
 import { SelectionModel } from "@angular/cdk/collections";
+import { AsyncPipe, LowerCasePipe } from "@angular/common";
+import { TranslocoDirective } from "@jsverse/transloco";
 import { FilesizePipe } from "../pipes/filesize.pipe";
 import { TimeAgoPipe } from "../pipes/time-ago.pipe";
 import * as generated from "../graphql/generated";
-import { AppModule } from "../app.module";
 import { TorrentsSearchDatasource } from "./torrents-search.datasource";
 import { contentTypeInfo } from "./content-types";
 import { TorrentChipsComponent } from "./torrent-chips.component";
@@ -13,7 +14,9 @@ import { TorrentsSearchController } from "./torrents-search.controller";
 @Component({
   selector: "app-torrents-table",
   imports: [
-    AppModule,
+    AsyncPipe,
+    LowerCasePipe,
+    TranslocoDirective,
     FilesizePipe,
     TimeAgoPipe,
     TorrentChipsComponent,

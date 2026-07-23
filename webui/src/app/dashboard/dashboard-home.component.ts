@@ -1,16 +1,15 @@
+import { AsyncPipe, DecimalPipe } from "@angular/common";
 import { Component, inject } from "@angular/core";
+import { RouterLink } from "@angular/router";
 import { Apollo } from "apollo-angular";
 import { catchError, map, of } from "rxjs";
-import { AppModule } from "../app.module";
 import { ErrorsService } from "../errors/errors.service";
 import * as generated from "../graphql/generated";
-import { GraphQLModule } from "../graphql/graphql.module";
-import { HealthModule } from "../health/health.module";
 import { HealthService } from "../health/health.service";
 
 @Component({
   selector: "app-dashboard-home",
-  imports: [AppModule, GraphQLModule, HealthModule],
+  imports: [AsyncPipe, DecimalPipe, RouterLink],
   templateUrl: "./dashboard-home.component.html",
   styleUrl: "./dashboard-home.component.scss",
 })

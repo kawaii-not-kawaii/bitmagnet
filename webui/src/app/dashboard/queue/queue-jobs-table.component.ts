@@ -1,12 +1,21 @@
+import { ClipboardModule } from "@angular/cdk/clipboard";
+import { AsyncPipe, DecimalPipe, SlicePipe } from "@angular/common";
 import { Component, Input, OnInit } from "@angular/core";
+import { TranslocoDirective } from "@jsverse/transloco";
 import { TimeAgoPipe } from "../../pipes/time-ago.pipe";
 import * as generated from "../../graphql/generated";
-import { AppModule } from "../../app.module";
 import { QueueJobsDatasource } from "./queue-jobs.datasource";
 
 @Component({
   selector: "app-queue-jobs-table",
-  imports: [AppModule, TimeAgoPipe],
+  imports: [
+    AsyncPipe,
+    ClipboardModule,
+    DecimalPipe,
+    SlicePipe,
+    TranslocoDirective,
+    TimeAgoPipe,
+  ],
   templateUrl: "./queue-jobs-table.component.html",
   styleUrl: "./queue-jobs-table.component.scss",
 })

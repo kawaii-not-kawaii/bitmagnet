@@ -1,80 +1,53 @@
 // Custom Theming for Angular Material
 // For more information: https://material.angular.io/guide/theming
 @use "@angular/material" as mat;
-@use "sass:map";
-// Plus imports for other components in your app.
-@use "./app/health/health-widget-component.theme";
-@use "./app/layout/layout-component.theme";
-@use "./app/dashboard/dashboard-component.theme";
-@use "./app/dashboard/queue/queue-visualize-component.theme";
-@use "./app/themes/theme-emitter-component.theme";
-@use "app/torrents/torrents-search-component.theme";
-@use "app/torrents/torrents-table-component.theme";
+@use "@fontsource/roboto";
+@use "@fontsource/jetbrains-mono/400.css" as jbm400;
+@use "@fontsource/jetbrains-mono/500.css" as jbm500;
+@use "@fontsource/jetbrains-mono/600.css" as jbm600;
+@use "@fontsource/jetbrains-mono/700.css" as jbm700;
+@use "@fontsource/material-icons";
+@use "@fontsource/material-icons-outlined";
+@use "@fontsource/material-symbols-outlined";
 
-@use "app/themes/classic-theme";
-@use "app/themes/neon-theme";
-@use "app/themes/tundra-theme";
-
-@import "@fontsource/roboto";
-@import "@fontsource/jetbrains-mono/400.css";
-@import "@fontsource/jetbrains-mono/500.css";
-@import "@fontsource/jetbrains-mono/600.css";
-@import "@fontsource/jetbrains-mono/700.css";
-@import "@fontsource/material-icons";
-@import "@fontsource/material-icons-outlined";
-@import "@fontsource/material-symbols-outlined";
-
-// Include the common styles for Angular Material. We include this here so that you only
-// have to load a single css file for Angular Material in your app.
-// Be sure that you only ever include this mixin once!
-@include mat.elevation-classes();
-@include mat.app-background();
-
-@mixin app-component-themes($theme) {
-  @include health-widget-component.theme($theme);
-  @include layout-component.theme($theme);
-  @include dashboard-component.theme($theme);
-  @include queue-visualize-component.theme($theme);
-  @include theme-emitter-component.theme($theme);
-  @include torrents-search-component.theme($theme);
-  @include torrents-table-component.theme($theme);
-}
-
-//.mat-toolbar.toolbar-header {
-//  background-color: mat.get-theme-color($theme, primary, 40);
-//  --mat-toolbar-container-text-color: #fff;
-
-// Include theme styles for core and each component used in your app.
-// Alternatively, you can import and @include the theme mixins for each component
-// that you are using.
+// Material theming (v19 token API). One mat.theme emits the --mat-sys-*
+// system tokens; the overrides below re-point the key ones at the app's own
+// theme tokens so every [data-theme] restyles Material surfaces too.
 html {
   @include mat.elevation-classes();
   @include mat.app-background();
-  @include mat.all-component-themes(classic-theme.$theme);
-  @include app-component-themes(classic-theme.$theme);
-  //--mat-toolbar-container-text-color: #fff;
-  &[data-theme="clean"] {
-    @include classic-theme.clean-theme-vars;
+
+  & {
+    @include mat.theme(
+      (
+        color: (
+          primary: mat.$violet-palette,
+          theme-type: color-scheme,
+        ),
+        typography: Roboto,
+        density: 0,
+      )
+    );
   }
-  &[data-theme="neon"] {
-    @include mat.all-component-colors(neon-theme.$theme);
-    @include app-component-themes(neon-theme.$theme);
-    @include neon-theme.theme-vars;
-  }
-  &[data-theme="tundra"] {
-    @include mat.all-component-colors(tundra-theme.$theme);
-    @include app-component-themes(tundra-theme.$theme);
-    @include tundra-theme.theme-vars;
+
+  & {
+    --mat-sys-primary: var(--accent);
+    --mat-sys-on-primary: var(--bg);
+    --mat-sys-background: var(--bg);
+    --mat-sys-on-background: var(--text);
+    --mat-sys-surface: var(--surface);
+    --mat-sys-surface-container-lowest: var(--bg);
+    --mat-sys-surface-container-low: var(--surface);
+    --mat-sys-surface-container: var(--surface2);
+    --mat-sys-surface-container-high: var(--surface2);
+    --mat-sys-surface-container-highest: var(--surface2);
+    --mat-sys-on-surface: var(--text);
+    --mat-sys-surface-variant: var(--surface2);
+    --mat-sys-on-surface-variant: var(--dim);
+    --mat-sys-outline: var(--border);
+    --mat-sys-outline-variant: var(--border);
   }
 }
-
-// Comment out the line below if you want to use the pre-defined typography utility classes.
-// For more information: https://material.angular.io/guide/typography#using-typography-styles-in-your-application.
-//@include mat.typography-hierarchy(classic-theme.$theme);
-
-// Comment out the line below if you want to use the deprecated `color` inputs.
-// @include mat.color-variants-backwards-compatibility(classic-theme.$theme);
-/* You can add global styles to this file, and also import other style files */
 
 :root,
 [data-theme="bitmagnet-dark"] {

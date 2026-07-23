@@ -1,12 +1,12 @@
 import { Component, inject, Input, OnInit } from "@angular/core";
 import { Apollo } from "apollo-angular";
 import { TranslocoService } from "@jsverse/transloco";
-import { TimeAgoPipe } from "../pipes/time-ago.pipe";
 import * as generated from "../graphql/generated";
 import { ErrorsService } from "../errors/errors.service";
+import { AsyncPipe, DecimalPipe } from "@angular/common";
+import { TranslocoDirective } from "@jsverse/transloco";
 import { PaginatorComponent } from "../paginator/paginator.component";
 import { FilesizePipe } from "../pipes/filesize.pipe";
-import { AppModule } from "../app.module";
 import {
   ITorrentFilesDatasource,
   TorrentFilesDatasource,
@@ -19,7 +19,13 @@ import {
 
 @Component({
   selector: "app-torrent-files-table",
-  imports: [AppModule, FilesizePipe, PaginatorComponent, TimeAgoPipe],
+  imports: [
+    AsyncPipe,
+    DecimalPipe,
+    TranslocoDirective,
+    FilesizePipe,
+    PaginatorComponent,
+  ],
   templateUrl: "./torrent-files-table.component.html",
   styleUrl: "./torrent-files-table.component.scss",
 })

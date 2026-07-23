@@ -1,8 +1,8 @@
 import { Component, inject } from "@angular/core";
 import { FormsModule } from "@angular/forms";
 import { Apollo } from "apollo-angular";
+import { TranslocoDirective } from "@jsverse/transloco";
 import { catchError, EMPTY } from "rxjs";
-import { AppModule } from "../../app.module";
 import { ErrorsService } from "../../errors/errors.service";
 import * as generated from "../../graphql/generated";
 import { DocumentTitleComponent } from "../../layout/document-title.component";
@@ -10,7 +10,7 @@ import { availableQueueNames } from "./queue.constants";
 
 @Component({
   selector: "app-queue-admin",
-  imports: [AppModule, DocumentTitleComponent, FormsModule],
+  imports: [DocumentTitleComponent, FormsModule, TranslocoDirective],
   templateUrl: "./queue-admin.component.html",
   styleUrl: "./queue-admin.component.scss",
 })
