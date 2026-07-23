@@ -203,6 +203,11 @@ export class DashboardLlmComponent implements OnDestroy {
       });
   }
 
+  useRecommendedConcurrency(slots: number) {
+    this.form.controls.concurrency.setValue(slots);
+    this.form.controls.concurrency.markAsDirty();
+  }
+
   runBenchmark() {
     if (this.benchmarkSampleSize.invalid) {
       this.benchmarkSampleSize.markAsTouched();

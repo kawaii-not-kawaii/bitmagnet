@@ -148,12 +148,13 @@ func (r *Resolver) testDashboardLlmConnection(ctx context.Context) (gen.Dashboar
 
 func dashboardLlmCapacity(capacity openai.Capacity) *gen.LlmCapacity {
 	return &gen.LlmCapacity{
-		Source:              capacity.Source,
-		ContextPerRequest:   capacity.ContextPerRequest,
-		MaxCompletionTokens: capacity.MaxCompletionTokens,
-		Slots:               capacity.Slots,
-		Fits:                capacity.Fits,
-		Message:             capacity.Message,
+		Source:                 capacity.Source,
+		ContextPerRequest:      capacity.ContextPerRequest,
+		MaxCompletionTokens:    capacity.MaxCompletionTokens,
+		Slots:                  capacity.Slots,
+		Fits:                   capacity.Fits,
+		RecommendedConcurrency: capacity.RecommendedConcurrency,
+		Message:                capacity.Message,
 	}
 }
 

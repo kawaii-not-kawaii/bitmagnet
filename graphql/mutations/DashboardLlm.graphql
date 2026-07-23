@@ -24,6 +24,7 @@ mutation DashboardLlmTestConnection {
         maxCompletionTokens
         slots
         fits
+        recommendedConcurrency
         message
       }
     }

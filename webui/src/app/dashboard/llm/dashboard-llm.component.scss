@@ -907,6 +907,16 @@ button.failed {
     monospace;
   text-align: right;
 
+  .link-button {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--accent);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+
   &.warning {
     color: var(--llm-red);
   }

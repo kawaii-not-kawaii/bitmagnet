@@ -226,12 +226,13 @@ type ComplexityRoot struct {
 	}
 
 	LlmCapacity struct {
-		ContextPerRequest   func(childComplexity int) int
-		Fits                func(childComplexity int) int
-		MaxCompletionTokens func(childComplexity int) int
-		Message             func(childComplexity int) int
-		Slots               func(childComplexity int) int
-		Source              func(childComplexity int) int
+		ContextPerRequest      func(childComplexity int) int
+		Fits                   func(childComplexity int) int
+		MaxCompletionTokens    func(childComplexity int) int
+		Message                func(childComplexity int) int
+		RecommendedConcurrency func(childComplexity int) int
+		Slots                  func(childComplexity int) int
+		Source                 func(childComplexity int) int
 	}
 
 	LlmClassificationEvent struct {
@@ -1342,6 +1343,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LlmCapacity.Message(childComplexity), true
+
+	case "LlmCapacity.recommendedConcurrency":
+		if e.complexity.LlmCapacity.RecommendedConcurrency == nil {
+			break
+		}
+
+		return e.complexity.LlmCapacity.RecommendedConcurrency(childComplexity), true
 
 	case "LlmCapacity.slots":
 		if e.complexity.LlmCapacity.Slots == nil {
@@ -3150,6 +3158,12 @@ type LlmCapacity {
   # Whether configured max_context + max_tokens fits contextPerRequest.
   # Null when no window was detected.
   fits: Boolean
+
+  # Detected slot count as an UPPER bound for classifier concurrency
+  # (requests beyond it queue at the server; generation is often
+  # compute-bound below it — a ceiling to tune down from, not a target).
+  # Null for hosted providers, where concurrency is quota/cost bound.
+  recommendedConcurrency: Int
 
   # Human-readable capacity line, phrased slot-bound (local) or
   # quota/cost-bound (hosted).
@@ -7521,6 +7535,8 @@ func (ec *executionContext) fieldContext_DashboardLlmConnectionResult_capacity(_
 				return ec.fieldContext_LlmCapacity_slots(ctx, field)
 			case "fits":
 				return ec.fieldContext_LlmCapacity_fits(ctx, field)
+			case "recommendedConcurrency":
+				return ec.fieldContext_LlmCapacity_recommendedConcurrency(ctx, field)
 			case "message":
 				return ec.fieldContext_LlmCapacity_message(ctx, field)
 			}
@@ -9177,6 +9193,47 @@ func (ec *executionContext) fieldContext_LlmCapacity_fits(_ context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Boolean does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LlmCapacity_recommendedConcurrency(ctx context.Context, field graphql.CollectedField, obj *gen.LlmCapacity) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmCapacity_recommendedConcurrency(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RecommendedConcurrency, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*int)
+	fc.Result = res
+	return ec.marshalOInt2ᚖint(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmCapacity_recommendedConcurrency(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmCapacity",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
 		},
 	}
 	return fc, nil
@@ -23850,6 +23907,8 @@ func (ec *executionContext) _LlmCapacity(ctx context.Context, sel ast.SelectionS
 			out.Values[i] = ec._LlmCapacity_slots(ctx, field, obj)
 		case "fits":
 			out.Values[i] = ec._LlmCapacity_fits(ctx, field, obj)
+		case "recommendedConcurrency":
+			out.Values[i] = ec._LlmCapacity_recommendedConcurrency(ctx, field, obj)
 		case "message":
 			out.Values[i] = ec._LlmCapacity_message(ctx, field, obj)
 			if out.Values[i] == graphql.Null {

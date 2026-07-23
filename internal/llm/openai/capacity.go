@@ -24,7 +24,13 @@ type Capacity struct {
 	MaxCompletionTokens *int
 	Slots               *int
 	Fits                *bool
-	Message             string
+	// RecommendedConcurrency is the detected slot count for local backends —
+	// an UPPER bound for classifier concurrency (requests beyond it queue at
+	// the server). Generation is often compute-bound below the slot count, so
+	// treat it as a ceiling to tune down from, not a target. Nil for hosted
+	// providers, where concurrency is quota/cost bound.
+	RecommendedConcurrency *int
+	Message                string
 }
 
 type capacityBudgets struct {
@@ -278,6 +284,8 @@ func finishCapacity(capacity Capacity, maxContext int, maxTokens int) Capacity {
 	capacity.Fits = &fits
 
 	if capacity.Slots != nil {
+		capacity.RecommendedConcurrency = capacity.Slots
+
 		if fits {
 			capacity.Message = fmt.Sprintf(
 				"%d slots × %d ctx · config fits",

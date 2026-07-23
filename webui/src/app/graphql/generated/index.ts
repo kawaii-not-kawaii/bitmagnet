@@ -354,6 +354,7 @@ export type LlmCapacity = {
   fits?: Maybe<Scalars['Boolean']['output']>;
   maxCompletionTokens?: Maybe<Scalars['Int']['output']>;
   message: Scalars['String']['output'];
+  recommendedConcurrency?: Maybe<Scalars['Int']['output']>;
   slots?: Maybe<Scalars['Int']['output']>;
   source: Scalars['String']['output'];
 };
@@ -1101,7 +1102,7 @@ export type DashboardLlmSetConfigMutation = { __typename?: 'Mutation', config: {
 export type DashboardLlmTestConnectionMutationVariables = Exact<{ [key: string]: never; }>;
 
 
-export type DashboardLlmTestConnectionMutation = { __typename?: 'Mutation', dashboard: { __typename?: 'DashboardMutation', testLlmConnection: { __typename?: 'DashboardLlmConnectionResult', ok: boolean, error?: string | null, connected: boolean, latencySeconds: number, capacity?: { __typename?: 'LlmCapacity', source: string, contextPerRequest?: number | null, maxCompletionTokens?: number | null, slots?: number | null, fits?: boolean | null, message: string } | null } } };
+export type DashboardLlmTestConnectionMutation = { __typename?: 'Mutation', dashboard: { __typename?: 'DashboardMutation', testLlmConnection: { __typename?: 'DashboardLlmConnectionResult', ok: boolean, error?: string | null, connected: boolean, latencySeconds: number, capacity?: { __typename?: 'LlmCapacity', source: string, contextPerRequest?: number | null, maxCompletionTokens?: number | null, slots?: number | null, fits?: boolean | null, recommendedConcurrency?: number | null, message: string } | null } } };
 
 export type DashboardLlmRunBenchmarkMutationVariables = Exact<{
   sampleSize: Scalars['Int']['input'];
@@ -1518,6 +1519,7 @@ export const DashboardLlmTestConnectionDocument = gql`
         maxCompletionTokens
         slots
         fits
+        recommendedConcurrency
         message
       }
     }
