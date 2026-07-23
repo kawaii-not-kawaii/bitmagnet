@@ -1,5 +1,4 @@
-import { DOCUMENT } from "@angular/common";
-import { Injectable, inject } from "@angular/core";
+import { Injectable, inject, DOCUMENT } from "@angular/core";
 import { BehaviorSubject } from "rxjs";
 import { BrowserStorageService } from "../browser-storage/browser-storage.service";
 import {

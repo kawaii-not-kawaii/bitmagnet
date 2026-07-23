@@ -1,11 +1,11 @@
-import { Injectable } from "@angular/core";
+import { Injectable, inject } from "@angular/core";
 import { map, Observable } from "rxjs";
 import { Apollo } from "apollo-angular";
 import * as generated from "./generated";
 
 @Injectable({ providedIn: "root" })
 export class GraphQLService {
-  constructor(private readonly apollo: Apollo) {}
+  private readonly apollo = inject(Apollo);
 
   torrentDelete(
     input: generated.TorrentDeleteMutationVariables,
