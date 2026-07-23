@@ -29,7 +29,6 @@ type MetricsView = {
 };
 @Component({
   selector: "app-torrent-metrics",
-  standalone: true,
   templateUrl: "./torrent-metrics.component.html",
   styleUrl: "./torrent-metrics.component.scss",
   imports: [AppModule, BarChartComponent],

@@ -20,7 +20,6 @@ import { UiPreferences } from "./ui-preferences.service";
   selector: "app-layout",
   templateUrl: "./layout.component.html",
   styleUrl: "./layout.component.scss",
-  standalone: true,
   imports: [AppModule, HealthModule, VersionComponent],
 })
 export class LayoutComponent {

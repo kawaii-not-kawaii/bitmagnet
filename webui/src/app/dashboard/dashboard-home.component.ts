@@ -10,7 +10,6 @@ import { HealthService } from "../health/health.service";
 
 @Component({
   selector: "app-dashboard-home",
-  standalone: true,
   imports: [AppModule, GraphQLModule, HealthModule],
   templateUrl: "./dashboard-home.component.html",
   styleUrl: "./dashboard-home.component.scss",

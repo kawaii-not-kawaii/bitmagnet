@@ -6,7 +6,6 @@ import { QueueJobsDatasource } from "./queue-jobs.datasource";
 
 @Component({
   selector: "app-queue-jobs-table",
-  standalone: true,
   imports: [AppModule, TimeAgoPipe],
   templateUrl: "./queue-jobs-table.component.html",
   styleUrl: "./queue-jobs-table.component.scss",

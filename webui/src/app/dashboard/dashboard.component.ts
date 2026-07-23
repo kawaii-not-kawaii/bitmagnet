@@ -5,7 +5,6 @@ import { HealthService } from "../health/health.service";
 
 @Component({
   selector: "app-dashboard",
-  standalone: true,
   imports: [AppModule, HealthModule],
   templateUrl: "./dashboard.component.html",
   styleUrl: "./dashboard.component.scss",

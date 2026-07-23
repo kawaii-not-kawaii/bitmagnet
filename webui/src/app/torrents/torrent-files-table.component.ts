@@ -19,7 +19,6 @@ import {
 
 @Component({
   selector: "app-torrent-files-table",
-  standalone: true,
   imports: [AppModule, FilesizePipe, PaginatorComponent, TimeAgoPipe],
   templateUrl: "./torrent-files-table.component.html",
   styleUrl: "./torrent-files-table.component.scss",

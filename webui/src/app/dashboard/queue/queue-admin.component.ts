@@ -10,7 +10,6 @@ import { availableQueueNames } from "./queue.constants";
 
 @Component({
   selector: "app-queue-admin",
-  standalone: true,
   imports: [AppModule, DocumentTitleComponent, FormsModule],
   templateUrl: "./queue-admin.component.html",
   styleUrl: "./queue-admin.component.scss",

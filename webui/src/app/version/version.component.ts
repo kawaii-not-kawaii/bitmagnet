@@ -9,7 +9,6 @@ const defaultVersionName = "v-unknown";
 
 @Component({
   selector: "app-version",
-  standalone: true,
   templateUrl: "./version.component.html",
   imports: [AppModule, GraphQLModule],
 })

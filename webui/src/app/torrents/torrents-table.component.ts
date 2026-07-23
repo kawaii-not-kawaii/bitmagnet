@@ -12,7 +12,6 @@ import { TorrentsSearchController } from "./torrents-search.controller";
 
 @Component({
   selector: "app-torrents-table",
-  standalone: true,
   imports: [
     AppModule,
     FilesizePipe,

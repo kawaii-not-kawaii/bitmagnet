@@ -18,7 +18,6 @@ import normalizeTagInput from "../util/normalizeTagInput";
 
 @Component({
   selector: "app-torrent-edit-tags",
-  standalone: true,
   imports: [AppModule],
   templateUrl: "./torrent-edit-tags.component.html",
   styleUrl: "./torrent-edit-tags.component.scss",

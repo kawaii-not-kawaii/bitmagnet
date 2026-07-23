@@ -14,7 +14,6 @@ import { TorrentReprocessComponent } from "./torrent-reprocess.component";
   selector: "app-torrent-content",
   templateUrl: "./torrent-content.component.html",
   styleUrl: "./torrent-content.component.scss",
-  standalone: true,
   imports: [
     AppModule,
     NgOptimizedImage,

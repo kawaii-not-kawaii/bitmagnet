@@ -12,7 +12,6 @@ import type { PageEvent } from "./paginator.types";
 @Component({
   selector: "app-paginator",
   templateUrl: "./paginator.component.html",
-  standalone: true,
   styleUrls: ["./paginator.component.scss"],
   imports: [AppModule, IntEstimatePipe],
 })

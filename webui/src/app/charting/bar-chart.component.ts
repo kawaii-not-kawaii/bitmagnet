@@ -18,7 +18,6 @@ type RenderBucket = {
 
 @Component({
   selector: "app-bar-chart",
-  standalone: true,
   imports: [DecimalPipe],
   templateUrl: "./bar-chart.component.html",
   styleUrl: "./bar-chart.component.scss",

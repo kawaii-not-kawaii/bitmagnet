@@ -54,7 +54,6 @@ import {
   selector: "app-torrents-search",
   templateUrl: "./torrents-search.component.html",
   styleUrl: "./torrents-search.component.scss",
-  standalone: true,
   imports: [
     AppModule,
     DocumentTitleComponent,

@@ -8,7 +8,6 @@ import { AuthShellComponent } from "./auth-shell.component";
 
 @Component({
   selector: "app-setup",
-  standalone: true,
   imports: [AuthShellComponent, ReactiveFormsModule],
   templateUrl: "./setup.component.html",
   styleUrl: "./setup.component.scss",

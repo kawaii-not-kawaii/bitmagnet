@@ -8,7 +8,6 @@ type Refreshable = {
 
 @Component({
   selector: "app-queue-dashboard",
-  standalone: true,
   imports: [AppModule],
   templateUrl: "./queue-dashboard.component.html",
   styleUrl: "./queue-dashboard.component.scss",

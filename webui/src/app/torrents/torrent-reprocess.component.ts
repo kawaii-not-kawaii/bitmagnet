@@ -7,7 +7,6 @@ import { ErrorsService } from "../errors/errors.service";
 
 @Component({
   selector: "app-torrent-reprocess",
-  standalone: true,
   imports: [AppModule],
   templateUrl: "./torrent-reprocess.component.html",
   styleUrl: "./torrent-reprocess.component.scss",

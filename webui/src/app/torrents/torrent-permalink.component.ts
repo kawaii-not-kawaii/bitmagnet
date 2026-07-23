@@ -11,7 +11,6 @@ import { TorrentChipsComponent } from "./torrent-chips.component";
 
 @Component({
   selector: "app-torrent-permalink",
-  standalone: true,
   imports: [
     AppModule,
     GraphQLModule,

@@ -44,7 +44,6 @@ const statusOrder: QueueJobStatus[] = [
 
 @Component({
   selector: "app-queue-visualize",
-  standalone: true,
   templateUrl: "./queue-visualize.component.html",
   styleUrl: "./queue-visualize.component.scss",
   imports: [AppModule, BarChartComponent, DocumentTitleComponent],

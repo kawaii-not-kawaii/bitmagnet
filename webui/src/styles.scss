@@ -27,7 +27,8 @@
 // Include the common styles for Angular Material. We include this here so that you only
 // have to load a single css file for Angular Material in your app.
 // Be sure that you only ever include this mixin once!
-@include mat.core();
+@include mat.elevation-classes();
+@include mat.app-background();
 
 @mixin app-component-themes($theme) {
   @include health-widget-component.theme($theme);
@@ -47,7 +48,8 @@
 // Alternatively, you can import and @include the theme mixins for each component
 // that you are using.
 html {
-  @include mat.core-theme(classic-theme.$theme);
+  @include mat.elevation-classes();
+  @include mat.app-background();
   @include mat.all-component-themes(classic-theme.$theme);
   @include app-component-themes(classic-theme.$theme);
   //--mat-toolbar-container-text-color: #fff;

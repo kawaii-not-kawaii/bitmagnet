@@ -16,7 +16,6 @@ import { TorrentReprocessComponent } from "./torrent-reprocess.component";
 
 @Component({
   selector: "app-torrents-bulk-actions",
-  standalone: true,
   imports: [AppModule, TorrentReprocessComponent],
   templateUrl: "./torrents-bulk-actions.component.html",
   styleUrl: "./torrents-bulk-actions.component.scss",

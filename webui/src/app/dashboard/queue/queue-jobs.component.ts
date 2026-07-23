@@ -18,7 +18,6 @@ import {
 
 @Component({
   selector: "app-queue-jobs",
-  standalone: true,
   imports: [
     AppModule,
     PaginatorComponent,

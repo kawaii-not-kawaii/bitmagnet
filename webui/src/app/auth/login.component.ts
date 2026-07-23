@@ -11,7 +11,6 @@ type LoginMode = "password" | "apiKey";
 
 @Component({
   selector: "app-login",
-  standalone: true,
   imports: [AuthShellComponent, ReactiveFormsModule],
   templateUrl: "./login.component.html",
   styleUrl: "./login.component.scss",

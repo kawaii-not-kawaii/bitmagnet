@@ -20,7 +20,6 @@ import {
 
 @Component({
   selector: "app-dashboard-llm",
-  standalone: true,
   imports: [AppModule, GraphQLModule],
   providers: [DashboardLlmService],
   templateUrl: "./dashboard-llm.component.html",
