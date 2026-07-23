@@ -461,11 +461,11 @@ func TestUserMessageZeroContextKeepsCurrentLimit(t *testing.T) {
 	}
 }
 
-func TestEstimateTokensCJKByteBias(t *testing.T) {
+func TestEstimateTokensMultibyteBias(t *testing.T) {
 	t.Parallel()
 
-	if estimateTokens("电影标题") <= estimateTokens("abcd") {
-		t.Fatal("CJK bytes should estimate higher than the same number of ASCII characters")
+	if estimateTokens("ταιν") <= estimateTokens("abcd") {
+		t.Fatal("multibyte text should estimate higher than the same number of ASCII characters")
 	}
 }
 

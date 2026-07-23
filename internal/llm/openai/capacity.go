@@ -27,6 +27,38 @@ type Capacity struct {
 	Message             string
 }
 
+type capacityBudgets struct {
+	maxContext int
+	maxTokens  int
+}
+
+type modelsDevLimit struct {
+	Context int `json:"context"`
+	Output  int `json:"output"`
+}
+
+type propsGenerationSettings struct {
+	Context int `json:"n_ctx"`
+}
+
+type propsResponse struct {
+	DefaultGenerationSettings propsGenerationSettings `json:"default_generation_settings"`
+}
+
+type modelsTopProvider struct {
+	MaxCompletionTokens int `json:"max_completion_tokens"`
+}
+
+type modelsResponseModel struct {
+	ID            string            `json:"id"`
+	ContextLength int               `json:"context_length"`
+	TopProvider   modelsTopProvider `json:"top_provider"`
+}
+
+type modelsResponse struct {
+	Data []modelsResponseModel `json:"data"`
+}
+
 type modelsDevCache struct {
 	mutex    sync.Mutex
 	registry modelsDevRegistry
@@ -37,11 +69,8 @@ type modelsDevRegistry map[string]struct {
 }
 
 type modelsDevModel struct {
-	ID    string `json:"id"`
-	Limit struct {
-		Context int `json:"context"`
-		Output  int `json:"output"`
-	} `json:"limit"`
+	ID    string         `json:"id"`
+	Limit modelsDevLimit `json:"limit"`
 }
 
 var sharedModelsDevCache modelsDevCache
@@ -62,8 +91,7 @@ func ProbeCapacity(
 		baseURL,
 		apiKey,
 		model,
-		maxContext,
-		maxTokens,
+		capacityBudgets{maxContext: maxContext, maxTokens: maxTokens},
 		modelsDevRegistryURL,
 		&sharedModelsDevCache,
 	)
@@ -75,8 +103,7 @@ func probeCapacity(
 	baseURL string,
 	apiKey string,
 	model string,
-	maxContext int,
-	maxTokens int,
+	budgets capacityBudgets,
 	registryURL string,
 	registryCache *modelsDevCache,
 ) Capacity {
@@ -86,15 +113,15 @@ func probeCapacity(
 
 	baseURL = strings.TrimRight(baseURL, "/")
 	if capacity, ok := probeSlots(ctx, httpClient, baseURL+"/v1/slots", apiKey); ok {
-		return finishCapacity(capacity, maxContext, maxTokens)
+		return finishCapacity(capacity, budgets.maxContext, budgets.maxTokens)
 	}
 
 	if capacity, ok := probeProps(ctx, httpClient, baseURL+"/props", apiKey); ok {
-		return finishCapacity(capacity, maxContext, maxTokens)
+		return finishCapacity(capacity, budgets.maxContext, budgets.maxTokens)
 	}
 
 	if capacity, ok := probeModels(ctx, httpClient, baseURL+"/v1/models", apiKey, model); ok {
-		return finishCapacity(capacity, maxContext, maxTokens)
+		return finishCapacity(capacity, budgets.maxContext, budgets.maxTokens)
 	}
 
 	registry, err := registryCache.load(ctx, httpClient, registryURL)
@@ -105,7 +132,7 @@ func probeCapacity(
 			capacity.MaxCompletionTokens = positiveInt(modelMetadata.Limit.Output)
 
 			if capacity.ContextPerRequest != nil || capacity.MaxCompletionTokens != nil {
-				return finishCapacity(capacity, maxContext, maxTokens)
+				return finishCapacity(capacity, budgets.maxContext, budgets.maxTokens)
 			}
 		}
 	}
@@ -133,11 +160,7 @@ func probeSlots(ctx context.Context, client *http.Client, url string, apiKey str
 }
 
 func probeProps(ctx context.Context, client *http.Client, url string, apiKey string) (Capacity, bool) {
-	var props struct {
-		DefaultGenerationSettings struct {
-			Context int `json:"n_ctx"`
-		} `json:"default_generation_settings"`
-	}
+	var props propsResponse
 
 	if getJSON(ctx, client, url, apiKey, &props) != nil || props.DefaultGenerationSettings.Context <= 0 {
 		return Capacity{}, false
@@ -156,15 +179,7 @@ func probeModels(
 	apiKey string,
 	model string,
 ) (Capacity, bool) {
-	var response struct {
-		Data []struct {
-			ID            string `json:"id"`
-			ContextLength int    `json:"context_length"`
-			TopProvider   struct {
-				MaxCompletionTokens int `json:"max_completion_tokens"`
-			} `json:"top_provider"`
-		} `json:"data"`
-	}
+	var response modelsResponse
 
 	if getJSON(ctx, client, url, apiKey, &response) != nil {
 		return Capacity{}, false

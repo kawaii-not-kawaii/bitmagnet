@@ -72,7 +72,8 @@ func TestProbeCapacity(t *testing.T) {
 				"/v1/slots": {body: `not-json`},
 				"/props":    {status: http.StatusInternalServerError},
 				"/v1/models": {
-					body: `{"data":[{"id":"hosted","context_length":128000,"top_provider":{"max_completion_tokens":4096}}]}`,
+					body: `{"data":[{"id":"hosted","context_length":128000,` +
+						`"top_provider":{"max_completion_tokens":4096}}]}`,
 				},
 			},
 			model:          "hosted",
@@ -82,18 +83,21 @@ func TestProbeCapacity(t *testing.T) {
 			wantContext:    128000,
 			wantCompletion: 4096,
 			wantFits:       boolPointer(true),
-			wantMessage:    "context 128000 · capacity is concurrent-call bound — concurrency is your quota/cost throttle",
+			wantMessage: "context 128000 · capacity is concurrent-call bound — " +
+				"concurrency is your quota/cost throttle",
 		},
 		{
-			name:                "models.dev suffix match and cache",
-			registry:            `{"openrouter":{"models":{"vendor/model":{"id":"vendor/model","limit":{"context":32000,"output":2048}}}}}`,
-			model:               "gateway/vendor/model",
-			maxContext:          30000,
-			wantSource:          "models.dev",
-			wantContext:         32000,
-			wantCompletion:      2048,
-			wantFits:            boolPointer(true),
-			wantMessage:         "context 32000 · capacity is concurrent-call bound — concurrency is your quota/cost throttle",
+			name: "models.dev suffix match and cache",
+			registry: `{"openrouter":{"models":{"vendor/model":{"id":"vendor/model",` +
+				`"limit":{"context":32000,"output":2048}}}}}`,
+			model:          "gateway/vendor/model",
+			maxContext:     30000,
+			wantSource:     "models.dev",
+			wantContext:    32000,
+			wantCompletion: 2048,
+			wantFits:       boolPointer(true),
+			wantMessage: "context 32000 · capacity is concurrent-call bound — " +
+				"concurrency is your quota/cost throttle",
 			checkRegistryCached: true,
 		},
 		{
@@ -158,8 +162,10 @@ func TestProbeCapacity(t *testing.T) {
 				provider.URL,
 				"secret",
 				testCase.model,
-				testCase.maxContext,
-				testCase.maxTokens,
+				capacityBudgets{
+					maxContext: testCase.maxContext,
+					maxTokens:  testCase.maxTokens,
+				},
 				registry.URL,
 				cache,
 			)
@@ -173,8 +179,10 @@ func TestProbeCapacity(t *testing.T) {
 					provider.URL,
 					"secret",
 					testCase.model,
-					testCase.maxContext,
-					testCase.maxTokens,
+					capacityBudgets{
+						maxContext: testCase.maxContext,
+						maxTokens:  testCase.maxTokens,
+					},
 					registry.URL,
 					cache,
 				)
