@@ -313,6 +313,7 @@ ${xv}`,kv=he`
         maxCompletionTokens
         slots
         fits
+        recommendedConcurrency
         message
       }
     }
