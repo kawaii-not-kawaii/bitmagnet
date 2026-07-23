@@ -97,6 +97,7 @@ func TestNegativeCache_MetricsLabels(t *testing.T) {
 	}
 
 	now = now.Add(negativeCacheTTL + time.Second)
+
 	c.get("k")
 
 	for label, want := range map[string]float64{"store": 1, "hit": 1, "expired": 1} {
