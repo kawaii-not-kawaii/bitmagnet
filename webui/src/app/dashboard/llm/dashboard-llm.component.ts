@@ -1,10 +1,6 @@
 import { AsyncPipe, DatePipe, DecimalPipe, PercentPipe } from "@angular/common";
 import { Component, OnDestroy, inject } from "@angular/core";
-import {
-  FormBuilder,
-  ReactiveFormsModule,
-  Validators,
-} from "@angular/forms";
+import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
 import { Apollo } from "apollo-angular";
 import { finalize, tap } from "rxjs";
 import { ErrorsService } from "../../errors/errors.service";

@@ -1,8 +1,8 @@
 import { Component, EventEmitter, inject, Input, Output } from "@angular/core";
 import { catchError, EMPTY, tap } from "rxjs";
 import { LowerCasePipe, NgOptimizedImage } from "@angular/common";
-import * as generated from "../graphql/generated";
 import { TranslocoDirective } from "@jsverse/transloco";
+import * as generated from "../graphql/generated";
 import { GraphQLService } from "../graphql/graphql.service";
 import { ErrorsService } from "../errors/errors.service";
 import { TorrentFilesTableComponent } from "./torrent-files-table.component";

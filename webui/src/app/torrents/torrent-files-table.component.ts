@@ -1,10 +1,10 @@
 import { Component, inject, Input, OnInit } from "@angular/core";
 import { Apollo } from "apollo-angular";
 import { TranslocoService } from "@jsverse/transloco";
-import * as generated from "../graphql/generated";
-import { ErrorsService } from "../errors/errors.service";
 import { AsyncPipe, DecimalPipe } from "@angular/common";
 import { TranslocoDirective } from "@jsverse/transloco";
+import * as generated from "../graphql/generated";
+import { ErrorsService } from "../errors/errors.service";
 import { PaginatorComponent } from "../paginator/paginator.component";
 import { FilesizePipe } from "../pipes/filesize.pipe";
 import {

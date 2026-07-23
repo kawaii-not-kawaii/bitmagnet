@@ -1,6 +1,5 @@
 import { ComponentFixture, TestBed } from "@angular/core/testing";
 
-
 // import { StatusModule } from '../status.module';
 
 import { appConfig } from "../app.config";
@@ -13,7 +12,6 @@ describe("VersionComponent", () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       ...appConfig,
-
     }).compileComponents();
 
     fixture = TestBed.createComponent(VersionComponent);

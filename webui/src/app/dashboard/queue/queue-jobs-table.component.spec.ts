@@ -16,7 +16,6 @@ describe("QueueJobsTableComponent", () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       ...appConfig,
-
     }).compileComponents();
 
     fixture = TestBed.createComponent(QueueJobsTableComponent);

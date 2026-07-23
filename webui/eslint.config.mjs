@@ -1,5 +1,6 @@
 import { fixupConfigRules, fixupPluginRules } from "@eslint/compat";
 import typescriptEslintEslintPlugin from "@typescript-eslint/eslint-plugin";
+import angular from "angular-eslint";
 import _import from "eslint-plugin-import";
 import globals from "globals";
 import tsParser from "@typescript-eslint/parser";
@@ -20,9 +21,49 @@ export default [
   {
     ignores: [
       ".angular/**/*.*",
+      "dist/**/*.*",
       "src/app/graphql/generated/**/*.*",
-      "**/*.html",
     ],
+  },
+  ...angular.configs.tsRecommended.map((config) => ({
+    ...config,
+    files: ["**/*.ts"],
+  })),
+  {
+    files: ["**/*.ts"],
+    processor: angular.processInlineTemplates,
+    rules: {
+      "@angular-eslint/directive-selector": [
+        "error",
+        { type: "attribute", prefix: "app", style: "camelCase" },
+      ],
+      "@angular-eslint/component-selector": [
+        "error",
+        { type: "element", prefix: "app", style: "kebab-case" },
+      ],
+    },
+  },
+  ...[
+    ...angular.configs.templateRecommended,
+    ...angular.configs.templateAccessibility,
+  ].map((config) => ({
+    ...config,
+    files: ["src/**/*.html"],
+  })),
+  {
+    files: ["src/**/*.html"],
+    rules: {
+      // null-check idiom (x == null) is used deliberately in templates
+      "@angular-eslint/template/eqeqeq": [
+        "error",
+        { allowNullOrUndefined: true },
+      ],
+      // labels wrap mat-select rather than native controls
+      "@angular-eslint/template/label-has-associated-control": [
+        "error",
+        { controlComponents: ["mat-select"] },
+      ],
+    },
   },
   ...fixupConfigRules(
     compat.extends(

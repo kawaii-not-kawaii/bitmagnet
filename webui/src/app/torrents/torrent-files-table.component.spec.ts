@@ -11,7 +11,6 @@ describe("TorrentFilesTableComponent", () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       ...appConfig,
-
     }).compileComponents();
 
     fixture = TestBed.createComponent(TorrentFilesTableComponent);
