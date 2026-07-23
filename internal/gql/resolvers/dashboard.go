@@ -11,6 +11,7 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/gqlmodel/gen"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmbench"
+	"github.com/bitmagnet-io/bitmagnet/internal/llm/openai"
 	"github.com/bitmagnet-io/bitmagnet/internal/model"
 )
 
@@ -100,7 +101,7 @@ func (r *Resolver) dashboardQuery(ctx context.Context) (gen.DashboardQuery, erro
 }
 
 func (r *Resolver) testDashboardLlmConnection(ctx context.Context) (gen.DashboardLlmConnectionResult, error) {
-	_, provider, err := r.dashboardProvider()
+	providerName, provider, err := r.dashboardProvider()
 	if err != nil {
 		message := err.Error()
 
@@ -109,25 +110,51 @@ func (r *Resolver) testDashboardLlmConnection(ctx context.Context) (gen.Dashboar
 		}, nil
 	}
 
+	registryConfig := r.LlmRegistry.Config()
+	providerConfig := registryConfig.Providers[providerName]
 	startedAt := time.Now()
 
-	_, err = provider.Classify(ctx, llm.ClassifyInput{
+	_, connectionErr := provider.Classify(ctx, llm.ClassifyInput{
 		Name:         "The Matrix 1999 1080p BluRay",
 		ContentTypes: strings.Join(model.ContentTypeNames(), ", "),
 	})
-	if err != nil {
-		message := fmt.Errorf("dashboard: test LLM connection: %w", err).Error()
-
-		return gen.DashboardLlmConnectionResult{
-			Error: &message,
-		}, nil
+	latency := time.Since(startedAt).Seconds()
+	capacity := openai.ProbeCapacity(
+		ctx,
+		nil,
+		providerConfig.BaseURL,
+		providerConfig.APIKey,
+		providerConfig.Model,
+		registryConfig.MaxContext,
+		registryConfig.MaxTokens,
+	)
+	result := gen.DashboardLlmConnectionResult{
+		LatencySeconds: latency,
+		Capacity:       dashboardLlmCapacity(capacity),
 	}
 
-	return gen.DashboardLlmConnectionResult{
-		Ok:             true,
-		Connected:      true,
-		LatencySeconds: time.Since(startedAt).Seconds(),
-	}, nil
+	if connectionErr != nil {
+		message := fmt.Errorf("dashboard: test LLM connection: %w", connectionErr).Error()
+		result.Error = &message
+
+		return result, nil
+	}
+
+	result.Ok = true
+	result.Connected = true
+
+	return result, nil
+}
+
+func dashboardLlmCapacity(capacity openai.Capacity) *gen.LlmCapacity {
+	return &gen.LlmCapacity{
+		Source:              capacity.Source,
+		ContextPerRequest:   capacity.ContextPerRequest,
+		MaxCompletionTokens: capacity.MaxCompletionTokens,
+		Slots:               capacity.Slots,
+		Fits:                capacity.Fits,
+		Message:             capacity.Message,
+	}
 }
 
 func (r *Resolver) runDashboardLlmBenchmark(ctx context.Context, sampleSize int) (gen.DashboardLlmBenchmark, error) {
