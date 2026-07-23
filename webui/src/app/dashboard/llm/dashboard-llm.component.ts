@@ -48,6 +48,7 @@ export class DashboardLlmComponent implements OnDestroy {
 
   form = this.fb.nonNullable.group({
     enabled: false,
+    concurrency: [10, [this.required, Validators.min(1)]],
     providerName: ["default", this.required],
     baseUrl: ["", this.required],
     model: ["", this.required],
@@ -73,6 +74,7 @@ export class DashboardLlmComponent implements OnDestroy {
   saveMessage = "";
   testState: "idle" | "testing" | "ok" | "error" = "idle";
   connectionMessage = "";
+  connectionCapacity?: generated.DashboardLlmTestConnectionMutation["dashboard"]["testLlmConnection"]["capacity"];
   benchmark?: generated.DashboardLlmRunBenchmarkMutation["dashboard"]["runLlmBenchmark"];
 
   ngOnDestroy() {
@@ -161,6 +163,7 @@ export class DashboardLlmComponent implements OnDestroy {
   testConnection() {
     this.testState = "testing";
     this.connectionMessage = "";
+    this.connectionCapacity = undefined;
     clearTimeout(this.connectionTimer);
 
     this.apollo
@@ -177,12 +180,14 @@ export class DashboardLlmComponent implements OnDestroy {
       .subscribe({
         next: (result) => {
           const connection = result.data?.dashboard.testLlmConnection;
+          this.connectionCapacity = connection?.capacity ?? undefined;
           if (connection?.ok && connection.connected) {
             this.testState = "ok";
             this.connectionMessage = `✓ Connected · ${connection.latencySeconds.toFixed(2)}s`;
             this.connectionTimer = setTimeout(() => {
               this.testState = "idle";
               this.connectionMessage = "";
+              this.connectionCapacity = undefined;
             }, 3200);
             return;
           }
@@ -244,6 +249,7 @@ export class DashboardLlmComponent implements OnDestroy {
   private patchForm(config: LlmDashboardView["config"]) {
     this.form.patchValue({
       enabled: config.enabled,
+      concurrency: config.concurrency,
       providerName: config.providerName,
       baseUrl: config.baseUrl,
       model: config.model,

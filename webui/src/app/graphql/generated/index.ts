@@ -164,6 +164,7 @@ export type DashboardLlmBenchmarkDistribution = {
 
 export type DashboardLlmConnectionResult = {
   __typename?: 'DashboardLlmConnectionResult';
+  capacity?: Maybe<LlmCapacity>;
   connected: Scalars['Boolean']['output'];
   error?: Maybe<Scalars['String']['output']>;
   latencySeconds: Scalars['Float']['output'];
@@ -345,6 +346,16 @@ export type LanguageInfo = {
   __typename?: 'LanguageInfo';
   id: Scalars['String']['output'];
   name: Scalars['String']['output'];
+};
+
+export type LlmCapacity = {
+  __typename?: 'LlmCapacity';
+  contextPerRequest?: Maybe<Scalars['Int']['output']>;
+  fits?: Maybe<Scalars['Boolean']['output']>;
+  maxCompletionTokens?: Maybe<Scalars['Int']['output']>;
+  message: Scalars['String']['output'];
+  slots?: Maybe<Scalars['Int']['output']>;
+  source: Scalars['String']['output'];
 };
 
 export type LlmClassificationEvent = {
@@ -1090,7 +1101,7 @@ export type DashboardLlmSetConfigMutation = { __typename?: 'Mutation', config: {
 export type DashboardLlmTestConnectionMutationVariables = Exact<{ [key: string]: never; }>;
 
 
-export type DashboardLlmTestConnectionMutation = { __typename?: 'Mutation', dashboard: { __typename?: 'DashboardMutation', testLlmConnection: { __typename?: 'DashboardLlmConnectionResult', ok: boolean, error?: string | null, connected: boolean, latencySeconds: number } } };
+export type DashboardLlmTestConnectionMutation = { __typename?: 'Mutation', dashboard: { __typename?: 'DashboardMutation', testLlmConnection: { __typename?: 'DashboardLlmConnectionResult', ok: boolean, error?: string | null, connected: boolean, latencySeconds: number, capacity?: { __typename?: 'LlmCapacity', source: string, contextPerRequest?: number | null, maxCompletionTokens?: number | null, slots?: number | null, fits?: boolean | null, message: string } | null } } };
 
 export type DashboardLlmRunBenchmarkMutationVariables = Exact<{
   sampleSize: Scalars['Int']['input'];
@@ -1501,6 +1512,14 @@ export const DashboardLlmTestConnectionDocument = gql`
       error
       connected
       latencySeconds
+      capacity {
+        source
+        contextPerRequest
+        maxCompletionTokens
+        slots
+        fits
+        message
+      }
     }
   }
 }

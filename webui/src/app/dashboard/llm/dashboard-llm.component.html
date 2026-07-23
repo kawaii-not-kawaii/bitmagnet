@@ -400,6 +400,11 @@
                 <input type="number" min="1" formControlName="batchSize" />
               </label>
               <label>
+                <span>Concurrency</span>
+                <input type="number" min="1" formControlName="concurrency" />
+                <small>applies after restart</small>
+              </label>
+              <label>
                 <span>Max context</span>
                 <input type="number" min="1" formControlName="maxContext" />
               </label>
@@ -440,6 +445,17 @@
           @if (connectionMessage) {
             <p class="action-result" [class.good]="testState === 'ok'">
               {{ connectionMessage }}
+            </p>
+          }
+          @if (connectionCapacity; as capacity) {
+            <p
+              class="capacity-result"
+              [class.warning]="capacity.fits === false"
+            >
+              @if (capacity.fits === false) {
+                <span aria-hidden="true">⚠</span>
+              }
+              {{ capacity.message }}
             </p>
           }
           @if (saveMessage) {

@@ -877,7 +877,7 @@ button.failed {
 .numeric-fields {
   display: grid;
   grid-column: 1 / -1;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -897,6 +897,19 @@ button.failed {
     10.5px/1.45 "JetBrains Mono",
     monospace;
   text-align: right;
+}
+
+.capacity-result {
+  margin: 5px 0 0;
+  color: var(--faint);
+  font:
+    10.5px/1.45 "JetBrains Mono",
+    monospace;
+  text-align: right;
+
+  &.warning {
+    color: var(--llm-red);
+  }
 }
 
 @keyframes bm-pulse {
