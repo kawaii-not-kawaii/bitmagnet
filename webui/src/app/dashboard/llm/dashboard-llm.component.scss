@@ -505,6 +505,7 @@ input:focus-visible {
 }
 
 .feed-filters button,
+.feed-footer button,
 .form-actions button,
 .benchmark-action button {
   border: 1px solid var(--border);
@@ -530,6 +531,7 @@ input:focus-visible {
 
 .feed-filters button:hover,
 .feed-filters button.active,
+.feed-footer button:hover,
 .form-actions button:hover:not(:disabled),
 .benchmark-action button:hover:not(:disabled) {
   border-color: var(--llm-purple);
@@ -543,6 +545,28 @@ input:focus-visible {
 .feed-list {
   max-height: 640px;
   overflow: auto;
+}
+
+.feed-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 12px 16px;
+  border-top: 1px solid var(--border);
+}
+
+.feed-footer span {
+  color: var(--faint);
+  font:
+    500 11.5px/1.2 "JetBrains Mono",
+    monospace;
+}
+
+.feed-footer button {
+  padding: 6px 12px;
+  font-size: 12px;
 }
 
 .feed-row {
@@ -568,10 +592,12 @@ input:focus-visible {
 
 .outcome {
   justify-self: start;
+  width: 78px;
   border: 1px solid var(--border);
   border-radius: 5px;
   padding: 3px 6px;
   color: var(--dim);
+  text-align: center;
   font:
     700 9px/1.2 "JetBrains Mono",
     monospace;

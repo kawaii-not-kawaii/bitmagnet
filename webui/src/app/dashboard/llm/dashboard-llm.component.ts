@@ -1,10 +1,11 @@
 import { AsyncPipe, DatePipe, DecimalPipe, PercentPipe } from "@angular/common";
-import { Component, OnDestroy, inject } from "@angular/core";
+import { Component, OnDestroy, computed, inject, signal } from "@angular/core";
 import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
 import { Apollo } from "apollo-angular";
 import { finalize, tap } from "rxjs";
 import { ErrorsService } from "../../errors/errors.service";
 import * as generated from "../../graphql/generated";
+import { UiPreferences } from "../../layout/ui-preferences.service";
 import {
   DashboardLlmService,
   FeedFilter,
@@ -29,7 +30,9 @@ export class DashboardLlmComponent implements OnDestroy {
   private data = inject(DashboardLlmService);
   private errors = inject(ErrorsService);
   private fb = inject(FormBuilder);
+  private preferences = inject(UiPreferences);
   private required = Validators.required.bind(Validators);
+  private readonly feedEvents = signal<LlmEvent[]>([]);
   private freshnessTimer?: number;
   private connectionTimer?: number;
   private formInitialized = false;
@@ -42,6 +45,14 @@ export class DashboardLlmComponent implements OnDestroy {
     { key: "ERROR", label: "Error" },
   ];
   readonly view$ = this.data.data$.pipe(tap((view) => this.acceptView(view)));
+  readonly feedFilter = signal<FeedFilter>("ALL");
+  readonly feedLimit = signal<number | null>(null);
+  readonly filteredFeedEvents = computed(() =>
+    filterLlmEvents(this.feedEvents(), this.feedFilter()),
+  );
+  readonly visibleFeedEvents = computed(() =>
+    this.filteredFeedEvents().slice(0, this.feedWindow()),
+  );
   readonly formatDuration = formatDuration;
 
   form = this.fb.nonNullable.group({
@@ -63,7 +74,6 @@ export class DashboardLlmComponent implements OnDestroy {
     Validators.max(500),
   ]);
 
-  feedFilter: FeedFilter = "ALL";
   openEvent?: string;
   pollFresh = false;
   lastPollResponseAt?: Date;
@@ -80,13 +90,14 @@ export class DashboardLlmComponent implements OnDestroy {
     clearTimeout(this.connectionTimer);
   }
 
-  filteredEvents(events: LlmEvent[]) {
-    return filterLlmEvents(events, this.feedFilter);
+  selectFilter(filter: FeedFilter) {
+    this.feedFilter.set(filter);
+    this.feedLimit.set(null);
+    this.openEvent = undefined;
   }
 
-  selectFilter(filter: FeedFilter) {
-    this.feedFilter = filter;
-    this.openEvent = undefined;
+  loadOlder() {
+    this.feedLimit.set(this.feedWindow() + 10);
   }
 
   toggleEvent(event: LlmEvent) {
@@ -236,8 +247,15 @@ export class DashboardLlmComponent implements OnDestroy {
     return `${(count / maximum) * 100}%`;
   }
 
+  private feedWindow() {
+    return (
+      this.feedLimit() ?? (this.preferences.density() === "compact" ? 25 : 14)
+    );
+  }
+
   private acceptView(view: LlmDashboardView) {
     this.lastView = view;
+    this.feedEvents.set(view.events);
     this.lastPollResponseAt = new Date(view.lastPolledAt);
     this.pollFresh = true;
     clearTimeout(this.freshnessTimer);
