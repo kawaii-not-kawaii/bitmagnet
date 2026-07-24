@@ -226,7 +226,7 @@
         @for (filter of filters; track filter.key) {
           <button
             type="button"
-            [class.active]="feedFilter === filter.key"
+            [class.active]="feedFilter() === filter.key"
             (click)="selectFilter(filter.key)"
           >
             {{ filter.label }}
@@ -235,7 +235,7 @@
         }
       </nav>
       <div class="feed-list">
-        @for (event of filteredEvents(vm.events); track eventKey(event)) {
+        @for (event of visibleFeedEvents(); track eventKey(event)) {
           <button
             type="button"
             class="feed-row"
@@ -315,6 +315,15 @@
           <p class="feed-empty">No events match this filter.</p>
         }
       </div>
+      <footer class="feed-footer">
+        <span>
+          showing {{ visibleFeedEvents().length }} of
+          {{ filteredFeedEvents().length }} events
+        </span>
+        @if (visibleFeedEvents().length < filteredFeedEvents().length) {
+          <button type="button" (click)="loadOlder()">Load older ▾</button>
+        }
+      </footer>
     </article>
 
     <section class="management-grid">
