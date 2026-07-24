@@ -89,7 +89,16 @@ type responseFormat struct {
 }
 
 type chatResponseMessage struct {
-	Content string `json:"content"`
+	Content          string `json:"content"`
+	ReasoningContent string `json:"reasoning_content"`
+}
+
+func (m *chatResponseMessage) content() string {
+	if m.Content != "" {
+		return m.Content
+	}
+
+	return m.ReasoningContent
 }
 
 type chatResponseChoice struct {
@@ -284,19 +293,19 @@ func (c *client) buildUserMessage(input llm.ClassifyInput, systemContent string)
 func renderUserMessage(input llm.ClassifyInput, included int, marker string) string {
 	var builder strings.Builder
 
-	builder.WriteString("Name: ")
-	builder.WriteString(input.Name)
-	builder.WriteByte('\n')
+	_, _ = builder.WriteString("Name: ")
+	_, _ = builder.WriteString(input.Name)
+	_ = builder.WriteByte('\n')
 
 	for _, file := range input.Files[:included] {
-		builder.WriteString("File: ")
-		builder.WriteString(file)
-		builder.WriteByte('\n')
+		_, _ = builder.WriteString("File: ")
+		_, _ = builder.WriteString(file)
+		_ = builder.WriteByte('\n')
 	}
 
 	if marker != "" {
-		builder.WriteString(marker)
-		builder.WriteByte('\n')
+		_, _ = builder.WriteString(marker)
+		_ = builder.WriteByte('\n')
 	}
 
 	return builder.String()
@@ -318,13 +327,24 @@ func effectiveMaxTokens(configured int) int {
 // doRequestRaw sends the request and returns the raw content string from the first choice.
 // Used by BatchClassify which needs the raw content for array parsing.
 func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, chatResponseUsage, error) {
-	url := strings.TrimRight(c.config.BaseURL, "/") + "/v1/chat/completions"
+	baseURL := strings.TrimSuffix(strings.TrimRight(c.config.BaseURL, "/"), "/v1")
+	url := baseURL + "/v1/chat/completions"
 
-	var lastErr error
+	var (
+		lastErr       error
+		retryDelay    time.Duration
+		hasRetryDelay bool
+	)
 
 	for attempt := 0; attempt <= maxRetries; attempt++ {
 		if attempt > 0 {
 			backoff := time.Duration(100*math.Pow(2, float64(attempt-1))) * time.Millisecond
+
+			if hasRetryDelay {
+				backoff = retryDelay
+				hasRetryDelay = false
+			}
+
 			select {
 			case <-ctx.Done():
 				return "", chatResponseUsage{}, ctx.Err()
@@ -350,20 +370,23 @@ func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, chat
 		}
 
 		body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-		resp.Body.Close()
+		_ = resp.Body.Close()
 
 		if err != nil {
 			lastErr = fmt.Errorf("openai: read response: %w", err)
 			continue
 		}
 
-		if resp.StatusCode != http.StatusOK {
+		if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
 			detail := fmt.Sprintf("HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
 			if resp.StatusCode == http.StatusTooManyRequests {
-				return "", chatResponseUsage{}, fmt.Errorf("openai: %w: %s", llm.ErrRateLimited, detail)
+				lastErr = fmt.Errorf("openai: %w: %s", llm.ErrRateLimited, detail)
+				retryDelay, hasRetryDelay = parseRetryAfter(resp.Header.Get("Retry-After"))
+
+				continue
 			}
 
-			lastErr = fmt.Errorf("openai: %s", detail)
+			lastErr = fmt.Errorf("openai: %w: %s", llm.ErrBadStatus, detail)
 			if resp.StatusCode >= 400 && resp.StatusCode < 500 {
 				return "", chatResponseUsage{}, lastErr
 			}
@@ -399,7 +422,7 @@ func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, chat
 			return "", chatResponseUsage{}, llm.ErrNoResult
 		}
 
-		content := chatResp.Choices[0].Message.Content
+		content := chatResp.Choices[0].Message.content()
 		if content == "" {
 			return "", chatResponseUsage{}, llm.ErrNoResult
 		}
@@ -408,4 +431,23 @@ func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, chat
 	}
 
 	return "", chatResponseUsage{}, fmt.Errorf("openai: %w (after %d retries)", lastErr, maxRetries)
+}
+
+func parseRetryAfter(value string) (time.Duration, bool) {
+	value = strings.TrimSpace(value)
+
+	if value == "" {
+		return 0, false
+	}
+
+	if delay, err := time.ParseDuration(value + "s"); err == nil && delay >= 0 {
+		return delay, true
+	}
+
+	retryAt, err := http.ParseTime(value)
+	if err != nil {
+		return 0, false
+	}
+
+	return max(time.Until(retryAt), 0), true
 }

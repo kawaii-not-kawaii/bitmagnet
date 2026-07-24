@@ -8,15 +8,18 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 )
 
-// testContentTypeMovie is the content_type value used across LLM response
-// fixtures; extracted to satisfy goconst.
-const testContentTypeMovie = "movie"
+// Test content types are reused across LLM response fixtures.
+const (
+	testContentTypeMovie  = "movie"
+	testContentTypeTVShow = "tv_show"
+)
 
 // makeChoiceResp returns a chatResponse with one choice whose content is set to the given string.
 // It builds the value via JSON round-trip to avoid nested anonymous struct literals.
@@ -29,6 +32,13 @@ func makeChoiceResp(content string) chatResponse {
 	_ = json.Unmarshal([]byte(raw), &resp)
 
 	return resp
+}
+
+func makeReasoningChoiceResp(reasoningContent string) []byte {
+	return []byte(fmt.Sprintf(
+		`{"choices":[{"message":{"content":"","reasoning_content":%s},"finish_reason":""}]}`,
+		string(mustMarshalString(reasoningContent)),
+	))
 }
 
 func mustMarshalString(s string) []byte {
@@ -47,6 +57,49 @@ func TestName(t *testing.T) {
 
 	if p.Name() != "gemma4" {
 		t.Errorf("expected gemma4, got %q", p.Name())
+	}
+}
+
+func TestClassify_BaseURL(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		suffix   string
+		wantPath string
+	}{
+		{name: "trailing v1", suffix: "/v1", wantPath: "/v1/chat/completions"},
+		{name: "trailing v1 slash", suffix: "/v1/", wantPath: "/v1/chat/completions"},
+		{name: "no v1", wantPath: "/v1/chat/completions"},
+		{name: "mid-path v1", suffix: "/v1/foo", wantPath: "/v1/foo/v1/chat/completions"},
+	}
+
+	for _, testCase := range tests {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			server := httptest.NewServer(
+				http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
+					if request.URL.Path != testCase.wantPath {
+						t.Errorf("path = %q, want %q", request.URL.Path, testCase.wantPath)
+					}
+
+					_ = json.NewEncoder(writer).Encode(makeChoiceResp(`{"content_type":"movie"}`))
+				}),
+			)
+			defer server.Close()
+
+			configuredBaseURL := server.URL + testCase.suffix
+			provider := New(Config{BaseURL: configuredBaseURL, Model: "test"}).(*client)
+
+			if _, err := provider.Classify(context.Background(), llm.ClassifyInput{Name: "Test"}); err != nil {
+				t.Fatal(err)
+			}
+
+			if provider.config.BaseURL != configuredBaseURL {
+				t.Errorf("stored base URL = %q, want %q", provider.config.BaseURL, configuredBaseURL)
+			}
+		})
 	}
 }
 
@@ -130,11 +183,33 @@ func TestClassify_Success(t *testing.T) {
 	}
 }
 
+func TestClassify_ReasoningContent(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		_, _ = writer.Write(makeReasoningChoiceResp(
+			fmt.Sprintf(`{"content_type":%q,"title":"Reasoned"}`, testContentTypeMovie),
+		))
+	}))
+	defer server.Close()
+
+	provider := New(Config{BaseURL: server.URL, Model: "test"})
+
+	result, err := provider.Classify(context.Background(), llm.ClassifyInput{Name: "Test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.ContentType != testContentTypeMovie || result.Title != "Reasoned" {
+		t.Errorf("result = %#v, want reasoning content classification", result)
+	}
+}
+
 func TestClassify_EmptyContent(t *testing.T) {
 	t.Parallel()
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		resp := makeChoiceResp(`{}`)
+		resp := makeChoiceResp("")
 
 		w.Header().Set("Content-Type", "application/json")
 
@@ -145,12 +220,12 @@ func TestClassify_EmptyContent(t *testing.T) {
 	p := New(Config{Name: "test", BaseURL: srv.URL, Model: "test"})
 
 	result, err := p.Classify(context.Background(), llm.ClassifyInput{Name: "Test"})
-	if err == nil {
-		t.Fatal("expected error for empty content_type")
+	if !errors.Is(err, llm.ErrNoResult) {
+		t.Fatalf("error = %v, want ErrNoResult", err)
 	}
 
-	if result == nil || result.PromptTokens != 0 || result.CompletionTokens != 0 {
-		t.Fatalf("absent usage = %#v, want zero-valued result", result)
+	if result != nil {
+		t.Fatalf("result = %#v, want nil", result)
 	}
 }
 
@@ -174,62 +249,115 @@ func TestClassify_InvalidJSON(t *testing.T) {
 	}
 }
 
-func TestClassify_HTTPError(t *testing.T) {
+func TestClassify_BadStatus(t *testing.T) {
 	t.Parallel()
 
-	tests := []struct {
-		name            string
-		status          int
-		body            string
-		wantRateLimited bool
-	}{
-		{
-			name:            "rate limited",
-			status:          http.StatusTooManyRequests,
-			body:            `{"error":{"message":"quota exhausted"}}`,
-			wantRateLimited: true,
-		},
-		{
-			name:   "unauthorized",
-			status: http.StatusUnauthorized,
-			body:   `{"error":{"message":"unauthorized","type":"auth_error"}}`,
-		},
+	const body = `{"error":{"message":"not found"}}`
+
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		writer.WriteHeader(http.StatusNotFound)
+		_, _ = writer.Write([]byte(body))
+	}))
+	defer server.Close()
+
+	provider := New(Config{BaseURL: server.URL, Model: "test"})
+
+	_, err := provider.Classify(context.Background(), llm.ClassifyInput{Name: "Test"})
+	if !errors.Is(err, llm.ErrBadStatus) {
+		t.Fatalf("error = %v, want ErrBadStatus", err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
+	if !strings.Contains(err.Error(), "HTTP 404") || !strings.Contains(err.Error(), body) {
+		t.Errorf("error does not preserve response detail: %v", err)
+	}
+}
 
-			srv := httptest.NewServer(http.HandlerFunc(
-				func(w http.ResponseWriter, _ *http.Request) {
-					w.WriteHeader(tt.status)
-					_, _ = w.Write([]byte(tt.body))
-				},
-			))
-			defer srv.Close()
+func TestClassify_RateLimitRetry(t *testing.T) {
+	t.Parallel()
 
-			p := New(Config{Name: "test", BaseURL: srv.URL, Model: "test"})
+	var attempts atomic.Int32
 
-			_, err := p.Classify(context.Background(), llm.ClassifyInput{Name: "Test"})
-			if err == nil {
-				t.Fatalf("expected error for HTTP %d", tt.status)
-			}
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		if attempts.Add(1) == 1 {
+			writer.WriteHeader(http.StatusTooManyRequests)
 
-			isRateLimited := errors.Is(err, llm.ErrRateLimited)
-			if isRateLimited != tt.wantRateLimited {
-				t.Errorf(
-					"errors.Is(ErrRateLimited) = %t, want %t: %v",
-					isRateLimited,
-					tt.wantRateLimited,
-					err,
-				)
-			}
+			return
+		}
 
-			if !strings.Contains(err.Error(), fmt.Sprintf("HTTP %d", tt.status)) ||
-				!strings.Contains(err.Error(), tt.body) {
-				t.Errorf("error does not preserve response detail: %v", err)
-			}
-		})
+		_ = json.NewEncoder(writer).Encode(makeChoiceResp(
+			fmt.Sprintf(`{"content_type":%q,"title":"After Rate Limit"}`, testContentTypeMovie),
+		))
+	}))
+	defer server.Close()
+
+	provider := New(Config{BaseURL: server.URL, Model: "test"})
+
+	result, err := provider.Classify(context.Background(), llm.ClassifyInput{Name: "Test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if result.Title != "After Rate Limit" {
+		t.Errorf("title = %q, want After Rate Limit", result.Title)
+	}
+
+	if attempts.Load() != 2 {
+		t.Errorf("attempts = %d, want 2", attempts.Load())
+	}
+}
+
+func TestClassify_RetryAfter(t *testing.T) {
+	t.Parallel()
+
+	var attempts atomic.Int32
+
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		if attempts.Add(1) == 1 {
+			writer.Header().Set("Retry-After", "1")
+			writer.WriteHeader(http.StatusTooManyRequests)
+
+			return
+		}
+
+		_ = json.NewEncoder(writer).Encode(makeChoiceResp(
+			fmt.Sprintf(`{"content_type":%q}`, testContentTypeMovie),
+		))
+	}))
+	defer server.Close()
+
+	provider := New(Config{BaseURL: server.URL, Model: "test"})
+	start := time.Now()
+
+	_, err := provider.Classify(context.Background(), llm.ClassifyInput{Name: "Test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if elapsed := time.Since(start); elapsed < time.Second {
+		t.Errorf("retry waited %v, want at least 1s", elapsed)
+	}
+}
+
+func TestClassify_RateLimitExhausted(t *testing.T) {
+	t.Parallel()
+
+	var attempts atomic.Int32
+
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		attempts.Add(1)
+		writer.WriteHeader(http.StatusTooManyRequests)
+	}))
+	defer server.Close()
+
+	provider := New(Config{BaseURL: server.URL, Model: "test"})
+
+	_, err := provider.Classify(context.Background(), llm.ClassifyInput{Name: "Test"})
+	if !errors.Is(err, llm.ErrRateLimited) {
+		t.Fatalf("error = %v, want ErrRateLimited", err)
+	}
+
+	if attempts.Load() != maxRetries+1 {
+		t.Errorf("attempts = %d, want %d", attempts.Load(), maxRetries+1)
 	}
 }
 
@@ -291,6 +419,29 @@ func TestClassify_Timeout(t *testing.T) {
 	_, err := p.Classify(context.Background(), llm.ClassifyInput{Name: "Test"})
 	if err == nil {
 		t.Fatal("expected timeout error")
+	}
+}
+
+func TestClassify_TransportError(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.NotFoundHandler())
+	baseURL := server.URL
+	server.Close()
+
+	provider := New(Config{BaseURL: baseURL, Model: "test"})
+
+	_, err := provider.Classify(context.Background(), llm.ClassifyInput{Name: "Test"})
+	if err == nil {
+		t.Fatal("expected transport error")
+	}
+
+	if errors.Is(err, llm.ErrBadStatus) || errors.Is(err, llm.ErrRateLimited) {
+		t.Fatalf("transport error was reclassified: %v", err)
+	}
+
+	if !strings.Contains(err.Error(), "request failed") {
+		t.Fatalf("error = %v, want request failure detail", err)
 	}
 }
 
@@ -367,6 +518,35 @@ func TestBuildRequestTokenBudget(t *testing.T) {
 				t.Errorf("max_tokens = %d, want %d", request.MaxTokens, testCase.want)
 			}
 		})
+	}
+}
+
+func TestBatchClassify_ReasoningContent(t *testing.T) {
+	t.Parallel()
+
+	server := httptest.NewServer(http.HandlerFunc(func(writer http.ResponseWriter, _ *http.Request) {
+		_, _ = writer.Write(makeReasoningChoiceResp(fmt.Sprintf(
+			`{"results":[{"content_type":%q},{"content_type":%q}]}`,
+			testContentTypeMovie,
+			testContentTypeTVShow,
+		)))
+	}))
+	defer server.Close()
+
+	provider := New(Config{BaseURL: server.URL, Model: "test"}).(*client)
+
+	results, err := provider.BatchClassify(context.Background(), []llm.ClassifyInput{
+		{Name: "Movie"},
+		{Name: "Show"},
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(results) != 2 ||
+		results[0].ContentType != testContentTypeMovie ||
+		results[1].ContentType != testContentTypeTVShow {
+		t.Fatalf("results = %#v, want movie and tv_show classifications", results)
 	}
 }
 

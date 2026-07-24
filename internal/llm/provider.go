@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"net"
 	"strconv"
 	"strings"
 )
@@ -19,7 +20,52 @@ var (
 	ErrNoResult    = errors.New("llm: no classification result returned")
 	ErrInvalidJSON = errors.New("llm: provider returned invalid JSON")
 	ErrRateLimited = errors.New("llm: provider rate limited")
+	// ErrBadStatus wraps a non-success HTTP status that is not a rate-limit
+	// (429). Providers SHOULD wrap non-2xx responses with it so callers can
+	// distinguish "the URL/endpoint is wrong" from other failures.
+	ErrBadStatus = errors.New("llm: provider returned a non-success HTTP status")
 )
+
+// ErrorCategory is a stable, low-cardinality classification of a provider error,
+// used for observability (Prometheus labels, stats breakdowns) so operators can
+// self-diagnose without reading Go source. Derived purely from typed errors via
+// errors.Is/As so the categories stay correct as error messages change.
+type ErrorCategory string
+
+const (
+	CategoryRateLimited  ErrorCategory = "rate-limited"
+	CategoryConnection   ErrorCategory = "connection"
+	CategoryBadStatus    ErrorCategory = "bad-status"
+	CategoryInvalidJSON  ErrorCategory = "invalid-json"
+	CategoryEmptyContent ErrorCategory = "empty-content"
+	CategoryOther        ErrorCategory = "other"
+)
+
+// Categorize maps a provider error to a stable ErrorCategory. It returns the
+// empty string for a nil error. Sentinel checks take precedence over the
+// net.Error fallback (an HTTP 429/non-2xx is never a transport error), and any
+// unrecognized error collapses to CategoryOther.
+func Categorize(err error) ErrorCategory {
+	switch {
+	case err == nil:
+		return ""
+	case errors.Is(err, ErrRateLimited):
+		return CategoryRateLimited
+	case errors.Is(err, ErrBadStatus):
+		return CategoryBadStatus
+	case errors.Is(err, ErrInvalidJSON):
+		return CategoryInvalidJSON
+	case errors.Is(err, ErrNoResult):
+		return CategoryEmptyContent
+	}
+
+	var netErr net.Error
+	if errors.As(err, &netErr) {
+		return CategoryConnection
+	}
+
+	return CategoryOther
+}
 
 // ClassifyInput contains the torrent information sent to the LLM for classification.
 type ClassifyInput struct {
