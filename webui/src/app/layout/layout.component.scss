@@ -235,6 +235,34 @@
   font-size: 11px;
 }
 
+.threshold-inputs {
+  display: flex;
+  gap: 10px;
+
+  label {
+    display: flex;
+    flex: 1;
+    align-items: center;
+    gap: 6px;
+    color: var(--dim);
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  input {
+    width: 100%;
+    min-width: 0;
+    padding: 6px 8px;
+    color: var(--text);
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font:
+      500 12px "JetBrains Mono",
+      monospace;
+  }
+}
+
 .theme-grid,
 .language-grid {
   margin-bottom: 12px;

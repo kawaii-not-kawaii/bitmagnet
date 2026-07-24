@@ -1,15 +1,24 @@
-import { Component, EventEmitter, Input, OnInit, Output } from "@angular/core";
+import {
+  Component,
+  EventEmitter,
+  Input,
+  OnInit,
+  Output,
+  inject,
+} from "@angular/core";
 import { SelectionModel } from "@angular/cdk/collections";
 import { AsyncPipe, LowerCasePipe } from "@angular/common";
 import { TranslocoDirective } from "@jsverse/transloco";
 import { FilesizePipe } from "../pipes/filesize.pipe";
 import { TimeAgoPipe } from "../pipes/time-ago.pipe";
 import * as generated from "../graphql/generated";
+import { UiPreferences } from "../layout/ui-preferences.service";
 import { TorrentsSearchDatasource } from "./torrents-search.datasource";
 import { contentTypeInfo } from "./content-types";
 import { TorrentChipsComponent } from "./torrent-chips.component";
 import { TorrentContentComponent } from "./torrent-content.component";
 import { TorrentsSearchController } from "./torrents-search.controller";
+import { SWARM_BARS, SwarmHealth, swarmHealth } from "./swarm-health";
 
 @Component({
   selector: "app-torrents-table",
@@ -27,6 +36,8 @@ import { TorrentsSearchController } from "./torrents-search.controller";
 })
 export class TorrentsTableComponent implements OnInit {
   contentTypeInfo = contentTypeInfo;
+  uiPreferences = inject(UiPreferences);
+  swarmBars = Array.from({ length: SWARM_BARS }, (_, i) => i + 1);
 
   @Input() dataSource: TorrentsSearchDatasource;
   @Input() controller: TorrentsSearchController;
@@ -41,6 +52,14 @@ export class TorrentsTableComponent implements OnInit {
     this.dataSource.items$.subscribe((items) => {
       this.items = items;
     });
+  }
+
+  swarmHealth(seeders?: number | null): SwarmHealth {
+    return swarmHealth(
+      seeders,
+      this.uiPreferences.seedHealthy(),
+      this.uiPreferences.seedFair(),
+    );
   }
 
   isAllSelected() {

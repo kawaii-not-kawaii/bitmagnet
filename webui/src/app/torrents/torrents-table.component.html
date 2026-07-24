@@ -51,8 +51,29 @@
             <div class="row-meta">
               <strong>{{ item.torrent.size | filesize }}</strong>
               <span>{{ item.publishedAt | timeAgo }}</span>
-              <span
-                ><b>↑{{ item.seeders ?? "?" }}</b>
+              @let health = swarmHealth(item.seeders);
+              <span class="swarm" [title]="health.tooltip">
+                @if (uiPreferences.healthStyle() === "bars") {
+                  <span class="swarm-bars" aria-hidden="true">
+                    @for (bar of swarmBars; track bar) {
+                      <i
+                        [class.lit]="bar <= health.litBars"
+                        [style.background]="
+                          bar <= health.litBars ? health.color : null
+                        "
+                      ></i>
+                    }
+                  </span>
+                } @else if (uiPreferences.healthStyle() === "dot") {
+                  <span
+                    class="swarm-dot"
+                    aria-hidden="true"
+                    [style.background]="health.color || null"
+                  ></span>
+                }
+                <b class="swarm-count" [style.color]="health.color || null">{{
+                  item.seeders ?? "?"
+                }}</b>
                 <i>↓{{ item.leechers ?? "?" }}</i></span
               >
               <span>{{ sourceNames(item) }}</span>

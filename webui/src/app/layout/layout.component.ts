@@ -54,6 +54,22 @@ export class LayoutComponent {
     });
   }
 
+  // Guard at the boundary: the number input hands back a string, and a cleared
+  // or nonsensical field must not persist a threshold that mis-tiers every row.
+  setSeedHealthy(value: string) {
+    const parsed = Number(value);
+    if (Number.isInteger(parsed) && parsed > 0) {
+      this.preferences.setSeedHealthy(parsed);
+    }
+  }
+
+  setSeedFair(value: string) {
+    const parsed = Number(value);
+    if (Number.isInteger(parsed) && parsed > 0) {
+      this.preferences.setSeedFair(parsed);
+    }
+  }
+
   setPageSize(limit: number) {
     this.preferences.setPageSize(limit);
     void this.router.navigate([], {
