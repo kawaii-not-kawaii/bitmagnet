@@ -21,6 +21,7 @@ func TestConcurrencyControllerAdmissionAndRelease(t *testing.T) {
 
 	started := make(chan struct{})
 	acquired := make(chan error, 1)
+
 	go func() {
 		close(started)
 		acquired <- controller.Acquire(context.Background())
@@ -69,6 +70,7 @@ func TestConcurrencyControllerDownscaleBelowActive(t *testing.T) {
 	for range 3 {
 		require.NoError(t, controller.Acquire(context.Background()))
 	}
+
 	controller.SetEffective(1)
 
 	controller.Release()
@@ -252,14 +254,17 @@ func TestConcurrencyControllerEvaluate(t *testing.T) {
 
 			for i := range tt.requests {
 				var observationErr error
+
 				switch {
 				case i < tt.rateLimitCount:
 					observationErr = fmt.Errorf("provider: %w", llm.ErrRateLimited)
 				case i < tt.errorCount:
 					observationErr = errors.New("provider error")
 				}
+
 				controller.Observe(tt.latency, observationErr)
 			}
+
 			controller.evaluate()
 
 			assert.Equal(t, tt.wantEffective, controller.Effective())

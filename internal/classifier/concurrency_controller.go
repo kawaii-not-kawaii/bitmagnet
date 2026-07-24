@@ -46,6 +46,7 @@ func NewConcurrencyController(
 	lifecycle fx.Lifecycle,
 ) *ConcurrencyController {
 	controller := newConcurrencyController(config, recorder)
+
 	lifecycle.Append(fx.Hook{
 		OnStart: func(context.Context) error {
 			go controller.run()
@@ -69,6 +70,7 @@ func NewConcurrencyController(
 
 func newConcurrencyController(config Config, recorder *llmobs.Recorder) *ConcurrencyController {
 	ceiling := max(1, config.Concurrency)
+
 	effective := ceiling
 	if config.AutoScale {
 		effective = 1
@@ -98,6 +100,7 @@ func (c *ConcurrencyController) Acquire(ctx context.Context) error {
 
 			return nil
 		}
+
 		notify := c.notify
 		c.mu.Unlock()
 
@@ -115,6 +118,7 @@ func (c *ConcurrencyController) Release() {
 	if c.active > 0 {
 		c.active--
 	}
+
 	c.notifyLocked()
 	c.mu.Unlock()
 }
@@ -180,10 +184,12 @@ func (c *ConcurrencyController) Observe(latency time.Duration, err error) {
 	}
 
 	c.windowRequests++
+
 	c.windowLatencies = append(c.windowLatencies, latency)
 	if err != nil {
 		c.windowErrors++
 	}
+
 	if errors.Is(err, llm.ErrRateLimited) {
 		c.windowRateLimits++
 	}

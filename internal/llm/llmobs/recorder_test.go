@@ -193,6 +193,7 @@ func TestRecorder_Stats(t *testing.T) {
 	}
 
 	r.SetConcurrency(8, 3)
+
 	stats := r.Stats(window)
 	if stats.Attempted != 5 || stats.Matched != 2 || stats.Unmatched != 1 || stats.Errored != 1 ||
 		stats.Skipped != 1 {
