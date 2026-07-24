@@ -422,6 +422,10 @@ input:focus-visible {
   text-align: right;
 }
 
+.provider-metric-label {
+  display: none;
+}
+
 .provider-row .rate {
   color: var(--llm-green);
 }
@@ -1015,12 +1019,36 @@ button.failed {
     border-bottom: 1px solid var(--border);
   }
 
-  .provider-row {
-    grid-template-columns: minmax(100px, 1fr) 58px 50px;
+  .provider-head {
+    display: none;
   }
 
-  .provider-row > :nth-child(4) {
-    display: none;
+  .provider-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .provider-row > span:first-child {
+    grid-column: 1 / -1;
+    overflow: visible;
+    overflow-wrap: anywhere;
+    text-overflow: initial;
+    white-space: normal;
+  }
+
+  .provider-row b {
+    text-align: left;
+  }
+
+  .provider-metric-label {
+    display: block;
+    margin-bottom: 3px;
+    color: var(--faint);
+    font:
+      9px/1.2 "JetBrains Mono",
+      monospace;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
   }
 
   .providers-card footer {
@@ -1042,12 +1070,25 @@ button.failed {
   }
 
   .feed-row {
-    grid-template-columns: 75px minmax(0, 1fr) 12px;
+    grid-template-columns: 75px minmax(0, 1fr);
     gap: 8px;
     padding: 11px 12px;
   }
 
   .event-provider {
+    display: flex;
+    grid-column: 1 / -1;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    text-align: left;
+  }
+
+  .event-provider small {
+    margin-top: 0;
+  }
+
+  .chevron {
     display: none;
   }
 

@@ -176,11 +176,18 @@
               <span role="cell" [title]="provider.label">{{
                 provider.label
               }}</span>
-              <b role="cell">{{ provider.matched | number }}</b>
-              <b role="cell" class="rate">{{
-                provider.rate | percent: "1.1-1"
-              }}</b>
-              <b role="cell" class="latency">{{ provider.latencyP50 }}</b>
+              <b role="cell">
+                <span class="provider-metric-label">Matched</span>
+                {{ provider.matched | number }}
+              </b>
+              <b role="cell" class="rate">
+                <span class="provider-metric-label">Rate</span>
+                {{ provider.rate | percent: "1.1-1" }}
+              </b>
+              <b role="cell" class="latency">
+                <span class="provider-metric-label">p50</span>
+                {{ provider.latencyP50 }}
+              </b>
             </div>
           } @empty {
             <p class="empty">No provider activity recorded.</p>
