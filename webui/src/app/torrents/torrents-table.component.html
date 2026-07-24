@@ -36,6 +36,7 @@
 
           <span
             class="type-badge"
+            [class.unclassified]="!item.contentType"
             [title]="
               t('content_types.singular.' + (item.contentType ?? 'null'))
             "

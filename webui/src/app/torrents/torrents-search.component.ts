@@ -191,10 +191,12 @@ export class TorrentsSearchComponent implements OnInit, OnDestroy {
   }
   showContentType(key: string) {
     return (
-      key !== "null" &&
       (!this.preferences.safeMode() || key !== "xxx") &&
       (this.dataSource.result.aggregations.contentType?.some(
-        (aggregation) => aggregation.value === key,
+        // The unclassified bucket comes back with a null value; the pill keyed
+        // "null" is the one the LLM classifier drains, so it is offered like
+        // any other content type rather than hidden.
+        (aggregation) => (aggregation.value ?? "null") === key,
       ) ??
         true)
     );

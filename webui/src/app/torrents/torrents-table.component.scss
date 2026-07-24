@@ -83,6 +83,14 @@
     600 9.5px "JetBrains Mono",
     monospace;
   letter-spacing: 0.02em;
+
+  // An unclassified torrent reads as provisional rather than as a category of
+  // its own: dashed and unfilled against the solid badges of resolved types.
+  &.unclassified {
+    border-style: dashed;
+    border-color: color-mix(in srgb, var(--faint) 60%, var(--border));
+    background: transparent;
+  }
 }
 
 .row-content {
