@@ -3,6 +3,7 @@ package classifier
 import (
 	"context"
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier/classification"
@@ -231,6 +232,7 @@ func TestLLMClassifyRecordingPreservesBehavior(t *testing.T) {
 	t.Parallel()
 
 	providerErr := errors.New("provider unavailable")
+	rateLimitedErr := fmt.Errorf("provider throttled: %w", llm.ErrRateLimited)
 	matchedResult := &llm.ClassifyResult{
 		ContentType:      "movie",
 		Title:            "Example",
@@ -242,10 +244,11 @@ func TestLLMClassifyRecordingPreservesBehavior(t *testing.T) {
 		CompletionTokens: 20,
 	}
 	cases := []struct {
-		name        string
-		providers   map[string]llm.Provider
-		wantOutcome llmobs.Outcome
-		wantError   string
+		name          string
+		providers     map[string]llm.Provider
+		wantOutcome   llmobs.Outcome
+		wantError     string
+		wantRateLimit bool
 	}{
 		{
 			name: "matched",
@@ -270,6 +273,15 @@ func TestLLMClassifyRecordingPreservesBehavior(t *testing.T) {
 			wantError:   providerErr.Error(),
 		},
 		{
+			name: "rate limited error",
+			providers: map[string]llm.Provider{
+				"test": llmActionTestProvider{err: rateLimitedErr},
+			},
+			wantOutcome:   llmobs.OutcomeError,
+			wantError:     rateLimitedErr.Error(),
+			wantRateLimit: true,
+		},
+		{
 			name:        "skipped",
 			wantOutcome: llmobs.OutcomeSkipped,
 		},
@@ -286,7 +298,10 @@ func TestLLMClassifyRecordingPreservesBehavior(t *testing.T) {
 			require.NoError(t, err)
 
 			torrent := model.Torrent{Name: "Example.Torrent"}
-			run := func(recorder *llmobs.Recorder) (classification.Result, error) {
+			run := func(
+				recorder *llmobs.Recorder,
+				controller *ConcurrencyController,
+			) (classification.Result, error) {
 				logger := zap.NewNop().Sugar()
 
 				return compiled.run(executionContext{
@@ -298,17 +313,19 @@ func TestLLMClassifyRecordingPreservesBehavior(t *testing.T) {
 						llmEnabled: func() bool {
 							return true
 						},
-						recorder: recorder,
-						_logger:  logger,
-						logger:   logger,
+						recorder:    recorder,
+						concurrency: controller,
+						_logger:     logger,
+						logger:      logger,
 					},
 					torrent: torrent,
 				})
 			}
 
-			withoutRecorderResult, withoutRecorderErr := run(nil)
+			withoutRecorderResult, withoutRecorderErr := run(nil, nil)
 			recorder := llmobs.New()
-			withRecorderResult, withRecorderErr := run(recorder)
+			controller := newConcurrencyController(Config{Concurrency: 8, AutoScale: true}, recorder)
+			withRecorderResult, withRecorderErr := run(recorder, controller)
 
 			assert.Equal(t, withoutRecorderResult, withRecorderResult)
 			assert.Equal(t, withoutRecorderErr, withRecorderErr)
@@ -338,6 +355,16 @@ func TestLLMClassifyRecordingPreservesBehavior(t *testing.T) {
 			} else {
 				assert.Equal(t, "test", event.Provider)
 			}
+
+			controller.mu.Lock()
+			if tc.wantOutcome == llmobs.OutcomeSkipped {
+				assert.Zero(t, controller.windowRequests)
+			} else {
+				assert.Equal(t, 1, controller.windowRequests)
+				assert.Equal(t, tc.wantOutcome == llmobs.OutcomeError, controller.windowErrors == 1)
+				assert.Equal(t, tc.wantRateLimit, controller.windowRateLimits == 1)
+			}
+			controller.mu.Unlock()
 
 			if tc.wantOutcome == llmobs.OutcomeMatched {
 				assert.Equal(t, matchedResult.ContentType, event.ContentType)

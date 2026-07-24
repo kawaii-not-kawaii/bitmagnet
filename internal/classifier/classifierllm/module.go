@@ -21,6 +21,7 @@ type Params struct {
 	ConfigPath configwrite.TargetPath
 	Logger     *zap.SugaredLogger
 	Lifecycle  fx.Lifecycle
+	Controller *classifier.ConcurrencyController
 }
 
 type Result struct {
@@ -151,7 +152,10 @@ func New(p Params) Result {
 					)
 				}
 
-				return registry.Swap(RegistryConfig(cfg.Llm)), nil
+				after := registry.Swap(RegistryConfig(cfg.Llm))
+				p.Controller.Configure(cfg.Concurrency, cfg.AutoScale)
+
+				return after, nil
 			},
 		},
 		LlmProviders: registry.All(),

@@ -3,6 +3,7 @@ package openai
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -176,17 +177,58 @@ func TestClassify_InvalidJSON(t *testing.T) {
 func TestClassify_HTTPError(t *testing.T) {
 	t.Parallel()
 
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusUnauthorized)
-		_, _ = w.Write([]byte(`{"error": {"message": "unauthorized", "type": "auth_error"}}`))
-	}))
-	defer srv.Close()
+	tests := []struct {
+		name            string
+		status          int
+		body            string
+		wantRateLimited bool
+	}{
+		{
+			name:            "rate limited",
+			status:          http.StatusTooManyRequests,
+			body:            `{"error":{"message":"quota exhausted"}}`,
+			wantRateLimited: true,
+		},
+		{
+			name:   "unauthorized",
+			status: http.StatusUnauthorized,
+			body:   `{"error":{"message":"unauthorized","type":"auth_error"}}`,
+		},
+	}
 
-	p := New(Config{Name: "test", BaseURL: srv.URL, Model: "test"})
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 
-	_, err := p.Classify(context.Background(), llm.ClassifyInput{Name: "Test"})
-	if err == nil {
-		t.Fatal("expected error for 401")
+			srv := httptest.NewServer(http.HandlerFunc(
+				func(w http.ResponseWriter, _ *http.Request) {
+					w.WriteHeader(tt.status)
+					_, _ = w.Write([]byte(tt.body))
+				},
+			))
+			defer srv.Close()
+
+			p := New(Config{Name: "test", BaseURL: srv.URL, Model: "test"})
+			_, err := p.Classify(context.Background(), llm.ClassifyInput{Name: "Test"})
+			if err == nil {
+				t.Fatalf("expected error for HTTP %d", tt.status)
+			}
+
+			isRateLimited := errors.Is(err, llm.ErrRateLimited)
+			if isRateLimited != tt.wantRateLimited {
+				t.Errorf(
+					"errors.Is(ErrRateLimited) = %t, want %t: %v",
+					isRateLimited,
+					tt.wantRateLimited,
+					err,
+				)
+			}
+
+			if !strings.Contains(err.Error(), fmt.Sprintf("HTTP %d", tt.status)) ||
+				!strings.Contains(err.Error(), tt.body) {
+				t.Errorf("error does not preserve response detail: %v", err)
+			}
+		})
 	}
 }
 

@@ -19,10 +19,11 @@ type dependencies struct {
 	// when no registry is wired (e.g. tests without LLM).
 	llmProviders func() map[string]llm.Provider
 	// llmEnabled reads the registry's current enabled state.
-	llmEnabled func() bool
-	recorder   *llmobs.Recorder
-	_logger    *zap.SugaredLogger
-	logger     *zap.SugaredLogger
+	llmEnabled  func() bool
+	recorder    *llmobs.Recorder
+	concurrency *ConcurrencyController
+	_logger     *zap.SugaredLogger
+	logger      *zap.SugaredLogger
 }
 
 func (dependencies) CleanObj(o interface{}) map[string]any {

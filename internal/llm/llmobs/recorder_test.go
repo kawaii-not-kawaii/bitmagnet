@@ -192,10 +192,19 @@ func TestRecorder_Stats(t *testing.T) {
 		r.Record(event)
 	}
 
+	r.SetConcurrency(8, 3)
 	stats := r.Stats(window)
 	if stats.Attempted != 5 || stats.Matched != 2 || stats.Unmatched != 1 || stats.Errored != 1 ||
 		stats.Skipped != 1 {
 		t.Errorf("lifetime counts = %#v", stats)
+	}
+
+	if stats.Concurrency != 8 || stats.EffectiveConcurrency != 3 {
+		t.Errorf(
+			"concurrency = %d/%d, want 3/8",
+			stats.EffectiveConcurrency,
+			stats.Concurrency,
+		)
 	}
 
 	if stats.WindowAttempted != len(events) {

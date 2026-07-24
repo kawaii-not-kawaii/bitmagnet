@@ -358,7 +358,12 @@ func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, chat
 		}
 
 		if resp.StatusCode != http.StatusOK {
-			lastErr = fmt.Errorf("openai: HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+			detail := fmt.Sprintf("HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
+			if resp.StatusCode == http.StatusTooManyRequests {
+				return "", chatResponseUsage{}, fmt.Errorf("openai: %w: %s", llm.ErrRateLimited, detail)
+			}
+
+			lastErr = fmt.Errorf("openai: %s", detail)
 			if resp.StatusCode >= 400 && resp.StatusCode < 500 {
 				return "", chatResponseUsage{}, lastErr
 			}

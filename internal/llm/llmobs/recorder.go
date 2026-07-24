@@ -20,14 +20,16 @@ type Recorder struct {
 	next   int
 	count  int
 
-	attempted        int64
-	matched          int64
-	unmatched        int64
-	errored          int64
-	skipped          int64
-	promptTokens     int64
-	completionTokens int64
-	inFlight         int64
+	attempted            int64
+	matched              int64
+	unmatched            int64
+	errored              int64
+	skipped              int64
+	promptTokens         int64
+	completionTokens     int64
+	inFlight             int64
+	concurrency          int
+	effectiveConcurrency int
 
 	perProvider map[string]ProviderStats
 	metrics     recorderMetrics
@@ -39,6 +41,18 @@ func New() *Recorder {
 		perProvider: make(map[string]ProviderStats),
 		metrics:     newRecorderMetrics(),
 	}
+}
+
+// SetConcurrency updates the configured and effective classifier concurrency.
+func (r *Recorder) SetConcurrency(configured, effective int) {
+	if r == nil {
+		return
+	}
+
+	r.mu.Lock()
+	r.concurrency = configured
+	r.effectiveConcurrency = effective
+	r.mu.Unlock()
 }
 
 // Record stores an event, updates lifetime counters, and observes its metrics.
@@ -166,16 +180,18 @@ func (r *Recorder) Stats(window time.Duration) Stats {
 
 	r.mu.RLock()
 	stats := Stats{
-		Attempted:        r.attempted,
-		Matched:          r.matched,
-		Unmatched:        r.unmatched,
-		Errored:          r.errored,
-		Skipped:          r.skipped,
-		PromptTokens:     r.promptTokens,
-		CompletionTokens: r.completionTokens,
-		InFlight:         r.inFlight,
-		WindowStart:      windowStart,
-		PerProvider:      make([]ProviderStats, 0, len(r.perProvider)),
+		Attempted:            r.attempted,
+		Matched:              r.matched,
+		Unmatched:            r.unmatched,
+		Errored:              r.errored,
+		Skipped:              r.skipped,
+		PromptTokens:         r.promptTokens,
+		CompletionTokens:     r.completionTokens,
+		InFlight:             r.inFlight,
+		Concurrency:          r.concurrency,
+		EffectiveConcurrency: r.effectiveConcurrency,
+		WindowStart:          windowStart,
+		PerProvider:          make([]ProviderStats, 0, len(r.perProvider)),
 	}
 
 	for _, provider := range r.perProvider {

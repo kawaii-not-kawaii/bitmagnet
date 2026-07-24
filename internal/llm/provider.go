@@ -18,6 +18,7 @@ import (
 var (
 	ErrNoResult    = errors.New("llm: no classification result returned")
 	ErrInvalidJSON = errors.New("llm: provider returned invalid JSON")
+	ErrRateLimited = errors.New("llm: provider rate limited")
 )
 
 // ClassifyInput contains the torrent information sent to the LLM for classification.

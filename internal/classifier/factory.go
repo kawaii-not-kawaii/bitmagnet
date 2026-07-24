@@ -20,6 +20,7 @@ type Params struct {
 	TmdbClient  lazy.Lazy[tmdb.Client]
 	LlmRegistry *llm.Registry    `optional:"true"`
 	Recorder    *llmobs.Recorder `optional:"true"`
+	Controller  *ConcurrencyController
 	Logger      *zap.SugaredLogger
 }
 
@@ -73,9 +74,10 @@ func New(params Params) Result {
 				llmEnabled: func() bool {
 					return params.LlmRegistry == nil || params.LlmRegistry.Enabled()
 				},
-				recorder: params.Recorder,
-				_logger:  logger,
-				logger:   logger,
+				recorder:    params.Recorder,
+				concurrency: params.Controller,
+				_logger:     logger,
+				logger:      logger,
 			},
 		}, nil
 	})
@@ -110,8 +112,8 @@ func New(params Params) Result {
 			}
 
 			return runnerSemaphore{
-				runner:    r,
-				semaphore: make(chan struct{}, params.Config.Concurrency),
+				runner:     r,
+				controller: params.Controller,
 			}, nil
 		}),
 	}

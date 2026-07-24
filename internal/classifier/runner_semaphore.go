@@ -8,8 +8,8 @@ import (
 )
 
 type runnerSemaphore struct {
-	runner    Runner
-	semaphore chan struct{}
+	runner     Runner
+	controller *ConcurrencyController
 }
 
 func (r runnerSemaphore) Run(
@@ -18,13 +18,11 @@ func (r runnerSemaphore) Run(
 	flags Flags,
 	t model.Torrent,
 ) (classification.Result, error) {
-	select {
-	case <-ctx.Done():
-		return classification.Result{}, ctx.Err()
-	case r.semaphore <- struct{}{}:
+	if err := r.controller.Acquire(ctx); err != nil {
+		return classification.Result{}, err
 	}
 
-	defer func() { <-r.semaphore }()
+	defer r.controller.Release()
 
 	return r.runner.Run(ctx, workflow, flags, t)
 }

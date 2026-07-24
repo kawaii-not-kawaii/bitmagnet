@@ -70,6 +70,10 @@ type Stats struct {
 	PerProvider []ProviderStats
 	// InFlight is the number of classifications currently executing.
 	InFlight int64
+	// Concurrency is the configured classifier concurrency ceiling.
+	Concurrency int
+	// EffectiveConcurrency is the controller's current admission limit.
+	EffectiveConcurrency int
 
 	// Windowed figures, computed over buffered events at read time.
 	WindowStart time.Time

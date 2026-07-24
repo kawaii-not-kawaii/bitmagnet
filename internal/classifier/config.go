@@ -9,7 +9,8 @@ type Config struct {
 	Extensions  map[string][]string
 	Flags       map[string]any
 	DeleteXxx   bool
-	Concurrency int
+	Concurrency int  `validate:"gt=0"`
+	AutoScale   bool `yaml:"auto_scale" mapstructure:"auto_scale"`
 	Verbose     bool
 	Llm         LlmConfig
 }
