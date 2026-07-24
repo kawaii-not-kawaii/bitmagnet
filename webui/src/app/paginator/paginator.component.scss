@@ -16,7 +16,12 @@
 
   nav {
     display: flex;
+    // wrap the page buttons so a large page count can't overflow the
+    // viewport on mobile (the trailing arrow used to poke past the edge,
+    // forcing horizontal page overflow and a zoomed-out layout)
+    flex-wrap: wrap;
     align-items: center;
+    justify-content: flex-end;
     gap: 6px;
   }
 
