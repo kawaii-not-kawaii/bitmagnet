@@ -31,6 +31,11 @@ type LlmProviderStats {
   errored: Int!
 }
 
+type LlmErrorCategoryStats {
+  category: String!
+  count: Int!
+}
+
 type LlmStats {
   attempted: Int!
   matched: Int!
@@ -41,6 +46,7 @@ type LlmStats {
   completionTokens: Int!
   successRate: Float!
   perProvider: [LlmProviderStats!]!
+  errorCategories: [LlmErrorCategoryStats!]!
   inFlight: Int!
   concurrency: Int!
   windowStart: DateTime!

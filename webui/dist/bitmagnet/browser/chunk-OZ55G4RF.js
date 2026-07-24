@@ -435,6 +435,10 @@ ${Qc}`,qc=L`
         unmatched
         errored
       }
+      errorCategories {
+        category
+        count
+      }
       inFlight
       concurrency
       windowStart

@@ -83,6 +83,14 @@ func llmStats(
 		}
 	}
 
+	errorCategories := make([]gen.LlmErrorCategoryStats, len(stats.ErrorCategories))
+	for i, category := range stats.ErrorCategories {
+		errorCategories[i] = gen.LlmErrorCategoryStats{
+			Category: string(category.Category),
+			Count:    category.Count,
+		}
+	}
+
 	var successRate float64
 	if stats.Attempted != 0 {
 		successRate = float64(stats.Matched) / float64(stats.Attempted)
@@ -103,6 +111,7 @@ func llmStats(
 		CompletionTokens:    int(stats.CompletionTokens),
 		SuccessRate:         successRate,
 		PerProvider:         perProvider,
+		ErrorCategories:     errorCategories,
 		InFlight:            int(stats.InFlight),
 		Concurrency:         classifierConfig.Concurrency,
 		WindowStart:         stats.WindowStart,

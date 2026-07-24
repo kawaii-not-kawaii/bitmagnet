@@ -384,6 +384,12 @@ export type LlmClassificationOutcome =
   | 'SKIPPED'
   | 'UNMATCHED';
 
+export type LlmErrorCategoryStats = {
+  __typename?: 'LlmErrorCategoryStats';
+  category: Scalars['String']['output'];
+  count: Scalars['Int']['output'];
+};
+
 export type LlmProviderStats = {
   __typename?: 'LlmProviderStats';
   attempted: Scalars['Int']['output'];
@@ -414,6 +420,7 @@ export type LlmStats = {
   attempted: Scalars['Int']['output'];
   completionTokens: Scalars['Int']['output'];
   concurrency: Scalars['Int']['output'];
+  errorCategories: Array<LlmErrorCategoryStats>;
   errored: Scalars['Int']['output'];
   inFlight: Scalars['Int']['output'];
   latencyP50Ms: Scalars['Int']['output'];
@@ -1174,7 +1181,7 @@ export type DashboardDataQueryVariables = Exact<{
 }>;
 
 
-export type DashboardDataQuery = { __typename?: 'Query', dashboard: { __typename?: 'DashboardQuery', summary: { __typename?: 'DashboardSummary', totalTorrents: number, torrentsToday: number, indexedLastHour: number, indexedPreviousHour: number, classifiedPercent: number, queueProcessed: number, queuePending: number, queueFailed: number } }, llm: { __typename?: 'LlmQuery', events: Array<{ __typename?: 'LlmClassificationEvent', timestamp: string, infoHash: string, torrentName: string, provider: string, durationMs: number, outcome: LlmClassificationOutcome, promptTokens: number, completionTokens: number, contentType: string, title: string, year: number, season: number, episode: number, languages: Array<string>, error: string }>, stats: { __typename?: 'LlmStats', attempted: number, matched: number, unmatched: number, errored: number, skipped: number, promptTokens: number, completionTokens: number, successRate: number, inFlight: number, concurrency: number, windowStart: string, oldestBuffered?: string | null, windowAttempted: number, latencyP50Ms: number, latencyP95Ms: number, throughputPerMinute: number, queuePending: number, perProvider: Array<{ __typename?: 'LlmProviderStats', provider: string, attempted: number, matched: number, unmatched: number, errored: number }> } }, config: { __typename?: 'ConfigQuery', sections: Array<{ __typename?: 'ConfigSection', key: string, runtimeChangeable: ConfigRuntimeChangeability, value: Record<string, unknown> }> } };
+export type DashboardDataQuery = { __typename?: 'Query', dashboard: { __typename?: 'DashboardQuery', summary: { __typename?: 'DashboardSummary', totalTorrents: number, torrentsToday: number, indexedLastHour: number, indexedPreviousHour: number, classifiedPercent: number, queueProcessed: number, queuePending: number, queueFailed: number } }, llm: { __typename?: 'LlmQuery', events: Array<{ __typename?: 'LlmClassificationEvent', timestamp: string, infoHash: string, torrentName: string, provider: string, durationMs: number, outcome: LlmClassificationOutcome, promptTokens: number, completionTokens: number, contentType: string, title: string, year: number, season: number, episode: number, languages: Array<string>, error: string }>, stats: { __typename?: 'LlmStats', attempted: number, matched: number, unmatched: number, errored: number, skipped: number, promptTokens: number, completionTokens: number, successRate: number, inFlight: number, concurrency: number, windowStart: string, oldestBuffered?: string | null, windowAttempted: number, latencyP50Ms: number, latencyP95Ms: number, throughputPerMinute: number, queuePending: number, perProvider: Array<{ __typename?: 'LlmProviderStats', provider: string, attempted: number, matched: number, unmatched: number, errored: number }>, errorCategories: Array<{ __typename?: 'LlmErrorCategoryStats', category: string, count: number }> } }, config: { __typename?: 'ConfigQuery', sections: Array<{ __typename?: 'ConfigSection', key: string, runtimeChangeable: ConfigRuntimeChangeability, value: Record<string, unknown> }> } };
 
 export type HealthCheckQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1760,6 +1767,10 @@ export const DashboardDataDocument = gql`
         matched
         unmatched
         errored
+      }
+      errorCategories {
+        category
+        count
       }
       inFlight
       concurrency

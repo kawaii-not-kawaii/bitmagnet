@@ -124,6 +124,7 @@ function dashboardView(): LlmDashboardView {
       completionTokens: 0,
       successRate: 0,
       perProvider: [],
+      errorCategories: [],
       inFlight: 0,
       concurrency: 4,
       windowStart: "2026-07-23T00:00:00Z",

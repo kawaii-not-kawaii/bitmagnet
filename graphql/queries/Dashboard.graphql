@@ -45,6 +45,10 @@ query DashboardData($eventLimit: Int = 500, $windowMinutes: Int = 15) {
         unmatched
         errored
       }
+      errorCategories {
+        category
+        count
+      }
       inFlight
       concurrency
       windowStart

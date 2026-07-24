@@ -6,7 +6,11 @@
 // See openspec/changes/llm-observability/ for the governing design and specs.
 package llmobs
 
-import "time"
+import (
+	"time"
+
+	"github.com/bitmagnet-io/bitmagnet/internal/llm"
+)
 
 // Outcome classifies a single LLM classification attempt.
 type Outcome string
@@ -24,8 +28,7 @@ const (
 	OutcomeSkipped Outcome = "SKIPPED"
 )
 
-// Event is one recorded classification attempt. Fields are plain scalars so
-// this package depends on nothing above the standard library.
+// Event is one recorded classification attempt.
 type Event struct {
 	Timestamp   time.Time
 	InfoHash    string
@@ -36,6 +39,8 @@ type Event struct {
 	PromptTokens     int
 	CompletionTokens int
 	Outcome          Outcome
+	// Category is set only when Outcome is OutcomeError.
+	Category llm.ErrorCategory
 	// Parsed fields, populated when Outcome is OutcomeMatched.
 	ContentType string
 	Title       string
@@ -54,6 +59,12 @@ type ProviderStats struct {
 	Matched   int64
 	Unmatched int64
 	Errored   int64
+}
+
+// ErrorCategoryStats is a windowed count of errors in one category.
+type ErrorCategoryStats struct {
+	Category llm.ErrorCategory
+	Count    int
 }
 
 // Stats is the aggregate payload served to the stats query.
@@ -80,8 +91,10 @@ type Stats struct {
 	// OldestBuffered marks the effective window start when the ring buffer
 	// no longer covers the requested window (honest truncation). Zero when
 	// the buffer covers the full window.
-	OldestBuffered      time.Time
-	WindowAttempted     int
+	OldestBuffered  time.Time
+	WindowAttempted int
+	// ErrorCategories is sorted by category for deterministic output.
+	ErrorCategories     []ErrorCategoryStats
 	LatencyP50          time.Duration
 	LatencyP95          time.Duration
 	ThroughputPerMinute float64

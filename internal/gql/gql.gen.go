@@ -253,6 +253,11 @@ type ComplexityRoot struct {
 		Year             func(childComplexity int) int
 	}
 
+	LlmErrorCategoryStats struct {
+		Category func(childComplexity int) int
+		Count    func(childComplexity int) int
+	}
+
 	LlmProviderStats struct {
 		Attempted func(childComplexity int) int
 		Errored   func(childComplexity int) int
@@ -270,6 +275,7 @@ type ComplexityRoot struct {
 		Attempted           func(childComplexity int) int
 		CompletionTokens    func(childComplexity int) int
 		Concurrency         func(childComplexity int) int
+		ErrorCategories     func(childComplexity int) int
 		Errored             func(childComplexity int) int
 		InFlight            func(childComplexity int) int
 		LatencyP50Ms        func(childComplexity int) int
@@ -1470,6 +1476,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LlmClassificationEvent.Year(childComplexity), true
 
+	case "LlmErrorCategoryStats.category":
+		if e.complexity.LlmErrorCategoryStats.Category == nil {
+			break
+		}
+
+		return e.complexity.LlmErrorCategoryStats.Category(childComplexity), true
+
+	case "LlmErrorCategoryStats.count":
+		if e.complexity.LlmErrorCategoryStats.Count == nil {
+			break
+		}
+
+		return e.complexity.LlmErrorCategoryStats.Count(childComplexity), true
+
 	case "LlmProviderStats.attempted":
 		if e.complexity.LlmProviderStats.Attempted == nil {
 			break
@@ -1549,6 +1569,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LlmStats.Concurrency(childComplexity), true
+
+	case "LlmStats.errorCategories":
+		if e.complexity.LlmStats.ErrorCategories == nil {
+			break
+		}
+
+		return e.complexity.LlmStats.ErrorCategories(childComplexity), true
 
 	case "LlmStats.errored":
 		if e.complexity.LlmStats.Errored == nil {
@@ -3399,6 +3426,11 @@ type LlmProviderStats {
   errored: Int!
 }
 
+type LlmErrorCategoryStats {
+  category: String!
+  count: Int!
+}
+
 type LlmStats {
   attempted: Int!
   matched: Int!
@@ -3409,6 +3441,7 @@ type LlmStats {
   completionTokens: Int!
   successRate: Float!
   perProvider: [LlmProviderStats!]!
+  errorCategories: [LlmErrorCategoryStats!]!
   inFlight: Int!
   concurrency: Int!
   windowStart: DateTime!
@@ -9943,6 +9976,94 @@ func (ec *executionContext) fieldContext_LlmClassificationEvent_error(_ context.
 	return fc, nil
 }
 
+func (ec *executionContext) _LlmErrorCategoryStats_category(ctx context.Context, field graphql.CollectedField, obj *gen.LlmErrorCategoryStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmErrorCategoryStats_category(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Category, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmErrorCategoryStats_category(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmErrorCategoryStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LlmErrorCategoryStats_count(ctx context.Context, field graphql.CollectedField, obj *gen.LlmErrorCategoryStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmErrorCategoryStats_count(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Count, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmErrorCategoryStats_count(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmErrorCategoryStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _LlmProviderStats_provider(ctx context.Context, field graphql.CollectedField, obj *gen.LlmProviderStats) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_LlmProviderStats_provider(ctx, field)
 	if err != nil {
@@ -10307,6 +10428,8 @@ func (ec *executionContext) fieldContext_LlmQuery_stats(ctx context.Context, fie
 				return ec.fieldContext_LlmStats_successRate(ctx, field)
 			case "perProvider":
 				return ec.fieldContext_LlmStats_perProvider(ctx, field)
+			case "errorCategories":
+				return ec.fieldContext_LlmStats_errorCategories(ctx, field)
 			case "inFlight":
 				return ec.fieldContext_LlmStats_inFlight(ctx, field)
 			case "concurrency":
@@ -10746,6 +10869,56 @@ func (ec *executionContext) fieldContext_LlmStats_perProvider(_ context.Context,
 				return ec.fieldContext_LlmProviderStats_errored(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LlmProviderStats", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LlmStats_errorCategories(ctx context.Context, field graphql.CollectedField, obj *gen.LlmStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmStats_errorCategories(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ErrorCategories, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]gen.LlmErrorCategoryStats)
+	fc.Result = res
+	return ec.marshalNLlmErrorCategoryStats2ᚕgithubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐLlmErrorCategoryStatsᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmStats_errorCategories(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "category":
+				return ec.fieldContext_LlmErrorCategoryStats_category(ctx, field)
+			case "count":
+				return ec.fieldContext_LlmErrorCategoryStats_count(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LlmErrorCategoryStats", field.Name)
 		},
 	}
 	return fc, nil
@@ -24046,6 +24219,50 @@ func (ec *executionContext) _LlmClassificationEvent(ctx context.Context, sel ast
 	return out
 }
 
+var llmErrorCategoryStatsImplementors = []string{"LlmErrorCategoryStats"}
+
+func (ec *executionContext) _LlmErrorCategoryStats(ctx context.Context, sel ast.SelectionSet, obj *gen.LlmErrorCategoryStats) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, llmErrorCategoryStatsImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LlmErrorCategoryStats")
+		case "category":
+			out.Values[i] = ec._LlmErrorCategoryStats_category(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "count":
+			out.Values[i] = ec._LlmErrorCategoryStats_count(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var llmProviderStatsImplementors = []string{"LlmProviderStats"}
 
 func (ec *executionContext) _LlmProviderStats(ctx context.Context, sel ast.SelectionSet, obj *gen.LlmProviderStats) graphql.Marshaler {
@@ -24264,6 +24481,11 @@ func (ec *executionContext) _LlmStats(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "perProvider":
 			out.Values[i] = ec._LlmStats_perProvider(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "errorCategories":
+			out.Values[i] = ec._LlmStats_errorCategories(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -28104,6 +28326,54 @@ func (ec *executionContext) unmarshalNLlmClassificationOutcome2githubᚗcomᚋbi
 
 func (ec *executionContext) marshalNLlmClassificationOutcome2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐLlmClassificationOutcome(ctx context.Context, sel ast.SelectionSet, v gen.LlmClassificationOutcome) graphql.Marshaler {
 	return v
+}
+
+func (ec *executionContext) marshalNLlmErrorCategoryStats2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐLlmErrorCategoryStats(ctx context.Context, sel ast.SelectionSet, v gen.LlmErrorCategoryStats) graphql.Marshaler {
+	return ec._LlmErrorCategoryStats(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNLlmErrorCategoryStats2ᚕgithubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐLlmErrorCategoryStatsᚄ(ctx context.Context, sel ast.SelectionSet, v []gen.LlmErrorCategoryStats) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNLlmErrorCategoryStats2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐLlmErrorCategoryStats(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
 }
 
 func (ec *executionContext) marshalNLlmProviderStats2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐLlmProviderStats(ctx context.Context, sel ast.SelectionSet, v gen.LlmProviderStats) graphql.Marshaler {

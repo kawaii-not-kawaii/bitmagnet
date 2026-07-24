@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -163,6 +164,53 @@ func TestRecorder_EventsLimitsAndCopies(t *testing.T) {
 	}
 }
 
+func TestRecorder_EventCategories(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		event Event
+		want  llm.ErrorCategory
+	}{
+		{
+			name:  "error",
+			event: Event{Outcome: OutcomeError, Category: llm.CategoryRateLimited},
+			want:  llm.CategoryRateLimited,
+		},
+		{
+			name:  "missing error category",
+			event: Event{Outcome: OutcomeError},
+			want:  llm.CategoryOther,
+		},
+		{
+			name: "unknown error category",
+			event: Event{
+				Outcome:  OutcomeError,
+				Category: llm.ErrorCategory("unbounded"),
+			},
+			want: llm.CategoryOther,
+		},
+		{
+			name:  "non-error",
+			event: Event{Outcome: OutcomeMatched, Category: llm.CategoryRateLimited},
+			want:  "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			r := New()
+			r.Record(tt.event)
+
+			if got := r.Events(1)[0].Category; got != tt.want {
+				t.Errorf("category = %q, want %q", got, tt.want)
+			}
+		})
+	}
+}
+
 func TestRecorder_Stats(t *testing.T) {
 	t.Parallel()
 
@@ -235,6 +283,47 @@ func TestRecorder_Stats(t *testing.T) {
 
 	if !reflect.DeepEqual(stats.PerProvider, wantProviders) {
 		t.Errorf("per provider = %#v, want %#v", stats.PerProvider, wantProviders)
+	}
+}
+
+func TestRecorder_StatsErrorCategories(t *testing.T) {
+	t.Parallel()
+
+	r := New()
+	now := time.Now()
+
+	for _, event := range []Event{
+		{
+			Timestamp: now.Add(-4 * time.Minute),
+			Outcome:   OutcomeError,
+			Category:  llm.CategoryRateLimited,
+		},
+		{
+			Timestamp: now.Add(-3 * time.Minute),
+			Outcome:   OutcomeError,
+			Category:  llm.CategoryInvalidJSON,
+		},
+		{
+			Timestamp: now.Add(-2 * time.Minute),
+			Outcome:   OutcomeError,
+			Category:  llm.CategoryRateLimited,
+		},
+		{
+			Timestamp: now.Add(-time.Hour),
+			Outcome:   OutcomeError,
+			Category:  llm.CategoryBadStatus,
+		},
+	} {
+		r.Record(event)
+	}
+
+	want := []ErrorCategoryStats{
+		{Category: llm.CategoryInvalidJSON, Count: 1},
+		{Category: llm.CategoryRateLimited, Count: 2},
+	}
+
+	if got := r.Stats(5 * time.Minute).ErrorCategories; !reflect.DeepEqual(got, want) {
+		t.Errorf("error categories = %#v, want %#v", got, want)
 	}
 }
 
@@ -380,7 +469,12 @@ func TestRecorder_Prometheus(t *testing.T) {
 
 	r := New()
 	r.Record(Event{Provider: "alpha", Outcome: OutcomeMatched, Duration: time.Second})
-	r.Record(Event{Provider: "alpha", Outcome: OutcomeError, Duration: 2 * time.Second})
+	r.Record(Event{
+		Provider: "alpha",
+		Outcome:  OutcomeError,
+		Category: llm.CategoryRateLimited,
+		Duration: 2 * time.Second,
+	})
 	r.Record(Event{Provider: "beta", Outcome: OutcomeUnmatched, Duration: 3 * time.Second})
 
 	registry := prometheus.NewPedanticRegistry()
@@ -410,7 +504,12 @@ func TestRecorder_Prometheus(t *testing.T) {
 
 			switch family.GetName() {
 			case "bitmagnet_llm_classifications_total":
-				counters[labels["provider"]+"/"+labels["outcome"]] = metric.GetCounter().GetValue()
+				if _, ok := labels["category"]; !ok {
+					t.Error("classification counter is missing category label")
+				}
+
+				key := labels["provider"] + "/" + labels["outcome"] + "/" + labels["category"]
+				counters[key] = metric.GetCounter().GetValue()
 			case "bitmagnet_llm_classification_duration_seconds":
 				histogramCounts[labels["provider"]] = metric.GetHistogram().GetSampleCount()
 				histogramSums[labels["provider"]] = metric.GetHistogram().GetSampleSum()
@@ -419,9 +518,9 @@ func TestRecorder_Prometheus(t *testing.T) {
 	}
 
 	wantCounters := map[string]float64{
-		"alpha/matched":  1,
-		"alpha/error":    1,
-		"beta/unmatched": 1,
+		"alpha/matched/":           1,
+		"alpha/error/rate-limited": 1,
+		"beta/unmatched/":          1,
 	}
 
 	if !reflect.DeepEqual(counters, wantCounters) {
