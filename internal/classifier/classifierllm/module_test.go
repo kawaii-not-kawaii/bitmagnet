@@ -8,8 +8,12 @@ import (
 	"time"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
+	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
+	configpkg "github.com/bitmagnet-io/bitmagnet/internal/config"
+	"github.com/bitmagnet-io/bitmagnet/internal/config/configapply"
 	"github.com/bitmagnet-io/bitmagnet/internal/config/configwrite"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmobs"
+	"github.com/go-playground/validator/v10"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/fx/fxtest"
@@ -92,6 +96,8 @@ func TestNew_RegistryAlwaysConstructed_LiveToggle(t *testing.T) {
 		ProviderName:    "late",
 		ProviderBaseURL: "https://llm.internal",
 		ProviderModel:   "m",
+		BatchSize:       1,
+		MaxTokens:       256,
 	}})
 	if err != nil {
 		t.Fatalf("apply runtime classifier config: %v", err)
@@ -197,4 +203,54 @@ func TestLiveApplierConfiguresConcurrency(t *testing.T) {
 	stats := recorder.Stats(0)
 	assert.Equal(t, 6, stats.Concurrency)
 	assert.Equal(t, 6, stats.EffectiveConcurrency)
+}
+
+func TestConfigMutationSurfacesEnabledProviderValidation(t *testing.T) {
+	t.Parallel()
+
+	initial := classifier.NewDefaultConfig()
+	validate := validator.New()
+	resolvedResult, err := configpkg.New(configpkg.Params{
+		Specs: []configpkg.Spec{{
+			Key:          "classifier",
+			DefaultValue: initial,
+		}},
+		Validate: validate,
+	})
+	require.NoError(t, err)
+
+	resolved := &concurrency.AtomicValue[configpkg.ResolvedConfig]{}
+	resolved.Set(resolvedResult.Resolved)
+
+	path := filepath.Join(t.TempDir(), "config.yml")
+	lifecycle := fxtest.NewLifecycle(t)
+	result := New(Params{
+		Config:     initial,
+		ConfigPath: configwrite.TargetPath(path),
+		Logger:     zap.NewNop().Sugar(),
+		Lifecycle:  lifecycle,
+		Controller: classifier.NewConcurrencyController(initial, nil, lifecycle),
+	})
+	applier := configapply.New(configapply.Params{
+		Appliers: []configapply.LiveApplier{result.LiveApplier},
+		Resolved: resolved,
+		Validate: validate,
+		Path:     configwrite.TargetPath(path),
+	}).Applier
+
+	_, err = applier.SetSection("classifier", map[string]any{
+		"concurrency": 10,
+		"llm": map[string]any{
+			"enabled":           true,
+			"provider_base_url": "/v1",
+			"provider_model":    "model",
+			"batch_size":        1,
+			"max_tokens":        256,
+		},
+	})
+	require.ErrorContains(t, err, "provider_base_url")
+
+	_, statErr := os.Stat(path)
+	require.ErrorIs(t, statErr, os.ErrNotExist)
+	assert.Empty(t, result.Registry.All())
 }

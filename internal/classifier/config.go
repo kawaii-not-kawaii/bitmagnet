@@ -38,7 +38,7 @@ func NewDefaultConfig() Config {
 		Concurrency: 10,
 		Llm: LlmConfig{
 			Enabled:    true,
-			BatchSize:  5,
+			BatchSize:  1,
 			MaxContext: 16000,
 			MaxTokens:  256,
 			Interval:   5 * time.Second,
