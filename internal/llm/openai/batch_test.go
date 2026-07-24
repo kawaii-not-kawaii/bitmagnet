@@ -77,7 +77,7 @@ func TestParseBatchResponse_ResultsArray_OK(t *testing.T) {
 		t.Fatalf("expected 2 results, got %d", len(results))
 	}
 
-	if results[0].ContentType != testContentTypeMovie || results[1].ContentType != "tv_show" {
+	if results[0].ContentType != testContentTypeMovie || results[1].ContentType != testContentTypeTVShow {
 		t.Errorf("positional mismatch: got %q, %q", results[0].ContentType, results[1].ContentType)
 	}
 }
@@ -96,7 +96,7 @@ func TestParseBatchResponse_FencedResultsArray_OK(t *testing.T) {
 
 	if len(results) != 2 ||
 		results[0].ContentType != testContentTypeMovie ||
-		results[1].ContentType != "tv_show" {
+		results[1].ContentType != testContentTypeTVShow {
 		t.Fatalf("fenced results = %#v", results)
 	}
 }
