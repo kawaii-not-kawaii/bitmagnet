@@ -175,6 +175,55 @@
                 </button>
               </div>
             </div>
+            <div>
+              <p class="setting-label">Swarm health</p>
+              <div class="segments">
+                <button
+                  type="button"
+                  [class.active]="preferences.healthStyle() === 'bars'"
+                  (click)="preferences.setHealthStyle('bars')"
+                >
+                  Bars
+                </button>
+                <button
+                  type="button"
+                  [class.active]="preferences.healthStyle() === 'number'"
+                  (click)="preferences.setHealthStyle('number')"
+                >
+                  Number
+                </button>
+                <button
+                  type="button"
+                  [class.active]="preferences.healthStyle() === 'dot'"
+                  (click)="preferences.setHealthStyle('dot')"
+                >
+                  Dot
+                </button>
+              </div>
+            </div>
+            <div>
+              <p class="setting-label">Seeder thresholds</p>
+              <div class="threshold-inputs">
+                <label>
+                  Healthy ≥
+                  <input
+                    type="number"
+                    min="1"
+                    [value]="preferences.seedHealthy()"
+                    (change)="setSeedHealthy($any($event.target).value)"
+                  />
+                </label>
+                <label>
+                  Fair ≥
+                  <input
+                    type="number"
+                    min="1"
+                    [value]="preferences.seedFair()"
+                    (change)="setSeedFair($any($event.target).value)"
+                  />
+                </label>
+              </div>
+            </div>
           </div>
         </section>
 

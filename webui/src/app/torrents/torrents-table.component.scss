@@ -133,6 +133,49 @@
   }
 }
 
+// Swarm health: the seeder count is tier-coloured and paired with an ascending
+// three-bar glyph, so the health reads without parsing digits. The count's
+// leading arrow is intentionally gone — the bars carry that meaning.
+.swarm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.swarm-bars {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+
+  // Override .row-meta's dimming so a lit bar shows its tier colour at full
+  // strength; unlit bars are muted by their own background instead.
+  i {
+    width: 3px;
+    background: color-mix(in srgb, var(--faint) 45%, transparent);
+    border-radius: 1px;
+    opacity: 1;
+
+    &:nth-child(1) {
+      height: 4px;
+    }
+
+    &:nth-child(2) {
+      height: 7px;
+    }
+
+    &:nth-child(3) {
+      height: 10px;
+    }
+  }
+}
+
+.swarm-dot {
+  width: 8px;
+  height: 8px;
+  background: color-mix(in srgb, var(--faint) 45%, transparent);
+  border-radius: 50%;
+}
+
 .row-actions {
   display: flex;
   flex: none;
