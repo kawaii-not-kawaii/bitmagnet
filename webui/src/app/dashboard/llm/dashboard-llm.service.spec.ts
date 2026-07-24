@@ -169,6 +169,10 @@ function dashboardData(): generated.DashboardDataQuery {
             errored: 1,
           },
         ],
+        errorCategories: [
+          { category: "rate-limited", count: 2 },
+          { category: "invalid-json", count: 1 },
+        ],
         inFlight: 4,
         concurrency: 4,
         windowStart: "2026-07-22T12:00:00Z",
