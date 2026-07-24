@@ -32,6 +32,7 @@
               with pkgs;
               [
                 bundler
+                git
                 go
                 go-task
                 golangci-lint
