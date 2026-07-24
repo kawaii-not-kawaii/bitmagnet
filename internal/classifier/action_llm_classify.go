@@ -109,6 +109,7 @@ func (llmClassifyAction) compileAction(ctx compilerContext) (action, error) {
 			if err != nil {
 				event.Outcome = llmobs.OutcomeError
 				event.Error = err.Error()
+				event.Category = llm.Categorize(err)
 				ctx.recorder.Record(event)
 				ctx.logger.Warnw("llm classification failed",
 					"provider", provider.Name(),

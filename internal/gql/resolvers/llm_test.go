@@ -9,6 +9,7 @@ import (
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/gqlmodel/gen"
+	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmobs"
 	"github.com/bitmagnet-io/bitmagnet/internal/metrics/queuemetrics"
 	"github.com/bitmagnet-io/bitmagnet/internal/model"
@@ -111,6 +112,7 @@ func TestLlmQuery_Stats(t *testing.T) {
 		Provider:         "gemma",
 		Duration:         300 * time.Millisecond,
 		Outcome:          llmobs.OutcomeError,
+		Category:         llm.CategoryRateLimited,
 		PromptTokens:     50,
 		CompletionTokens: 10,
 	})
@@ -178,6 +180,12 @@ func TestLlmQuery_Stats(t *testing.T) {
 	if len(stats.PerProvider) != 1 || stats.PerProvider[0].Provider != "gemma" ||
 		stats.PerProvider[0].Attempted != 2 {
 		t.Errorf("perProvider = %#v", stats.PerProvider)
+	}
+
+	if len(stats.ErrorCategories) != 1 ||
+		stats.ErrorCategories[0].Category != string(llm.CategoryRateLimited) ||
+		stats.ErrorCategories[0].Count != 1 {
+		t.Errorf("errorCategories = %#v", stats.ErrorCategories)
 	}
 
 	if len(queueMetrics.request.Statuses) != 1 || queueMetrics.request.Statuses[0] != model.QueueJobStatusPending {

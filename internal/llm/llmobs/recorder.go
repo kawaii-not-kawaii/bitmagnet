@@ -5,6 +5,8 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 )
 
 const (
@@ -64,6 +66,21 @@ func (r *Recorder) Record(e Event) {
 
 	if e.Timestamp.IsZero() {
 		e.Timestamp = time.Now()
+	}
+
+	if e.Outcome != OutcomeError {
+		e.Category = ""
+	} else {
+		switch e.Category {
+		case llm.CategoryRateLimited,
+			llm.CategoryConnection,
+			llm.CategoryBadStatus,
+			llm.CategoryInvalidJSON,
+			llm.CategoryEmptyContent,
+			llm.CategoryOther:
+		default:
+			e.Category = llm.CategoryOther
+		}
 	}
 
 	e.Languages = slices.Clone(e.Languages)
@@ -192,6 +209,7 @@ func (r *Recorder) Stats(window time.Duration) Stats {
 		EffectiveConcurrency: r.effectiveConcurrency,
 		WindowStart:          windowStart,
 		PerProvider:          make([]ProviderStats, 0, len(r.perProvider)),
+		ErrorCategories:      make([]ErrorCategoryStats, 0, 6),
 	}
 
 	for _, provider := range r.perProvider {
@@ -223,6 +241,7 @@ func (r *Recorder) Stats(window time.Duration) Stats {
 	}
 
 	durations := make([]time.Duration, 0, len(buffered))
+	errorCategoryCounts := make(map[llm.ErrorCategory]int, 6)
 
 	for _, event := range buffered {
 		if event.Timestamp.Before(windowStart) {
@@ -231,8 +250,23 @@ func (r *Recorder) Stats(window time.Duration) Stats {
 
 		stats.WindowAttempted++
 
+		if event.Outcome == OutcomeError {
+			errorCategoryCounts[event.Category]++
+		}
+
 		durations = append(durations, event.Duration)
 	}
+
+	for category, count := range errorCategoryCounts {
+		stats.ErrorCategories = append(stats.ErrorCategories, ErrorCategoryStats{
+			Category: category,
+			Count:    count,
+		})
+	}
+
+	slices.SortFunc(stats.ErrorCategories, func(a, b ErrorCategoryStats) int {
+		return strings.Compare(string(a.Category), string(b.Category))
+	})
 
 	slices.Sort(durations)
 
