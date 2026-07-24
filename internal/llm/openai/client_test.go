@@ -209,6 +209,7 @@ func TestClassify_HTTPError(t *testing.T) {
 			defer srv.Close()
 
 			p := New(Config{Name: "test", BaseURL: srv.URL, Model: "test"})
+
 			_, err := p.Classify(context.Background(), llm.ClassifyInput{Name: "Test"})
 			if err == nil {
 				t.Fatalf("expected error for HTTP %d", tt.status)
