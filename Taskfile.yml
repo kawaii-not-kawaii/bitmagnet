@@ -117,8 +117,11 @@ tasks:
       - task build-webui
       # The CI `generated` job regenerates and fails on any diff. Scoped to the
       # generated paths so unrelated uncommitted work doesn't trip the gate.
-      # 3rdpartylicenses.txt is excluded in CI too.
-      - git diff --exit-code -- internal/gql webui/src/app/graphql/generated webui/dist ':(exclude)webui/dist/bitmagnet/3rdpartylicenses.txt'
+      # 3rdpartylicenses.txt is excluded in CI too. `--stat` because the payload
+      # is minified bundles: the file list is the signal, and the contents are
+      # hundreds of KB of noise. A failure here means "commit the rebuilt
+      # output", not "the build is broken".
+      - git diff --exit-code --stat -- internal/gql webui/src/app/graphql/generated webui/dist ':(exclude)webui/dist/bitmagnet/3rdpartylicenses.txt'
 
   check-all:
     desc: Run both local gates.
