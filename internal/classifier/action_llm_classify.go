@@ -102,6 +102,10 @@ func (llmClassifyAction) compileAction(ctx compilerContext) (action, error) {
 			event.Duration = time.Since(started)
 			done()
 
+			if ctx.concurrency != nil {
+				ctx.concurrency.Observe(event.Duration, err)
+			}
+
 			if err != nil {
 				event.Outcome = llmobs.OutcomeError
 				event.Error = err.Error()

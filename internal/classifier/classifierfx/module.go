@@ -13,6 +13,7 @@ func New() fx.Option {
 		configfx.NewConfigModule[classifier.Config]("classifier", classifier.NewDefaultConfig()),
 		llmobs.Module,
 		fx.Provide(
+			classifier.NewConcurrencyController,
 			classifier.New,
 		),
 	)

@@ -9,6 +9,9 @@ import (
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
 	"github.com/bitmagnet-io/bitmagnet/internal/config/configwrite"
+	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmobs"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"go.uber.org/fx/fxtest"
 	"go.uber.org/zap"
 )
@@ -66,11 +69,14 @@ func TestRegistryConfig_NoBaseURLYieldsZeroProviders(t *testing.T) {
 func TestNew_RegistryAlwaysConstructed_LiveToggle(t *testing.T) {
 	t.Parallel()
 
+	config := classifier.Config{Concurrency: 8}
 	lc := fxtest.NewLifecycle(t)
+	controller := classifier.NewConcurrencyController(config, nil, lc)
 	res := New(Params{
-		Config:    classifier.Config{},
-		Logger:    zap.NewNop().Sugar(),
-		Lifecycle: lc,
+		Config:     config,
+		Logger:     zap.NewNop().Sugar(),
+		Lifecycle:  lc,
+		Controller: controller,
 	})
 
 	if res.Registry == nil {
@@ -120,16 +126,22 @@ func TestNew_WiresConfigPath(t *testing.T) {
 	t.Parallel()
 
 	path := filepath.Join(t.TempDir(), "config.yml")
-	res := New(Params{
-		Config: classifier.Config{Llm: classifier.LlmConfig{
+	config := classifier.Config{
+		Concurrency: 8,
+		Llm: classifier.LlmConfig{
 			Enabled:         true,
 			ProviderName:    "gemma4",
 			ProviderBaseURL: "https://llm.internal",
 			ProviderModel:   "gemma-4",
-		}},
+		},
+	}
+	lifecycle := fxtest.NewLifecycle(t)
+	res := New(Params{
+		Config:     config,
 		ConfigPath: configwrite.TargetPath(path),
 		Logger:     zap.NewNop().Sugar(),
-		Lifecycle:  fxtest.NewLifecycle(t),
+		Lifecycle:  lifecycle,
+		Controller: classifier.NewConcurrencyController(config, nil, lifecycle),
 	})
 
 	if err := res.Registry.Flush(); err != nil {
@@ -145,4 +157,44 @@ func TestNew_WiresConfigPath(t *testing.T) {
 		!strings.Contains(string(data), "base_url: https://llm.internal") {
 		t.Errorf("flushed config missing classifier.llm section:\n%s", data)
 	}
+}
+
+func TestLiveApplierConfiguresConcurrency(t *testing.T) {
+	t.Parallel()
+
+	config := classifier.Config{Concurrency: 8}
+	recorder := llmobs.New()
+	lifecycle := fxtest.NewLifecycle(t)
+	controller := classifier.NewConcurrencyController(config, recorder, lifecycle)
+	result := New(Params{
+		Config:     config,
+		Logger:     zap.NewNop().Sugar(),
+		Lifecycle:  lifecycle,
+		Controller: controller,
+	})
+
+	apply := func(config classifier.Config) {
+		t.Helper()
+
+		after, err := result.LiveApplier.Apply(config)
+		require.NoError(t, err)
+		after()
+	}
+
+	apply(classifier.Config{Concurrency: 8, AutoScale: true})
+	assert.Equal(t, 1, controller.Effective())
+
+	controller.SetEffective(4)
+	apply(classifier.Config{Concurrency: 10, AutoScale: true})
+	assert.Equal(t, 4, controller.Effective())
+
+	apply(classifier.Config{Concurrency: 3, AutoScale: true})
+	assert.Equal(t, 3, controller.Effective())
+
+	apply(classifier.Config{Concurrency: 6})
+	assert.Equal(t, 6, controller.Effective())
+
+	stats := recorder.Stats(0)
+	assert.Equal(t, 6, stats.Concurrency)
+	assert.Equal(t, 6, stats.EffectiveConcurrency)
 }
