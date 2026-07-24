@@ -9,10 +9,12 @@ type Config struct {
 	Extensions  map[string][]string
 	Flags       map[string]any
 	DeleteXxx   bool
-	Concurrency int  `validate:"gt=0"`
-	AutoScale   bool `mapstructure:"auto_scale" yaml:"auto_scale"`
-	Verbose     bool
-	Llm         LlmConfig
+	Concurrency int `validate:"gt=0"`
+	// AutoScale maps to `auto_scale` via the resolver's strcase.ToSnake on the
+	// field name (like every other field here) — no mapstructure/yaml tag needed.
+	AutoScale bool
+	Verbose   bool
+	Llm       LlmConfig
 }
 
 // LlmConfig holds the configuration for LLM-based classification.
