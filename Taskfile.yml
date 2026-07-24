@@ -86,6 +86,49 @@ tasks:
     env:
       CHROME_BIN: chromium
 
+  # Local CI gates. Run them inside the dev shell so the toolchain matches CI:
+  #   nix develop --ignore-environment --keep HOME . --command task check
+  # `--ignore-environment` is required, not optional: without it a system Go
+  # leaks in and clashes with the pinned one ("compile: version go1.26.0 does
+  # not match go tool version go1.23.8"). `git` is in the devshell so the diff
+  # check below works under that flag.
+  # `check` covers Go-only changes; run `check-webui` as well (or `check-all`)
+  # whenever the change touches webui/ or graphql/.
+  check:
+    desc: Local gate for Go changes — mirrors the CI lint + test jobs (Go half).
+    cmds:
+      - task lint-golangci
+      - task lint-prettier
+      - task test-go
+
+  check-webui:
+    desc: Local gate for webui/graphql changes — eslint, karma, and codegen/dist reproducibility.
+    cmds:
+      # CI installs from a clean lockfile; a stale node_modules produces different
+      # dist chunk hashes and fails the diff below. Reinstall only when the
+      # lockfile moved (npm rewrites the marker file on every install).
+      # ponytail: mtime check, not a content hash — the dist diff below is the
+      # real assertion, so a missed reinstall still fails loudly rather than silently.
+      - test webui/node_modules/.package-lock.json -nt webui/package-lock.json || task install-webui
+      - task lint-webui
+      - task test-webui
+      - task gen-gql
+      - task gen-webui-graphql
+      - task build-webui
+      # The CI `generated` job regenerates and fails on any diff. Scoped to the
+      # generated paths so unrelated uncommitted work doesn't trip the gate.
+      # 3rdpartylicenses.txt is excluded in CI too. `--stat` because the payload
+      # is minified bundles: the file list is the signal, and the contents are
+      # hundreds of KB of noise. A failure here means "commit the rebuilt
+      # output", not "the build is broken".
+      - git diff --exit-code --stat -- internal/gql webui/src/app/graphql/generated webui/dist ':(exclude)webui/dist/bitmagnet/3rdpartylicenses.txt'
+
+  check-all:
+    desc: Run both local gates.
+    cmds:
+      - task check
+      - task check-webui
+
   migrate:
     cmds:
       - go run ./internal/dev migrate up

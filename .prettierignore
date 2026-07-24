@@ -6,3 +6,8 @@ webui/.angular
 plugins/assembly/**/*.*
 go-plugin/**/*.*
 webui/src/app/themes/*-theme.scss
+
+# Local-only working dirs (git-excluded, so CI never checks them out; listed here
+# so `task lint` behaves the same locally as it does in CI).
+openspec/
+.local/
