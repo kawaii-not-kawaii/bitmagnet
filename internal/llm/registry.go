@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
 	"sort"
 	"sync"
 	"time"
@@ -38,6 +39,44 @@ type RegistryConfig struct {
 	MaxTokens  int                       `json:"max_tokens"         yaml:"max_tokens"`
 	Interval   time.Duration             `json:"interval"           yaml:"interval"`
 	Timeout    time.Duration             `json:"timeout"            yaml:"timeout"`
+}
+
+// Validate rejects incomplete enabled-provider configurations.
+func (cfg RegistryConfig) Validate() error {
+	if !cfg.Enabled {
+		return nil
+	}
+
+	if len(cfg.Providers) == 0 {
+		return errors.New("provider_base_url must be a valid absolute HTTP(S) URL")
+	}
+
+	for name, provider := range cfg.Providers {
+		if provider.Model == "" {
+			return fmt.Errorf("provider %q: provider_model must not be empty", name)
+		}
+
+		baseURL, err := url.Parse(provider.BaseURL)
+
+		if err != nil ||
+			(baseURL.Scheme != "http" && baseURL.Scheme != "https") ||
+			baseURL.Host == "" {
+			return fmt.Errorf(
+				"provider %q: provider_base_url must be a valid absolute HTTP(S) URL",
+				name,
+			)
+		}
+	}
+
+	if cfg.BatchSize <= 0 {
+		return errors.New("batch_size must be greater than 0")
+	}
+
+	if cfg.MaxTokens <= 0 {
+		return errors.New("max_tokens must be greater than 0")
+	}
+
+	return nil
 }
 
 // ProviderFactory creates a Provider from a ProviderConfig. It also receives

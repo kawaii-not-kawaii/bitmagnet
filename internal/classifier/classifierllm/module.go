@@ -152,7 +152,13 @@ func New(p Params) Result {
 					)
 				}
 
-				after := registry.Swap(RegistryConfig(cfg.Llm))
+				regCfg := RegistryConfig(cfg.Llm)
+
+				if err := regCfg.Validate(); err != nil {
+					return nil, err
+				}
+
+				after := registry.Swap(regCfg)
 				p.Controller.Configure(cfg.Concurrency, cfg.AutoScale)
 
 				return after, nil

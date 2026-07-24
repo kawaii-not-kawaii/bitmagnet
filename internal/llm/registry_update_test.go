@@ -2,6 +2,7 @@ package llm
 
 import (
 	"sort"
+	"strings"
 	"sync"
 	"testing"
 	"time"
@@ -171,5 +172,148 @@ func TestRegistry_DisabledSkipsProviderConstruction(t *testing.T) {
 
 	if len(registry.All()) != 0 || registry.Enabled() {
 		t.Fatalf("disabled update state: providers=%v enabled=%t", registry.All(), registry.Enabled())
+	}
+}
+
+func TestRegistryConfigValidate(t *testing.T) {
+	t.Parallel()
+
+	testCases := []struct {
+		name            string
+		enabled         bool
+		includeProvider bool
+		baseURL         string
+		model           string
+		batchSize       int
+		maxTokens       int
+		wantField       string
+	}{
+		{
+			name:            "empty model",
+			enabled:         true,
+			includeProvider: true,
+			baseURL:         "https://llm.internal",
+			batchSize:       1,
+			maxTokens:       256,
+			wantField:       "provider_model",
+		},
+		{
+			name:      "missing base URL",
+			enabled:   true,
+			model:     "model",
+			batchSize: 1,
+			maxTokens: 256,
+			wantField: "provider_base_url",
+		},
+		{
+			name:            "relative base URL",
+			enabled:         true,
+			includeProvider: true,
+			baseURL:         "/v1",
+			model:           "model",
+			batchSize:       1,
+			maxTokens:       256,
+			wantField:       "provider_base_url",
+		},
+		{
+			name:            "non-HTTP base URL",
+			enabled:         true,
+			includeProvider: true,
+			baseURL:         "ftp://llm.internal",
+			model:           "model",
+			batchSize:       1,
+			maxTokens:       256,
+			wantField:       "provider_base_url",
+		},
+		{
+			name:            "malformed base URL",
+			enabled:         true,
+			includeProvider: true,
+			baseURL:         "https://%41:8080",
+			model:           "model",
+			batchSize:       1,
+			maxTokens:       256,
+			wantField:       "provider_base_url",
+		},
+		{
+			name:            "base URL without host",
+			enabled:         true,
+			includeProvider: true,
+			baseURL:         "https:///v1",
+			model:           "model",
+			batchSize:       1,
+			maxTokens:       256,
+			wantField:       "provider_base_url",
+		},
+		{
+			name:            "non-positive batch size",
+			enabled:         true,
+			includeProvider: true,
+			baseURL:         "https://llm.internal",
+			model:           "model",
+			maxTokens:       256,
+			wantField:       "batch_size",
+		},
+		{
+			name:            "non-positive max tokens",
+			enabled:         true,
+			includeProvider: true,
+			baseURL:         "https://llm.internal",
+			model:           "model",
+			batchSize:       1,
+			wantField:       "max_tokens",
+		},
+		{
+			name:            "disabled partial draft",
+			includeProvider: true,
+		},
+		{
+			name:            "valid enabled config",
+			enabled:         true,
+			includeProvider: true,
+			baseURL:         "http://llm.internal/v1",
+			model:           "model",
+			batchSize:       1,
+			maxTokens:       256,
+		},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			t.Parallel()
+
+			cfg := RegistryConfig{
+				Enabled:   testCase.enabled,
+				BatchSize: testCase.batchSize,
+				MaxTokens: testCase.maxTokens,
+			}
+
+			if testCase.includeProvider {
+				cfg.Providers = map[string]ProviderConfig{
+					"default": {
+						BaseURL: testCase.baseURL,
+						Model:   testCase.model,
+					},
+				}
+			}
+
+			err := cfg.Validate()
+
+			if testCase.wantField == "" {
+				if err != nil {
+					t.Fatalf("Validate() error = %v", err)
+				}
+
+				return
+			}
+
+			if err == nil {
+				t.Fatalf("Validate() unexpectedly succeeded")
+			}
+
+			if !strings.Contains(err.Error(), testCase.wantField) {
+				t.Fatalf("Validate() error = %q, want field %q", err, testCase.wantField)
+			}
+		})
 	}
 }
