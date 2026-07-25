@@ -1,6 +1,7 @@
 import * as generated from "../../graphql/generated";
 import {
   LLM_EVENT_LIMIT,
+  REDACTED_VALUE,
   buildClassifierConfigValue,
   filterLlmEvents,
   mapDashboardLlmData,
@@ -133,6 +134,7 @@ describe("DashboardLlmService mapping", () => {
     });
 
     expect(value["Concurrency"]).toBe(6);
+    expect(value["AutoScale"]).toBe(false);
     expect(value["Llm"]).toEqual(
       jasmine.objectContaining({
         Enabled: false,
@@ -147,6 +149,36 @@ describe("DashboardLlmService mapping", () => {
         Timeout: "45s",
       }),
     );
+  });
+
+  it("serializes auto-scale in both directions", () => {
+    // auto_scale: false is the kill-switch, so an omitted field would silently
+    // leave a running autoscaler enabled — assert the key is always present.
+    const view = mapDashboardLlmData(dashboardData(), 123456);
+    const formValue = {
+      enabled: true,
+      concurrency: 6,
+      autoScale: true,
+      providerName: "local",
+      baseUrl: "http://localhost:8080",
+      model: "gemma-4",
+      apiKey: REDACTED_VALUE,
+      batchSize: 1,
+      maxContext: 16000,
+      maxTokens: 256,
+      intervalSeconds: 5,
+      timeoutSeconds: 30,
+    };
+
+    expect(
+      buildClassifierConfigValue(view.config, formValue)["AutoScale"],
+    ).toBe(true);
+    expect(
+      buildClassifierConfigValue(view.config, {
+        ...formValue,
+        autoScale: false,
+      }),
+    ).toEqual(jasmine.objectContaining({ AutoScale: false }));
   });
 });
 
