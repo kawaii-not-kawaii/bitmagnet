@@ -58,6 +58,7 @@ export class DashboardLlmComponent implements OnDestroy {
   form = this.fb.nonNullable.group({
     enabled: false,
     concurrency: [10, [this.required, Validators.min(1)]],
+    autoScale: false,
     providerName: ["default", this.required],
     baseUrl: ["", this.required],
     model: ["", this.required],
@@ -271,6 +272,7 @@ export class DashboardLlmComponent implements OnDestroy {
     this.form.patchValue({
       enabled: config.enabled,
       concurrency: config.concurrency,
+      autoScale: config.autoScale,
       providerName: config.providerName,
       baseUrl: config.baseUrl,
       model: config.model,

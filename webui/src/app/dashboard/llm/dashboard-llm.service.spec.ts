@@ -49,6 +49,7 @@ describe("DashboardLlmService mapping", () => {
     const value = buildClassifierConfigValue(view.config, {
       enabled: false,
       concurrency: 6,
+      autoScale: false,
       providerName: " local ",
       baseUrl: " http://localhost:8080 ",
       model: " gemma-4 ",
