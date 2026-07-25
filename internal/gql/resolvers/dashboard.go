@@ -118,7 +118,7 @@ func (r *Resolver) testDashboardLlmConnection(ctx context.Context) (gen.Dashboar
 		Name:         "The Matrix 1999 1080p BluRay",
 		ContentTypes: strings.Join(model.ContentTypeNames(), ", "),
 	})
-	latency := time.Since(startedAt).Seconds()
+	latency := time.Since(startedAt)
 	capacity := openai.ProbeCapacity(
 		ctx,
 		nil,
@@ -129,7 +129,7 @@ func (r *Resolver) testDashboardLlmConnection(ctx context.Context) (gen.Dashboar
 		registryConfig.MaxTokens,
 	)
 	result := gen.DashboardLlmConnectionResult{
-		LatencySeconds: latency,
+		LatencySeconds: latency.Seconds(),
 		Capacity:       dashboardLlmCapacity(capacity),
 	}
 
@@ -138,6 +138,23 @@ func (r *Resolver) testDashboardLlmConnection(ctx context.Context) (gen.Dashboar
 		result.Error = &message
 
 		return result, nil
+	}
+
+	// The ceiling comes from the recorder, which the concurrency controller
+	// updates on every transition — the startup classifier.Config snapshot goes
+	// stale as soon as the section is applied live.
+	recommendation := openai.Recommend(capacity, openai.CurrentConfig{
+		MaxTokens:   registryConfig.MaxTokens,
+		MaxContext:  registryConfig.MaxContext,
+		Timeout:     registryConfig.Timeout,
+		Concurrency: r.LlmRecorder.Stats(0).Concurrency,
+	}, latency)
+	result.Capacity.RecommendedConfig = &gen.LlmRecommendedConfig{
+		BatchSize:      recommendation.BatchSize,
+		MaxTokens:      recommendation.MaxTokens,
+		MaxContext:     recommendation.MaxContext,
+		TimeoutSeconds: recommendation.TimeoutSeconds,
+		Concurrency:    recommendation.Concurrency,
 	}
 
 	result.Ok = true

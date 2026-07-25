@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/gqlmodel/gen"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmobs"
 	"github.com/bitmagnet-io/bitmagnet/internal/metrics/queuemetrics"
@@ -48,7 +47,6 @@ func llmStats(
 	ctx context.Context,
 	recorder *llmobs.Recorder,
 	queueMetrics queuemetrics.Client,
-	classifierConfig classifier.Config,
 	windowMinutes *int,
 ) (gen.LlmStats, error) {
 	window := time.Duration(0)
@@ -102,24 +100,25 @@ func llmStats(
 	}
 
 	return gen.LlmStats{
-		Attempted:           int(stats.Attempted),
-		Matched:             int(stats.Matched),
-		Unmatched:           int(stats.Unmatched),
-		Errored:             int(stats.Errored),
-		Skipped:             int(stats.Skipped),
-		PromptTokens:        int(stats.PromptTokens),
-		CompletionTokens:    int(stats.CompletionTokens),
-		SuccessRate:         successRate,
-		PerProvider:         perProvider,
-		ErrorCategories:     errorCategories,
-		InFlight:            int(stats.InFlight),
-		Concurrency:         classifierConfig.Concurrency,
-		WindowStart:         stats.WindowStart,
-		OldestBuffered:      oldestBuffered,
-		WindowAttempted:     stats.WindowAttempted,
-		LatencyP50Ms:        int(stats.LatencyP50.Milliseconds()),
-		LatencyP95Ms:        int(stats.LatencyP95.Milliseconds()),
-		ThroughputPerMinute: stats.ThroughputPerMinute,
-		QueuePending:        queuePending,
+		Attempted:            int(stats.Attempted),
+		Matched:              int(stats.Matched),
+		Unmatched:            int(stats.Unmatched),
+		Errored:              int(stats.Errored),
+		Skipped:              int(stats.Skipped),
+		PromptTokens:         int(stats.PromptTokens),
+		CompletionTokens:     int(stats.CompletionTokens),
+		SuccessRate:          successRate,
+		PerProvider:          perProvider,
+		ErrorCategories:      errorCategories,
+		InFlight:             int(stats.InFlight),
+		Concurrency:          stats.Concurrency,
+		EffectiveConcurrency: stats.EffectiveConcurrency,
+		WindowStart:          stats.WindowStart,
+		OldestBuffered:       oldestBuffered,
+		WindowAttempted:      stats.WindowAttempted,
+		LatencyP50Ms:         int(stats.LatencyP50.Milliseconds()),
+		LatencyP95Ms:         int(stats.LatencyP95.Milliseconds()),
+		ThroughputPerMinute:  stats.ThroughputPerMinute,
+		QueuePending:         queuePending,
 	}, nil
 }

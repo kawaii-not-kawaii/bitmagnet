@@ -51,6 +51,7 @@ query DashboardData($eventLimit: Int = 500, $windowMinutes: Int = 15) {
       }
       inFlight
       concurrency
+      effectiveConcurrency
       windowStart
       oldestBuffered
       windowAttempted

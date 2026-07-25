@@ -3,7 +3,6 @@ package gqlfx
 import (
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/bitmagnet-io/bitmagnet/internal/blocking"
-	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
 	"github.com/bitmagnet-io/bitmagnet/internal/client"
 	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
 	rootconfig "github.com/bitmagnet-io/bitmagnet/internal/config"
@@ -108,7 +107,6 @@ func New() fx.Option {
 							LlmRegistry:          p.LlmRegistry,
 							Applier:              p.Applier,
 							LlmRecorder:          p.LlmRecorder,
-							ClassifierConfig:     p.ClassifierConfig,
 						}, nil
 					}),
 				}
@@ -143,7 +141,6 @@ type Params struct {
 	LlmRegistry          *llm.Registry
 	Applier              *configapply.Applier
 	LlmRecorder          *llmobs.Recorder
-	ClassifierConfig     classifier.Config
 }
 
 type Result struct {

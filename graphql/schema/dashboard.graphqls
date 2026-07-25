@@ -59,6 +59,20 @@ type LlmCapacity {
   # Human-readable capacity line, phrased slot-bound (local) or
   # quota/cost-bound (hosted).
   message: String!
+
+  # A complete classifier configuration derived from this probe, the live
+  # config, and the measured connection latency. Populated ONLY when the
+  # connectivity check succeeded — a failed check must not present guesses.
+  recommendedConfig: LlmRecommendedConfig
+}
+
+# Every field is populated together; the UI applies all five or none.
+type LlmRecommendedConfig {
+  batchSize: Int!
+  maxTokens: Int!
+  maxContext: Int!
+  timeoutSeconds: Int!
+  concurrency: Int!
 }
 
 type DashboardLlmBenchmark {

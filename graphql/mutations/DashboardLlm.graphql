@@ -25,6 +25,13 @@ mutation DashboardLlmTestConnection {
         slots
         fits
         recommendedConcurrency
+        recommendedConfig {
+          batchSize
+          maxTokens
+          maxContext
+          timeoutSeconds
+          concurrency
+        }
         message
       }
     }

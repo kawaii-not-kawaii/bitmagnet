@@ -175,6 +175,7 @@ function dashboardData(): generated.DashboardDataQuery {
         ],
         inFlight: 4,
         concurrency: 4,
+        effectiveConcurrency: 4,
         windowStart: "2026-07-22T12:00:00Z",
         oldestBuffered: null,
         windowAttempted: 3,

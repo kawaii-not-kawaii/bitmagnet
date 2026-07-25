@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
+	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmobs"
 )
 
 type dashboardTestProvider struct {
@@ -79,7 +80,13 @@ func TestDashboardLlmConnection(t *testing.T) {
 			)
 			before := registry.Config()
 
-			result, err := (&Resolver{LlmRegistry: registry}).testDashboardLlmConnection(
+			recorder := llmobs.New()
+			recorder.SetConcurrency(7, 7)
+
+			result, err := (&Resolver{
+				LlmRegistry: registry,
+				LlmRecorder: recorder,
+			}).testDashboardLlmConnection(
 				context.Background(),
 			)
 			if err != nil {
@@ -109,6 +116,26 @@ func TestDashboardLlmConnection(t *testing.T) {
 				*result.Capacity.Fits ||
 				!strings.Contains(result.Capacity.Message, "exceeds per-slot window") {
 				t.Errorf("capacity = %#v, want non-fitting slots result", result.Capacity)
+			}
+
+			if result.Capacity != nil {
+				recommendation := result.Capacity.RecommendedConfig
+				if tc.wantOK {
+					if recommendation == nil {
+						t.Errorf("recommended config = nil, want complete recommendation")
+					} else if recommendation.BatchSize != 1 ||
+						recommendation.MaxTokens <= 0 ||
+						recommendation.MaxContext <= 0 ||
+						recommendation.TimeoutSeconds <= 0 ||
+						recommendation.Concurrency <= 0 {
+						t.Errorf(
+							"recommended config = %#v, want batch size 1 and five positive fields",
+							recommendation,
+						)
+					}
+				} else if recommendation != nil {
+					t.Errorf("recommended config = %#v, want nil after failed connection", recommendation)
+				}
 			}
 
 			if !reflect.DeepEqual(registry.Config(), before) {

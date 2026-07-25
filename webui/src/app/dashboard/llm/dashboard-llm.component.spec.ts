@@ -214,6 +214,7 @@ function dashboardView(events: LlmEvent[] = []): LlmDashboardView {
       errorCategories: [],
       inFlight: 0,
       concurrency: 4,
+      effectiveConcurrency: 4,
       windowStart: "2026-07-23T00:00:00Z",
       oldestBuffered: null,
       windowAttempted: 0,
