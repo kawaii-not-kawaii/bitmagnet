@@ -130,13 +130,14 @@ type LanguageFacetInput struct {
 }
 
 type LlmCapacity struct {
-	Source                 string `json:"source"`
-	ContextPerRequest      *int   `json:"contextPerRequest,omitempty"`
-	MaxCompletionTokens    *int   `json:"maxCompletionTokens,omitempty"`
-	Slots                  *int   `json:"slots,omitempty"`
-	Fits                   *bool  `json:"fits,omitempty"`
-	RecommendedConcurrency *int   `json:"recommendedConcurrency,omitempty"`
-	Message                string `json:"message"`
+	Source                 string                `json:"source"`
+	ContextPerRequest      *int                  `json:"contextPerRequest,omitempty"`
+	MaxCompletionTokens    *int                  `json:"maxCompletionTokens,omitempty"`
+	Slots                  *int                  `json:"slots,omitempty"`
+	Fits                   *bool                 `json:"fits,omitempty"`
+	RecommendedConcurrency *int                  `json:"recommendedConcurrency,omitempty"`
+	Message                string                `json:"message"`
+	RecommendedConfig      *LlmRecommendedConfig `json:"recommendedConfig,omitempty"`
 }
 
 type LlmClassificationEvent struct {
@@ -175,26 +176,35 @@ type LlmQuery struct {
 	Stats  LlmStats                 `json:"stats"`
 }
 
+type LlmRecommendedConfig struct {
+	BatchSize      int `json:"batchSize"`
+	MaxTokens      int `json:"maxTokens"`
+	MaxContext     int `json:"maxContext"`
+	TimeoutSeconds int `json:"timeoutSeconds"`
+	Concurrency    int `json:"concurrency"`
+}
+
 type LlmStats struct {
-	Attempted           int                     `json:"attempted"`
-	Matched             int                     `json:"matched"`
-	Unmatched           int                     `json:"unmatched"`
-	Errored             int                     `json:"errored"`
-	Skipped             int                     `json:"skipped"`
-	PromptTokens        int                     `json:"promptTokens"`
-	CompletionTokens    int                     `json:"completionTokens"`
-	SuccessRate         float64                 `json:"successRate"`
-	PerProvider         []LlmProviderStats      `json:"perProvider"`
-	ErrorCategories     []LlmErrorCategoryStats `json:"errorCategories"`
-	InFlight            int                     `json:"inFlight"`
-	Concurrency         int                     `json:"concurrency"`
-	WindowStart         time.Time               `json:"windowStart"`
-	OldestBuffered      *time.Time              `json:"oldestBuffered,omitempty"`
-	WindowAttempted     int                     `json:"windowAttempted"`
-	LatencyP50Ms        int                     `json:"latencyP50Ms"`
-	LatencyP95Ms        int                     `json:"latencyP95Ms"`
-	ThroughputPerMinute float64                 `json:"throughputPerMinute"`
-	QueuePending        int                     `json:"queuePending"`
+	Attempted            int                     `json:"attempted"`
+	Matched              int                     `json:"matched"`
+	Unmatched            int                     `json:"unmatched"`
+	Errored              int                     `json:"errored"`
+	Skipped              int                     `json:"skipped"`
+	PromptTokens         int                     `json:"promptTokens"`
+	CompletionTokens     int                     `json:"completionTokens"`
+	SuccessRate          float64                 `json:"successRate"`
+	PerProvider          []LlmProviderStats      `json:"perProvider"`
+	ErrorCategories      []LlmErrorCategoryStats `json:"errorCategories"`
+	InFlight             int                     `json:"inFlight"`
+	Concurrency          int                     `json:"concurrency"`
+	EffectiveConcurrency int                     `json:"effectiveConcurrency"`
+	WindowStart          time.Time               `json:"windowStart"`
+	OldestBuffered       *time.Time              `json:"oldestBuffered,omitempty"`
+	WindowAttempted      int                     `json:"windowAttempted"`
+	LatencyP50Ms         int                     `json:"latencyP50Ms"`
+	LatencyP95Ms         int                     `json:"latencyP95Ms"`
+	ThroughputPerMinute  float64                 `json:"throughputPerMinute"`
+	QueuePending         int                     `json:"queuePending"`
 }
 
 type Mutation struct {

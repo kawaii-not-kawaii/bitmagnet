@@ -355,6 +355,7 @@ export type LlmCapacity = {
   maxCompletionTokens?: Maybe<Scalars['Int']['output']>;
   message: Scalars['String']['output'];
   recommendedConcurrency?: Maybe<Scalars['Int']['output']>;
+  recommendedConfig?: Maybe<LlmRecommendedConfig>;
   slots?: Maybe<Scalars['Int']['output']>;
   source: Scalars['String']['output'];
 };
@@ -415,11 +416,21 @@ export type LlmQueryStatsArgs = {
   windowMinutes?: InputMaybe<Scalars['Int']['input']>;
 };
 
+export type LlmRecommendedConfig = {
+  __typename?: 'LlmRecommendedConfig';
+  batchSize: Scalars['Int']['output'];
+  concurrency: Scalars['Int']['output'];
+  maxContext: Scalars['Int']['output'];
+  maxTokens: Scalars['Int']['output'];
+  timeoutSeconds: Scalars['Int']['output'];
+};
+
 export type LlmStats = {
   __typename?: 'LlmStats';
   attempted: Scalars['Int']['output'];
   completionTokens: Scalars['Int']['output'];
   concurrency: Scalars['Int']['output'];
+  effectiveConcurrency: Scalars['Int']['output'];
   errorCategories: Array<LlmErrorCategoryStats>;
   errored: Scalars['Int']['output'];
   inFlight: Scalars['Int']['output'];

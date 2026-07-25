@@ -231,6 +231,7 @@ type ComplexityRoot struct {
 		MaxCompletionTokens    func(childComplexity int) int
 		Message                func(childComplexity int) int
 		RecommendedConcurrency func(childComplexity int) int
+		RecommendedConfig      func(childComplexity int) int
 		Slots                  func(childComplexity int) int
 		Source                 func(childComplexity int) int
 	}
@@ -271,26 +272,35 @@ type ComplexityRoot struct {
 		Stats  func(childComplexity int, windowMinutes *int) int
 	}
 
+	LlmRecommendedConfig struct {
+		BatchSize      func(childComplexity int) int
+		Concurrency    func(childComplexity int) int
+		MaxContext     func(childComplexity int) int
+		MaxTokens      func(childComplexity int) int
+		TimeoutSeconds func(childComplexity int) int
+	}
+
 	LlmStats struct {
-		Attempted           func(childComplexity int) int
-		CompletionTokens    func(childComplexity int) int
-		Concurrency         func(childComplexity int) int
-		ErrorCategories     func(childComplexity int) int
-		Errored             func(childComplexity int) int
-		InFlight            func(childComplexity int) int
-		LatencyP50Ms        func(childComplexity int) int
-		LatencyP95Ms        func(childComplexity int) int
-		Matched             func(childComplexity int) int
-		OldestBuffered      func(childComplexity int) int
-		PerProvider         func(childComplexity int) int
-		PromptTokens        func(childComplexity int) int
-		QueuePending        func(childComplexity int) int
-		Skipped             func(childComplexity int) int
-		SuccessRate         func(childComplexity int) int
-		ThroughputPerMinute func(childComplexity int) int
-		Unmatched           func(childComplexity int) int
-		WindowAttempted     func(childComplexity int) int
-		WindowStart         func(childComplexity int) int
+		Attempted            func(childComplexity int) int
+		CompletionTokens     func(childComplexity int) int
+		Concurrency          func(childComplexity int) int
+		EffectiveConcurrency func(childComplexity int) int
+		ErrorCategories      func(childComplexity int) int
+		Errored              func(childComplexity int) int
+		InFlight             func(childComplexity int) int
+		LatencyP50Ms         func(childComplexity int) int
+		LatencyP95Ms         func(childComplexity int) int
+		Matched              func(childComplexity int) int
+		OldestBuffered       func(childComplexity int) int
+		PerProvider          func(childComplexity int) int
+		PromptTokens         func(childComplexity int) int
+		QueuePending         func(childComplexity int) int
+		Skipped              func(childComplexity int) int
+		SuccessRate          func(childComplexity int) int
+		ThroughputPerMinute  func(childComplexity int) int
+		Unmatched            func(childComplexity int) int
+		WindowAttempted      func(childComplexity int) int
+		WindowStart          func(childComplexity int) int
 	}
 
 	MetadataSource struct {
@@ -1357,6 +1367,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LlmCapacity.RecommendedConcurrency(childComplexity), true
 
+	case "LlmCapacity.recommendedConfig":
+		if e.complexity.LlmCapacity.RecommendedConfig == nil {
+			break
+		}
+
+		return e.complexity.LlmCapacity.RecommendedConfig(childComplexity), true
+
 	case "LlmCapacity.slots":
 		if e.complexity.LlmCapacity.Slots == nil {
 			break
@@ -1549,6 +1566,41 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.LlmQuery.Stats(childComplexity, args["windowMinutes"].(*int)), true
 
+	case "LlmRecommendedConfig.batchSize":
+		if e.complexity.LlmRecommendedConfig.BatchSize == nil {
+			break
+		}
+
+		return e.complexity.LlmRecommendedConfig.BatchSize(childComplexity), true
+
+	case "LlmRecommendedConfig.concurrency":
+		if e.complexity.LlmRecommendedConfig.Concurrency == nil {
+			break
+		}
+
+		return e.complexity.LlmRecommendedConfig.Concurrency(childComplexity), true
+
+	case "LlmRecommendedConfig.maxContext":
+		if e.complexity.LlmRecommendedConfig.MaxContext == nil {
+			break
+		}
+
+		return e.complexity.LlmRecommendedConfig.MaxContext(childComplexity), true
+
+	case "LlmRecommendedConfig.maxTokens":
+		if e.complexity.LlmRecommendedConfig.MaxTokens == nil {
+			break
+		}
+
+		return e.complexity.LlmRecommendedConfig.MaxTokens(childComplexity), true
+
+	case "LlmRecommendedConfig.timeoutSeconds":
+		if e.complexity.LlmRecommendedConfig.TimeoutSeconds == nil {
+			break
+		}
+
+		return e.complexity.LlmRecommendedConfig.TimeoutSeconds(childComplexity), true
+
 	case "LlmStats.attempted":
 		if e.complexity.LlmStats.Attempted == nil {
 			break
@@ -1569,6 +1621,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.LlmStats.Concurrency(childComplexity), true
+
+	case "LlmStats.effectiveConcurrency":
+		if e.complexity.LlmStats.EffectiveConcurrency == nil {
+			break
+		}
+
+		return e.complexity.LlmStats.EffectiveConcurrency(childComplexity), true
 
 	case "LlmStats.errorCategories":
 		if e.complexity.LlmStats.ErrorCategories == nil {
@@ -3195,6 +3254,20 @@ type LlmCapacity {
   # Human-readable capacity line, phrased slot-bound (local) or
   # quota/cost-bound (hosted).
   message: String!
+
+  # A complete classifier configuration derived from this probe, the live
+  # config, and the measured connection latency. Populated ONLY when the
+  # connectivity check succeeded — a failed check must not present guesses.
+  recommendedConfig: LlmRecommendedConfig
+}
+
+# Every field is populated together; the UI applies all five or none.
+type LlmRecommendedConfig {
+  batchSize: Int!
+  maxTokens: Int!
+  maxContext: Int!
+  timeoutSeconds: Int!
+  concurrency: Int!
 }
 
 type DashboardLlmBenchmark {
@@ -3443,7 +3516,11 @@ type LlmStats {
   perProvider: [LlmProviderStats!]!
   errorCategories: [LlmErrorCategoryStats!]!
   inFlight: Int!
+  # The configured ceiling.
   concurrency: Int!
+  # The controller's current admission limit; equals the ceiling while
+  # auto-scaling is disabled.
+  effectiveConcurrency: Int!
   windowStart: DateTime!
   oldestBuffered: DateTime
   windowAttempted: Int!
@@ -7572,6 +7649,8 @@ func (ec *executionContext) fieldContext_DashboardLlmConnectionResult_capacity(_
 				return ec.fieldContext_LlmCapacity_recommendedConcurrency(ctx, field)
 			case "message":
 				return ec.fieldContext_LlmCapacity_message(ctx, field)
+			case "recommendedConfig":
+				return ec.fieldContext_LlmCapacity_recommendedConfig(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type LlmCapacity", field.Name)
 		},
@@ -9316,6 +9395,59 @@ func (ec *executionContext) fieldContext_LlmCapacity_message(_ context.Context, 
 	return fc, nil
 }
 
+func (ec *executionContext) _LlmCapacity_recommendedConfig(ctx context.Context, field graphql.CollectedField, obj *gen.LlmCapacity) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmCapacity_recommendedConfig(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.RecommendedConfig, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*gen.LlmRecommendedConfig)
+	fc.Result = res
+	return ec.marshalOLlmRecommendedConfig2ᚖgithubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐLlmRecommendedConfig(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmCapacity_recommendedConfig(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmCapacity",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "batchSize":
+				return ec.fieldContext_LlmRecommendedConfig_batchSize(ctx, field)
+			case "maxTokens":
+				return ec.fieldContext_LlmRecommendedConfig_maxTokens(ctx, field)
+			case "maxContext":
+				return ec.fieldContext_LlmRecommendedConfig_maxContext(ctx, field)
+			case "timeoutSeconds":
+				return ec.fieldContext_LlmRecommendedConfig_timeoutSeconds(ctx, field)
+			case "concurrency":
+				return ec.fieldContext_LlmRecommendedConfig_concurrency(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type LlmRecommendedConfig", field.Name)
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _LlmClassificationEvent_timestamp(ctx context.Context, field graphql.CollectedField, obj *gen.LlmClassificationEvent) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_LlmClassificationEvent_timestamp(ctx, field)
 	if err != nil {
@@ -10434,6 +10566,8 @@ func (ec *executionContext) fieldContext_LlmQuery_stats(ctx context.Context, fie
 				return ec.fieldContext_LlmStats_inFlight(ctx, field)
 			case "concurrency":
 				return ec.fieldContext_LlmStats_concurrency(ctx, field)
+			case "effectiveConcurrency":
+				return ec.fieldContext_LlmStats_effectiveConcurrency(ctx, field)
 			case "windowStart":
 				return ec.fieldContext_LlmStats_windowStart(ctx, field)
 			case "oldestBuffered":
@@ -10462,6 +10596,226 @@ func (ec *executionContext) fieldContext_LlmQuery_stats(ctx context.Context, fie
 	if fc.Args, err = ec.field_LlmQuery_stats_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LlmRecommendedConfig_batchSize(ctx context.Context, field graphql.CollectedField, obj *gen.LlmRecommendedConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmRecommendedConfig_batchSize(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.BatchSize, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmRecommendedConfig_batchSize(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmRecommendedConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LlmRecommendedConfig_maxTokens(ctx context.Context, field graphql.CollectedField, obj *gen.LlmRecommendedConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmRecommendedConfig_maxTokens(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxTokens, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmRecommendedConfig_maxTokens(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmRecommendedConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LlmRecommendedConfig_maxContext(ctx context.Context, field graphql.CollectedField, obj *gen.LlmRecommendedConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmRecommendedConfig_maxContext(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.MaxContext, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmRecommendedConfig_maxContext(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmRecommendedConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LlmRecommendedConfig_timeoutSeconds(ctx context.Context, field graphql.CollectedField, obj *gen.LlmRecommendedConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmRecommendedConfig_timeoutSeconds(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.TimeoutSeconds, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmRecommendedConfig_timeoutSeconds(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmRecommendedConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LlmRecommendedConfig_concurrency(ctx context.Context, field graphql.CollectedField, obj *gen.LlmRecommendedConfig) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmRecommendedConfig_concurrency(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Concurrency, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmRecommendedConfig_concurrency(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmRecommendedConfig",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
 	}
 	return fc, nil
 }
@@ -11000,6 +11354,50 @@ func (ec *executionContext) _LlmStats_concurrency(ctx context.Context, field gra
 }
 
 func (ec *executionContext) fieldContext_LlmStats_concurrency(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "LlmStats",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _LlmStats_effectiveConcurrency(ctx context.Context, field graphql.CollectedField, obj *gen.LlmStats) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_LlmStats_effectiveConcurrency(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.EffectiveConcurrency, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNInt2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_LlmStats_effectiveConcurrency(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "LlmStats",
 		Field:      field,
@@ -24087,6 +24485,8 @@ func (ec *executionContext) _LlmCapacity(ctx context.Context, sel ast.SelectionS
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		case "recommendedConfig":
+			out.Values[i] = ec._LlmCapacity_recommendedConfig(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -24428,6 +24828,65 @@ func (ec *executionContext) _LlmQuery(ctx context.Context, sel ast.SelectionSet,
 	return out
 }
 
+var llmRecommendedConfigImplementors = []string{"LlmRecommendedConfig"}
+
+func (ec *executionContext) _LlmRecommendedConfig(ctx context.Context, sel ast.SelectionSet, obj *gen.LlmRecommendedConfig) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, llmRecommendedConfigImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("LlmRecommendedConfig")
+		case "batchSize":
+			out.Values[i] = ec._LlmRecommendedConfig_batchSize(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "maxTokens":
+			out.Values[i] = ec._LlmRecommendedConfig_maxTokens(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "maxContext":
+			out.Values[i] = ec._LlmRecommendedConfig_maxContext(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "timeoutSeconds":
+			out.Values[i] = ec._LlmRecommendedConfig_timeoutSeconds(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "concurrency":
+			out.Values[i] = ec._LlmRecommendedConfig_concurrency(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
 var llmStatsImplementors = []string{"LlmStats"}
 
 func (ec *executionContext) _LlmStats(ctx context.Context, sel ast.SelectionSet, obj *gen.LlmStats) graphql.Marshaler {
@@ -24496,6 +24955,11 @@ func (ec *executionContext) _LlmStats(ctx context.Context, sel ast.SelectionSet,
 			}
 		case "concurrency":
 			out.Values[i] = ec._LlmStats_concurrency(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "effectiveConcurrency":
+			out.Values[i] = ec._LlmStats_effectiveConcurrency(ctx, field, obj)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
@@ -30238,6 +30702,13 @@ func (ec *executionContext) marshalOLlmCapacity2ᚖgithubᚗcomᚋbitmagnetᚑio
 		return graphql.Null
 	}
 	return ec._LlmCapacity(ctx, sel, v)
+}
+
+func (ec *executionContext) marshalOLlmRecommendedConfig2ᚖgithubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋgqlᚋgqlmodelᚋgenᚐLlmRecommendedConfig(ctx context.Context, sel ast.SelectionSet, v *gen.LlmRecommendedConfig) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._LlmRecommendedConfig(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOQueueEnqueueReprocessTorrentsBatchInput2githubᚗcomᚋbitmagnetᚑioᚋbitmagnetᚋinternalᚋqueueᚋmanagerᚐEnqueueReprocessTorrentsBatchRequest(ctx context.Context, v any) (manager.EnqueueReprocessTorrentsBatchRequest, error) {

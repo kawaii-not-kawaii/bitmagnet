@@ -48,7 +48,11 @@ type LlmStats {
   perProvider: [LlmProviderStats!]!
   errorCategories: [LlmErrorCategoryStats!]!
   inFlight: Int!
+  # The configured ceiling.
   concurrency: Int!
+  # The controller's current admission limit; equals the ceiling while
+  # auto-scaling is disabled.
+  effectiveConcurrency: Int!
   windowStart: DateTime!
   oldestBuffered: DateTime
   windowAttempted: Int!
