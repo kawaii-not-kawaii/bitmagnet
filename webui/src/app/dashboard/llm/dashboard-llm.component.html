@@ -140,9 +140,16 @@
         <div class="slots">
           <div class="slot-heading">
             <span>Slots in use</span>
-            <strong
-              >{{ vm.stats.inFlight }} / {{ vm.stats.concurrency }}</strong
-            >
+            <div class="slot-limits">
+              <strong
+                >{{ vm.stats.inFlight }} / {{ vm.effectiveConcurrency }}</strong
+              >
+              @if (vm.effectiveConcurrency !== vm.concurrencyCeiling) {
+                <small class="slot-ceiling"
+                  >ceiling {{ vm.concurrencyCeiling }}</small
+                >
+              }
+            </div>
           </div>
           <div class="slot-gauge" aria-label="LLM classification slots">
             @for (active of vm.slots; track $index) {
@@ -392,6 +399,56 @@
 
       <article class="panel management-card config-card">
         <header><strong>Configuration</strong></header>
+        <section class="preset-manager" aria-label="Provider presets">
+          <div class="preset-save">
+            <label>
+              <span>Preset name</span>
+              <input
+                type="text"
+                placeholder="Local llama, hosted…"
+                [formControl]="presetName"
+              />
+            </label>
+            <button
+              type="button"
+              [disabled]="!presetName.value.trim()"
+              (click)="saveCurrentPreset()"
+            >
+              Save preset
+            </button>
+          </div>
+          @if (presets.length) {
+            <div class="preset-list">
+              @for (preset of presets; track preset.name) {
+                <div class="preset-row">
+                  <span>
+                    <strong>{{ preset.name }}</strong>
+                    <small
+                      >{{ preset.value.providerName }} ·
+                      {{ preset.value.model }}</small
+                    >
+                  </span>
+                  <div class="preset-actions">
+                    <button
+                      type="button"
+                      class="load-preset"
+                      (click)="loadPreset(preset)"
+                    >
+                      Load
+                    </button>
+                    <button
+                      type="button"
+                      class="delete-preset"
+                      (click)="removePreset(preset)"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          }
+        </section>
         <form [formGroup]="form" (ngSubmit)="save()">
           <div class="fields">
             <label>
@@ -416,9 +473,17 @@
                 <input type="number" min="1" formControlName="batchSize" />
               </label>
               <label>
-                <span>Concurrency</span>
+                <span>Concurrency ceiling</span>
                 <input type="number" min="1" formControlName="concurrency" />
-                <small>applies after restart</small>
+                <small>operator cap for live concurrency</small>
+              </label>
+              <label class="auto-scale-field">
+                <span>Auto-scale</span>
+                <span class="checkbox-control">
+                  <input type="checkbox" formControlName="autoScale" />
+                  adjust live limit within ceiling
+                </span>
+                <small>Concurrency stays your configured cap.</small>
               </label>
               <label>
                 <span>Max context</span>
@@ -473,6 +538,46 @@
               }
               {{ capacity.message }}
             </p>
+            @if (capacity.recommendedConfig; as recommendation) {
+              <section
+                class="recommendation"
+                aria-label="Recommended configuration"
+              >
+                <header>
+                  <strong>Recommended configuration</strong>
+                  <span>review before saving</span>
+                </header>
+                <div class="recommendation-values">
+                  <span
+                    ><small>Batch</small
+                    ><b>{{ recommendation.batchSize }}</b></span
+                  >
+                  <span
+                    ><small>Max tokens</small
+                    ><b>{{ recommendation.maxTokens }}</b></span
+                  >
+                  <span
+                    ><small>Max context</small
+                    ><b>{{ recommendation.maxContext }}</b></span
+                  >
+                  <span
+                    ><small>Timeout</small
+                    ><b>{{ recommendation.timeoutSeconds }}s</b></span
+                  >
+                  <span
+                    ><small>Concurrency</small
+                    ><b>{{ recommendation.concurrency }}</b></span
+                  >
+                </div>
+                <button
+                  type="button"
+                  class="accent apply-recommendation"
+                  (click)="applyRecommendation(recommendation)"
+                >
+                  Apply recommendation
+                </button>
+              </section>
+            }
             @if (capacity.recommendedConcurrency; as slots) {
               @if (form.controls.concurrency.value > slots) {
                 <p class="capacity-result warning">

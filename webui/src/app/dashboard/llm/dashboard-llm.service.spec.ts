@@ -44,6 +44,77 @@ describe("DashboardLlmService mapping", () => {
     ).toEqual(["malformed response"]);
   });
 
+  it("uses effective concurrency below the configured ceiling", () => {
+    const view = mapDashboardLlmData(
+      dashboardData({
+        inFlight: 2,
+        effectiveConcurrency: 3,
+        concurrency: 8,
+      }),
+    );
+
+    expect(view.effectiveConcurrency).toBe(3);
+    expect(view.concurrencyCeiling).toBe(8);
+    expect(view.utilization).toBeCloseTo(2 / 3);
+    expect(view.slots).toEqual([true, true, false]);
+  });
+
+  it("preserves capacity behavior when autoscaling is disabled", () => {
+    const view = mapDashboardLlmData(
+      dashboardData({
+        inFlight: 2,
+        effectiveConcurrency: 4,
+        concurrency: 4,
+      }),
+    );
+
+    expect(view.effectiveConcurrency).toBe(4);
+    expect(view.concurrencyCeiling).toBe(4);
+    expect(view.utilization).toBe(0.5);
+    expect(view.slots).toEqual([true, true, false, false]);
+  });
+
+  it("reports saturation against effective concurrency", () => {
+    const view = mapDashboardLlmData(
+      dashboardData({
+        inFlight: 4,
+        effectiveConcurrency: 3,
+        concurrency: 8,
+      }),
+    );
+
+    expect(view.utilization).toBeGreaterThanOrEqual(1);
+    expect(view.slots.length).toBe(3);
+    expect(view.capacityStatus).toBe("saturated, backlog growing");
+  });
+
+  it("handles zero effective concurrency without invalid numbers", () => {
+    const view = mapDashboardLlmData(
+      dashboardData({
+        inFlight: 2,
+        effectiveConcurrency: 0,
+        concurrency: 8,
+      }),
+    );
+
+    expect(view.utilization).toBe(0);
+    expect(Number.isFinite(view.utilization)).toBeTrue();
+    expect(view.slots).toEqual([]);
+  });
+
+  it("keeps the near-capacity threshold at 80 percent", () => {
+    const view = mapDashboardLlmData(
+      dashboardData({
+        inFlight: 4,
+        effectiveConcurrency: 5,
+        concurrency: 8,
+      }),
+    );
+
+    expect(view.utilization).toBe(0.8);
+    expect(view.capacityStatus).toBe("near capacity");
+  });
+
   it("preserves unrelated config fields while serializing edited LLM values", () => {
     const view = mapDashboardLlmData(dashboardData(), 123456);
     const value = buildClassifierConfigValue(view.config, {
@@ -79,7 +150,9 @@ describe("DashboardLlmService mapping", () => {
   });
 });
 
-function dashboardData(): generated.DashboardDataQuery {
+function dashboardData(
+  statsOverrides: Partial<generated.DashboardDataQuery["llm"]["stats"]> = {},
+): generated.DashboardDataQuery {
   const event = (
     timestamp: string,
     outcome: generated.LlmClassificationOutcome,
@@ -184,6 +257,7 @@ function dashboardData(): generated.DashboardDataQuery {
         latencyP95Ms: 2500,
         throughputPerMinute: 2,
         queuePending: 240,
+        ...statsOverrides,
       },
     },
     config: {

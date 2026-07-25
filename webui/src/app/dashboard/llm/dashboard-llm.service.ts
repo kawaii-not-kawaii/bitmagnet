@@ -133,8 +133,9 @@ export function mapDashboardLlmData(
   const windowMatched = windowEvents.filter(
     (event) => event.outcome === "MATCHED",
   ).length;
-  const concurrency = Math.max(0, stats.concurrency);
-  const utilization = concurrency > 0 ? stats.inFlight / concurrency : 0;
+  const effectiveConcurrency = Math.max(0, stats.effectiveConcurrency);
+  const utilization =
+    effectiveConcurrency > 0 ? stats.inFlight / effectiveConcurrency : 0;
   const drainRatePerHour = stats.throughputPerMinute * 60;
 
   return {
@@ -153,10 +154,10 @@ export function mapDashboardLlmData(
     windowTruncated: Boolean(stats.oldestBuffered),
     windowCoverageStart: stats.oldestBuffered ?? stats.windowStart,
     slots: Array.from(
-      { length: concurrency },
+      { length: effectiveConcurrency },
       (_, index) => index < stats.inFlight,
     ),
-    effectiveConcurrency: Math.max(0, stats.effectiveConcurrency),
+    effectiveConcurrency,
     concurrencyCeiling: Math.max(0, stats.concurrency),
     utilization,
     capacityStatus:
