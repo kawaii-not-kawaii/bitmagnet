@@ -1120,7 +1120,7 @@ export type DashboardLlmSetConfigMutation = { __typename?: 'Mutation', config: {
 export type DashboardLlmTestConnectionMutationVariables = Exact<{ [key: string]: never; }>;
 
 
-export type DashboardLlmTestConnectionMutation = { __typename?: 'Mutation', dashboard: { __typename?: 'DashboardMutation', testLlmConnection: { __typename?: 'DashboardLlmConnectionResult', ok: boolean, error?: string | null, connected: boolean, latencySeconds: number, capacity?: { __typename?: 'LlmCapacity', source: string, contextPerRequest?: number | null, maxCompletionTokens?: number | null, slots?: number | null, fits?: boolean | null, recommendedConcurrency?: number | null, message: string } | null } } };
+export type DashboardLlmTestConnectionMutation = { __typename?: 'Mutation', dashboard: { __typename?: 'DashboardMutation', testLlmConnection: { __typename?: 'DashboardLlmConnectionResult', ok: boolean, error?: string | null, connected: boolean, latencySeconds: number, capacity?: { __typename?: 'LlmCapacity', source: string, contextPerRequest?: number | null, maxCompletionTokens?: number | null, slots?: number | null, fits?: boolean | null, recommendedConcurrency?: number | null, message: string, recommendedConfig?: { __typename?: 'LlmRecommendedConfig', batchSize: number, maxTokens: number, maxContext: number, timeoutSeconds: number, concurrency: number } | null } | null } } };
 
 export type DashboardLlmRunBenchmarkMutationVariables = Exact<{
   sampleSize: Scalars['Int']['input'];
@@ -1192,7 +1192,7 @@ export type DashboardDataQueryVariables = Exact<{
 }>;
 
 
-export type DashboardDataQuery = { __typename?: 'Query', dashboard: { __typename?: 'DashboardQuery', summary: { __typename?: 'DashboardSummary', totalTorrents: number, torrentsToday: number, indexedLastHour: number, indexedPreviousHour: number, classifiedPercent: number, queueProcessed: number, queuePending: number, queueFailed: number } }, llm: { __typename?: 'LlmQuery', events: Array<{ __typename?: 'LlmClassificationEvent', timestamp: string, infoHash: string, torrentName: string, provider: string, durationMs: number, outcome: LlmClassificationOutcome, promptTokens: number, completionTokens: number, contentType: string, title: string, year: number, season: number, episode: number, languages: Array<string>, error: string }>, stats: { __typename?: 'LlmStats', attempted: number, matched: number, unmatched: number, errored: number, skipped: number, promptTokens: number, completionTokens: number, successRate: number, inFlight: number, concurrency: number, windowStart: string, oldestBuffered?: string | null, windowAttempted: number, latencyP50Ms: number, latencyP95Ms: number, throughputPerMinute: number, queuePending: number, perProvider: Array<{ __typename?: 'LlmProviderStats', provider: string, attempted: number, matched: number, unmatched: number, errored: number }>, errorCategories: Array<{ __typename?: 'LlmErrorCategoryStats', category: string, count: number }> } }, config: { __typename?: 'ConfigQuery', sections: Array<{ __typename?: 'ConfigSection', key: string, runtimeChangeable: ConfigRuntimeChangeability, value: Record<string, unknown> }> } };
+export type DashboardDataQuery = { __typename?: 'Query', dashboard: { __typename?: 'DashboardQuery', summary: { __typename?: 'DashboardSummary', totalTorrents: number, torrentsToday: number, indexedLastHour: number, indexedPreviousHour: number, classifiedPercent: number, queueProcessed: number, queuePending: number, queueFailed: number } }, llm: { __typename?: 'LlmQuery', events: Array<{ __typename?: 'LlmClassificationEvent', timestamp: string, infoHash: string, torrentName: string, provider: string, durationMs: number, outcome: LlmClassificationOutcome, promptTokens: number, completionTokens: number, contentType: string, title: string, year: number, season: number, episode: number, languages: Array<string>, error: string }>, stats: { __typename?: 'LlmStats', attempted: number, matched: number, unmatched: number, errored: number, skipped: number, promptTokens: number, completionTokens: number, successRate: number, inFlight: number, concurrency: number, effectiveConcurrency: number, windowStart: string, oldestBuffered?: string | null, windowAttempted: number, latencyP50Ms: number, latencyP95Ms: number, throughputPerMinute: number, queuePending: number, perProvider: Array<{ __typename?: 'LlmProviderStats', provider: string, attempted: number, matched: number, unmatched: number, errored: number }>, errorCategories: Array<{ __typename?: 'LlmErrorCategoryStats', category: string, count: number }> } }, config: { __typename?: 'ConfigQuery', sections: Array<{ __typename?: 'ConfigSection', key: string, runtimeChangeable: ConfigRuntimeChangeability, value: Record<string, unknown> }> } };
 
 export type HealthCheckQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1538,6 +1538,13 @@ export const DashboardLlmTestConnectionDocument = gql`
         slots
         fits
         recommendedConcurrency
+        recommendedConfig {
+          batchSize
+          maxTokens
+          maxContext
+          timeoutSeconds
+          concurrency
+        }
         message
       }
     }
@@ -1785,6 +1792,7 @@ export const DashboardDataDocument = gql`
       }
       inFlight
       concurrency
+      effectiveConcurrency
       windowStart
       oldestBuffered
       windowAttempted

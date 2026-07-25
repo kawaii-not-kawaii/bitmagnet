@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
 	"github.com/bitmagnet-io/bitmagnet/internal/gql/gqlmodel/gen"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmobs"
@@ -98,6 +97,8 @@ func TestLlmQuery_Stats(t *testing.T) {
 	t.Parallel()
 
 	recorder := llmobs.New()
+	recorder.SetConcurrency(8, 3)
+
 	now := time.Now()
 	recorder.Record(llmobs.Event{
 		Timestamp:        now.Add(-time.Minute),
@@ -128,7 +129,6 @@ func TestLlmQuery_Stats(t *testing.T) {
 	stats, err := (&llmQueryResolver{&Resolver{
 		LlmRecorder:        recorder,
 		QueueMetricsClient: queueMetrics,
-		ClassifierConfig:   classifier.Config{Concurrency: 8},
 	}}).Stats(context.Background(), &gen.LlmQuery{}, &windowMinutes)
 	if err != nil {
 		t.Fatalf("Stats: %v", err)
@@ -164,10 +164,14 @@ func TestLlmQuery_Stats(t *testing.T) {
 		)
 	}
 
-	if stats.InFlight != 1 || stats.Concurrency != 8 || stats.QueuePending != 7 {
+	if stats.InFlight != 1 ||
+		stats.Concurrency != 8 ||
+		stats.EffectiveConcurrency != 3 ||
+		stats.QueuePending != 7 {
 		t.Errorf(
-			"utilization = inFlight %d, concurrency %d, queuePending %d",
+			"utilization = inFlight %d, effective/configured %d/%d, queuePending %d",
 			stats.InFlight,
+			stats.EffectiveConcurrency,
 			stats.Concurrency,
 			stats.QueuePending,
 		)

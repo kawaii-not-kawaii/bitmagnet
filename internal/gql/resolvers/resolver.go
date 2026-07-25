@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"github.com/bitmagnet-io/bitmagnet/internal/blocking"
-	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
 	"github.com/bitmagnet-io/bitmagnet/internal/client"
 	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
 	"github.com/bitmagnet-io/bitmagnet/internal/config"
@@ -39,5 +38,4 @@ type Resolver struct {
 	Changeability        configapply.Changeability
 	Applier              *configapply.Applier
 	LlmRecorder          *llmobs.Recorder
-	ClassifierConfig     classifier.Config
 }

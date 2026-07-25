@@ -1,6 +1,9 @@
 package openai
 
-import "time"
+import (
+	"math"
+	"time"
+)
 
 // Repository defaults used when the live configuration carries no positive
 // value for a field. They mirror the classifier LLM config defaults.
@@ -59,17 +62,39 @@ func (c CurrentConfig) resolve() CurrentConfig {
 // It is pure: no I/O, no mutation of capacity or the provider registry. Callers
 // must only invoke it for a probe taken during a SUCCESSFUL connection test —
 // a failed test must present no recommendation at all.
-//
-// TODO(pr-2): apply the detected-capacity caps — token/context clamping against
-// the probed window, source-based concurrency, and latency-derived timeout.
-func Recommend(_ Capacity, current CurrentConfig, _ time.Duration) RecommendedConfig {
+func Recommend(capacity Capacity, current CurrentConfig, latency time.Duration) RecommendedConfig {
 	resolved := current.resolve()
+	maxTokens := resolved.MaxTokens
+
+	if capacity.MaxCompletionTokens != nil && *capacity.MaxCompletionTokens > 0 {
+		maxTokens = min(maxTokens, *capacity.MaxCompletionTokens)
+	}
+
+	maxContext := resolved.MaxContext
+
+	if capacity.ContextPerRequest != nil && *capacity.ContextPerRequest >= 2 {
+		window := *capacity.ContextPerRequest
+		maxTokens = min(maxTokens, window-1)
+		maxContext = min(maxContext, window-maxTokens)
+	}
+
+	concurrency := resolved.Concurrency
+
+	switch {
+	case capacity.Slots != nil && *capacity.Slots > 0:
+		concurrency = *capacity.Slots
+	case capacity.Source == "models" || capacity.Source == "models.dev":
+		concurrency = 16
+	}
+
+	timeoutSeconds := int(math.Ceil(4 * latency.Seconds()))
+	timeoutSeconds = max(int(defaultRecommendTimeout.Seconds()), min(timeoutSeconds, 300))
 
 	return RecommendedConfig{
 		BatchSize:      1,
-		MaxTokens:      resolved.MaxTokens,
-		MaxContext:     resolved.MaxContext,
-		TimeoutSeconds: int(resolved.Timeout.Seconds()),
-		Concurrency:    resolved.Concurrency,
+		MaxTokens:      maxTokens,
+		MaxContext:     maxContext,
+		TimeoutSeconds: timeoutSeconds,
+		Concurrency:    concurrency,
 	}
 }

@@ -314,6 +314,13 @@ ${Qc}`,qc=L`
         slots
         fits
         recommendedConcurrency
+        recommendedConfig {
+          batchSize
+          maxTokens
+          maxContext
+          timeoutSeconds
+          concurrency
+        }
         message
       }
     }
@@ -441,6 +448,7 @@ ${Qc}`,qc=L`
       }
       inFlight
       concurrency
+      effectiveConcurrency
       windowStart
       oldestBuffered
       windowAttempted

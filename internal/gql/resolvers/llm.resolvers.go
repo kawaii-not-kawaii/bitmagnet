@@ -18,7 +18,7 @@ func (r *llmQueryResolver) Events(ctx context.Context, obj *gen.LlmQuery, limit 
 
 // Stats is the resolver for the stats field.
 func (r *llmQueryResolver) Stats(ctx context.Context, obj *gen.LlmQuery, windowMinutes *int) (gen.LlmStats, error) {
-	return llmStats(ctx, r.LlmRecorder, r.QueueMetricsClient, r.ClassifierConfig, windowMinutes)
+	return llmStats(ctx, r.LlmRecorder, r.QueueMetricsClient, windowMinutes)
 }
 
 // LlmQuery returns gql.LlmQueryResolver implementation.
