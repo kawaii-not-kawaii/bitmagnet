@@ -770,6 +770,10 @@ input:focus-visible {
 .fields label,
 .benchmark-action label {
   display: grid;
+  // Without this, a stretched grid cell hands its spare height to these
+  // auto-sized rows, so a field with a hint below it pushes its own input
+  // out of line with its neighbours'.
+  align-content: start;
   gap: 5px;
 }
 
@@ -785,24 +789,19 @@ input:focus-visible {
   font-weight: 400;
 }
 
-.checkbox-control {
+.fields .auto-scale-toggle {
+  // Reuses the .toggle switch from the status panel. Needs to out-specify
+  // `.fields label`, which would otherwise force its grid display back on.
+  // Deliberately NOT inside .numeric-fields: a checkbox in that grid renders
+  // as a fake text input and knocks the row baselines out of line.
   display: flex;
-  min-height: 34px;
-  align-items: center;
-  gap: 7px;
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  padding: 7px 9px;
-  background: var(--surface2);
-  color: var(--text);
-  font-weight: 400;
+  grid-column: 1 / -1;
+  margin-top: 2px;
 }
 
-.fields .checkbox-control input {
-  width: 16px;
-  height: 16px;
-  padding: 0;
-  accent-color: var(--llm-purple);
+.fields .auto-scale-toggle small {
+  margin-left: 6px;
+  font-weight: 400;
 }
 
 .fields input,
