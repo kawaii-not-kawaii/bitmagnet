@@ -477,14 +477,6 @@
                 <input type="number" min="1" formControlName="concurrency" />
                 <small>operator cap for live concurrency</small>
               </label>
-              <label class="auto-scale-field">
-                <span>Auto-scale</span>
-                <span class="checkbox-control">
-                  <input type="checkbox" formControlName="autoScale" />
-                  adjust live limit within ceiling
-                </span>
-                <small>Concurrency stays your configured cap.</small>
-              </label>
               <label>
                 <span>Max context</span>
                 <input type="number" min="1" formControlName="maxContext" />
@@ -506,6 +498,16 @@
                 <input type="number" min="1" formControlName="timeoutSeconds" />
               </label>
             </div>
+            <label class="toggle auto-scale-toggle">
+              <input type="checkbox" formControlName="autoScale" />
+              <i aria-hidden="true"></i>
+              <span
+                >Auto-scale
+                <small
+                  >adjust the live limit within the ceiling above</small
+                ></span
+              >
+            </label>
           </div>
           <div class="form-actions">
             <button
