@@ -203,10 +203,12 @@ export class DashboardLlmComponent implements OnDestroy {
           if (connection?.ok && connection.connected) {
             this.testState = "ok";
             this.connectionMessage = `✓ Connected · ${connection.latencySeconds.toFixed(2)}s`;
+            // Only the transient "✓ Connected" flash expires. The capacity and
+            // its recommendation must persist until the next test — they carry
+            // five values and an Apply button that nobody can act on in 3.2s.
             this.connectionTimer = setTimeout(() => {
               this.testState = "idle";
               this.connectionMessage = "";
-              this.connectionCapacity = undefined;
             }, 3200);
             return;
           }
