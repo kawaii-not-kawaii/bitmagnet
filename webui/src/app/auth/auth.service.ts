@@ -1,3 +1,4 @@
+import { Location } from "@angular/common";
 import { HttpClient } from "@angular/common/http";
 import { Injectable, inject, signal } from "@angular/core";
 import { Router } from "@angular/router";
@@ -25,6 +26,7 @@ export interface AuthResponse {
 export class AuthService {
   private readonly http = inject(HttpClient);
   private readonly router = inject(Router);
+  private readonly location = inject(Location);
   private readonly storage = inject(BrowserStorageService);
   private readonly currentState = signal<AuthState | null>(null);
 
@@ -86,11 +88,11 @@ export class AuthService {
       return;
     }
     if (
-      this.isAuthRoute(this.router.url) &&
+      this.isAuthRoute(this.currentPath()) &&
       (legacyLogin === "succeeded" ||
         state.authDisabled ||
         state.trustedBypass ||
-        this.router.url.startsWith("/setup"))
+        this.currentPath().startsWith("/setup"))
     ) {
       await this.router.navigateByUrl("/torrents");
     }
@@ -101,12 +103,24 @@ export class AuthService {
   }
 
   private routeToLogin(): Promise<boolean> {
-    if (this.isAuthRoute(this.router.url)) {
+    const target = this.currentPath();
+
+    if (this.isAuthRoute(target)) {
       return Promise.resolve(false);
     }
+
     return this.router.navigate(["/login"], {
-      queryParams: { returnUrl: this.router.url },
+      queryParams: { returnUrl: target },
     });
+  }
+
+  // Location.path() is the browser's URL minus the base href, so it holds the
+  // route the user actually asked for even when auth resolves during bootstrap
+  // — before the router has resolved that navigation, while router.url still
+  // reads "/". Reading router.url here sent every deep link to the default
+  // landing page after login.
+  private currentPath(): string {
+    return this.location.path() || this.router.url;
   }
 
   private isAuthRoute(url: string): boolean {

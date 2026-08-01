@@ -1,3 +1,4 @@
+import { Location } from "@angular/common";
 import { provideHttpClient } from "@angular/common/http";
 import {
   HttpTestingController,
@@ -27,9 +28,11 @@ describe("AuthService", () => {
   let router: jasmine.SpyObj<Router>;
   let service: AuthService;
   let storage: Storage;
+  let locationPath: string;
 
   beforeEach(() => {
     storage = fakeStorage();
+    locationPath = "";
     router = jasmine.createSpyObj<Router>(
       "Router",
       ["navigate", "navigateByUrl"],
@@ -44,6 +47,7 @@ describe("AuthService", () => {
         provideHttpClientTesting(),
         { provide: BROWSER_STORAGE, useValue: storage },
         { provide: Router, useValue: router },
+        { provide: Location, useValue: { path: () => locationPath } },
       ],
     });
     http = TestBed.inject(HttpTestingController);
@@ -96,6 +100,20 @@ describe("AuthService", () => {
     expect(router.navigate.calls.mostRecent().args).toEqual([
       ["/login"],
       { queryParams: { returnUrl: "/dashboard" } },
+    ]);
+  });
+
+  it("keeps the deep link when the router has not resolved it yet", () => {
+    // During bootstrap the router still reports its default URL while the
+    // browser is already sitting on the requested route. Reading router.url
+    // here sent every deep link to the landing page after login.
+    locationPath = "/dashboard/llm";
+
+    service.notifyAuthRequired();
+
+    expect(router.navigate.calls.mostRecent().args).toEqual([
+      ["/login"],
+      { queryParams: { returnUrl: "/dashboard/llm" } },
     ]);
   });
 
