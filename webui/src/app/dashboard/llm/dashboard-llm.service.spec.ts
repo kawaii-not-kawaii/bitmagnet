@@ -1,6 +1,7 @@
 import * as generated from "../../graphql/generated";
 import {
   LLM_EVENT_LIMIT,
+  REDACTED_VALUE,
   buildClassifierConfigValue,
   filterLlmEvents,
   mapDashboardLlmData,
@@ -44,11 +45,83 @@ describe("DashboardLlmService mapping", () => {
     ).toEqual(["malformed response"]);
   });
 
+  it("uses effective concurrency below the configured ceiling", () => {
+    const view = mapDashboardLlmData(
+      dashboardData({
+        inFlight: 2,
+        effectiveConcurrency: 3,
+        concurrency: 8,
+      }),
+    );
+
+    expect(view.effectiveConcurrency).toBe(3);
+    expect(view.concurrencyCeiling).toBe(8);
+    expect(view.utilization).toBeCloseTo(2 / 3);
+    expect(view.slots).toEqual([true, true, false]);
+  });
+
+  it("preserves capacity behavior when autoscaling is disabled", () => {
+    const view = mapDashboardLlmData(
+      dashboardData({
+        inFlight: 2,
+        effectiveConcurrency: 4,
+        concurrency: 4,
+      }),
+    );
+
+    expect(view.effectiveConcurrency).toBe(4);
+    expect(view.concurrencyCeiling).toBe(4);
+    expect(view.utilization).toBe(0.5);
+    expect(view.slots).toEqual([true, true, false, false]);
+  });
+
+  it("reports saturation against effective concurrency", () => {
+    const view = mapDashboardLlmData(
+      dashboardData({
+        inFlight: 4,
+        effectiveConcurrency: 3,
+        concurrency: 8,
+      }),
+    );
+
+    expect(view.utilization).toBeGreaterThanOrEqual(1);
+    expect(view.slots.length).toBe(3);
+    expect(view.capacityStatus).toBe("saturated, backlog growing");
+  });
+
+  it("handles zero effective concurrency without invalid numbers", () => {
+    const view = mapDashboardLlmData(
+      dashboardData({
+        inFlight: 2,
+        effectiveConcurrency: 0,
+        concurrency: 8,
+      }),
+    );
+
+    expect(view.utilization).toBe(0);
+    expect(Number.isFinite(view.utilization)).toBeTrue();
+    expect(view.slots).toEqual([]);
+  });
+
+  it("keeps the near-capacity threshold at 80 percent", () => {
+    const view = mapDashboardLlmData(
+      dashboardData({
+        inFlight: 4,
+        effectiveConcurrency: 5,
+        concurrency: 8,
+      }),
+    );
+
+    expect(view.utilization).toBe(0.8);
+    expect(view.capacityStatus).toBe("near capacity");
+  });
+
   it("preserves unrelated config fields while serializing edited LLM values", () => {
     const view = mapDashboardLlmData(dashboardData(), 123456);
     const value = buildClassifierConfigValue(view.config, {
       enabled: false,
       concurrency: 6,
+      autoScale: false,
       providerName: " local ",
       baseUrl: " http://localhost:8080 ",
       model: " gemma-4 ",
@@ -61,6 +134,7 @@ describe("DashboardLlmService mapping", () => {
     });
 
     expect(value["Concurrency"]).toBe(6);
+    expect(value["AutoScale"]).toBe(false);
     expect(value["Llm"]).toEqual(
       jasmine.objectContaining({
         Enabled: false,
@@ -76,9 +150,41 @@ describe("DashboardLlmService mapping", () => {
       }),
     );
   });
+
+  it("serializes auto-scale in both directions", () => {
+    // auto_scale: false is the kill-switch, so an omitted field would silently
+    // leave a running autoscaler enabled — assert the key is always present.
+    const view = mapDashboardLlmData(dashboardData(), 123456);
+    const formValue = {
+      enabled: true,
+      concurrency: 6,
+      autoScale: true,
+      providerName: "local",
+      baseUrl: "http://localhost:8080",
+      model: "gemma-4",
+      apiKey: REDACTED_VALUE,
+      batchSize: 1,
+      maxContext: 16000,
+      maxTokens: 256,
+      intervalSeconds: 5,
+      timeoutSeconds: 30,
+    };
+
+    expect(
+      buildClassifierConfigValue(view.config, formValue)["AutoScale"],
+    ).toBe(true);
+    expect(
+      buildClassifierConfigValue(view.config, {
+        ...formValue,
+        autoScale: false,
+      }),
+    ).toEqual(jasmine.objectContaining({ AutoScale: false }));
+  });
 });
 
-function dashboardData(): generated.DashboardDataQuery {
+function dashboardData(
+  statsOverrides: Partial<generated.DashboardDataQuery["llm"]["stats"]> = {},
+): generated.DashboardDataQuery {
   const event = (
     timestamp: string,
     outcome: generated.LlmClassificationOutcome,
@@ -183,6 +289,7 @@ function dashboardData(): generated.DashboardDataQuery {
         latencyP95Ms: 2500,
         throughputPerMinute: 2,
         queuePending: 240,
+        ...statsOverrides,
       },
     },
     config: {

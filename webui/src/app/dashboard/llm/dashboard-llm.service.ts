@@ -32,6 +32,7 @@ export interface ClassifierConfigView {
   runtimeChangeable?: generated.ConfigRuntimeChangeability;
   enabled: boolean;
   concurrency: number;
+  autoScale: boolean;
   providerName: string;
   baseUrl: string;
   model: string;
@@ -58,6 +59,10 @@ export interface LlmDashboardView {
   windowTruncated: boolean;
   windowCoverageStart: string;
   slots: boolean[];
+  // The controller's live admission limit; the denominator for slots and
+  // utilization. `concurrencyCeiling` is the configured maximum it scales within.
+  effectiveConcurrency: number;
+  concurrencyCeiling: number;
   utilization: number;
   capacityStatus: string;
   drainRatePerHour: number;
@@ -67,6 +72,7 @@ export interface LlmDashboardView {
 export interface LlmConfigFormValue {
   enabled: boolean;
   concurrency: number;
+  autoScale: boolean;
   providerName: string;
   baseUrl: string;
   model: string;
@@ -127,8 +133,9 @@ export function mapDashboardLlmData(
   const windowMatched = windowEvents.filter(
     (event) => event.outcome === "MATCHED",
   ).length;
-  const concurrency = Math.max(0, stats.concurrency);
-  const utilization = concurrency > 0 ? stats.inFlight / concurrency : 0;
+  const effectiveConcurrency = Math.max(0, stats.effectiveConcurrency);
+  const utilization =
+    effectiveConcurrency > 0 ? stats.inFlight / effectiveConcurrency : 0;
   const drainRatePerHour = stats.throughputPerMinute * 60;
 
   return {
@@ -147,9 +154,11 @@ export function mapDashboardLlmData(
     windowTruncated: Boolean(stats.oldestBuffered),
     windowCoverageStart: stats.oldestBuffered ?? stats.windowStart,
     slots: Array.from(
-      { length: concurrency },
+      { length: effectiveConcurrency },
       (_, index) => index < stats.inFlight,
     ),
+    effectiveConcurrency,
+    concurrencyCeiling: Math.max(0, stats.concurrency),
     utilization,
     capacityStatus:
       utilization >= 1
@@ -174,6 +183,7 @@ export function mapClassifierConfig(
     llmRaw,
     runtimeChangeable: section?.runtimeChangeable,
     concurrency: numberValue(raw["Concurrency"], 10),
+    autoScale: booleanValue(raw["AutoScale"], false),
     enabled: booleanValue(llmRaw["Enabled"], false),
     providerName: stringValue(llmRaw["ProviderName"], "default"),
     baseUrl: stringValue(llmRaw["ProviderBaseURL"]),
@@ -194,6 +204,7 @@ export function buildClassifierConfigValue(
   return {
     ...config.raw,
     Concurrency: value.concurrency,
+    AutoScale: value.autoScale,
     Llm: {
       ...config.llmRaw,
       Enabled: value.enabled,

@@ -17,6 +17,13 @@ import {
   formatDuration,
   mapClassifierConfig,
 } from "./dashboard-llm.service";
+import {
+  LlmPreset,
+  deletePreset,
+  loadPresets,
+  presetFormValue,
+  savePreset,
+} from "./dashboard-llm.presets";
 
 @Component({
   selector: "app-dashboard-llm",
@@ -58,6 +65,7 @@ export class DashboardLlmComponent implements OnDestroy {
   form = this.fb.nonNullable.group({
     enabled: false,
     concurrency: [10, [this.required, Validators.min(1)]],
+    autoScale: false,
     providerName: ["default", this.required],
     baseUrl: ["", this.required],
     model: ["", this.required],
@@ -73,6 +81,8 @@ export class DashboardLlmComponent implements OnDestroy {
     Validators.min(1),
     Validators.max(500),
   ]);
+  readonly presetName = this.fb.nonNullable.control("");
+  presets = loadPresets();
 
   openEvent?: string;
   pollFresh = false;
@@ -217,6 +227,40 @@ export class DashboardLlmComponent implements OnDestroy {
     this.form.controls.concurrency.markAsDirty();
   }
 
+  applyRecommendation(recommendation: generated.LlmRecommendedConfig) {
+    this.form.patchValue({
+      batchSize: recommendation.batchSize,
+      maxTokens: recommendation.maxTokens,
+      maxContext: recommendation.maxContext,
+      timeoutSeconds: recommendation.timeoutSeconds,
+      concurrency: recommendation.concurrency,
+    });
+    this.form.controls.batchSize.markAsDirty();
+    this.form.controls.maxTokens.markAsDirty();
+    this.form.controls.maxContext.markAsDirty();
+    this.form.controls.timeoutSeconds.markAsDirty();
+    this.form.controls.concurrency.markAsDirty();
+  }
+
+  saveCurrentPreset() {
+    const name = this.presetName.value.trim();
+    if (!name) {
+      return;
+    }
+
+    this.presets = savePreset(name, this.form.getRawValue());
+    this.presetName.setValue(name);
+  }
+
+  loadPreset(preset: LlmPreset) {
+    this.form.patchValue(presetFormValue(preset, this.form.getRawValue()));
+    this.form.markAsDirty();
+  }
+
+  removePreset(preset: LlmPreset) {
+    this.presets = deletePreset(preset.name);
+  }
+
   runBenchmark() {
     if (this.benchmarkSampleSize.invalid) {
       this.benchmarkSampleSize.markAsTouched();
@@ -271,6 +315,7 @@ export class DashboardLlmComponent implements OnDestroy {
     this.form.patchValue({
       enabled: config.enabled,
       concurrency: config.concurrency,
+      autoScale: config.autoScale,
       providerName: config.providerName,
       baseUrl: config.baseUrl,
       model: config.model,

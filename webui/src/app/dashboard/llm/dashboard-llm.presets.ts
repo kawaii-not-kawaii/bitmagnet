@@ -1,0 +1,158 @@
+import { REDACTED_VALUE } from "./dashboard-llm.service";
+import type { LlmConfigFormValue } from "./dashboard-llm.service";
+
+// Versioned so a future shape change can be introduced without migrating or
+// misreading v1 payloads: an unrecognised version simply reads as empty.
+export const LLM_PRESETS_KEY = "bitmagnet.llm.presets.v1";
+
+export interface LlmPreset {
+  name: string;
+  value: LlmConfigFormValue;
+}
+
+/**
+ * Reads the stored v1 presets. Any parse, version, or shape failure yields an
+ * empty list rather than throwing — a corrupt key must never break the form.
+ */
+export function loadPresets(storage: Storage = localStorage): LlmPreset[] {
+  try {
+    const parsed: unknown = JSON.parse(storage.getItem(LLM_PRESETS_KEY) ?? "");
+
+    // Reject the whole list when one entry is invalid; partially trusting a
+    // corrupted versioned payload would make the displayed state unpredictable.
+    if (!Array.isArray(parsed) || !parsed.every(isPreset)) {
+      return [];
+    }
+
+    return parsed;
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Stores `value` under the trimmed `name`, replacing an entry with the exact
+ * same name. The API key is ALWAYS serialized as the redacted placeholder,
+ * regardless of what the form holds — credentials never enter browser storage.
+ * Returns the resulting list.
+ */
+export function savePreset(
+  name: string,
+  value: LlmConfigFormValue,
+  storage: Storage = localStorage,
+): LlmPreset[] {
+  const existing = loadPresets(storage);
+  const trimmed = name.trim();
+
+  if (trimmed.length === 0) {
+    return existing;
+  }
+
+  const preset: LlmPreset = {
+    name: trimmed,
+    value: { ...value, apiKey: REDACTED_VALUE },
+  };
+  const updated = [...existing];
+  const index = updated.findIndex((entry) => entry.name === trimmed);
+
+  if (index === -1) {
+    updated.push(preset);
+  } else {
+    updated[index] = preset;
+  }
+
+  return write(storage, updated, existing);
+}
+
+/** Removes the preset with this exact name. Returns the resulting list. */
+export function deletePreset(
+  name: string,
+  storage: Storage = localStorage,
+): LlmPreset[] {
+  const existing = loadPresets(storage);
+  const remaining = existing.filter((entry) => entry.name !== name);
+
+  if (remaining.length === existing.length) {
+    return existing;
+  }
+
+  return write(storage, remaining, existing);
+}
+
+/**
+ * The form value to patch when loading `preset` over the `current` form state.
+ *
+ * Provider identity is the trimmed provider name plus the base URL with
+ * trailing slashes removed. Same identity keeps the current API-key control —
+ * including the redacted placeholder, so the server-side round trip retains the
+ * configured key. Different identity clears it, so one provider's credential
+ * cannot be silently submitted to another endpoint.
+ */
+export function presetFormValue(
+  preset: LlmPreset,
+  current: LlmConfigFormValue,
+): LlmConfigFormValue {
+  try {
+    const sameProvider =
+      preset.value.providerName.trim() === current.providerName.trim() &&
+      preset.value.baseUrl.trim().replace(/\/+$/, "") ===
+        current.baseUrl.trim().replace(/\/+$/, "");
+
+    return {
+      ...preset.value,
+      apiKey: sameProvider ? current.apiKey : "",
+    };
+  } catch {
+    return current;
+  }
+}
+
+function write(
+  storage: Storage,
+  presets: LlmPreset[],
+  fallback: LlmPreset[],
+): LlmPreset[] {
+  try {
+    storage.setItem(LLM_PRESETS_KEY, JSON.stringify(presets));
+
+    return presets;
+  } catch {
+    return fallback;
+  }
+}
+
+function isPreset(entry: unknown): entry is LlmPreset {
+  if (
+    !isRecord(entry) ||
+    typeof entry["name"] !== "string" ||
+    entry["name"].trim().length === 0 ||
+    !isRecord(entry["value"])
+  ) {
+    return false;
+  }
+
+  const value = entry["value"];
+
+  return (
+    typeof value["enabled"] === "boolean" &&
+    isFiniteNumber(value["concurrency"]) &&
+    typeof value["autoScale"] === "boolean" &&
+    typeof value["providerName"] === "string" &&
+    typeof value["baseUrl"] === "string" &&
+    typeof value["model"] === "string" &&
+    typeof value["apiKey"] === "string" &&
+    isFiniteNumber(value["batchSize"]) &&
+    isFiniteNumber(value["maxContext"]) &&
+    isFiniteNumber(value["maxTokens"]) &&
+    isFiniteNumber(value["intervalSeconds"]) &&
+    isFiniteNumber(value["timeoutSeconds"])
+  );
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null;
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
