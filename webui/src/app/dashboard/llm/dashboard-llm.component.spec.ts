@@ -1,5 +1,10 @@
 import { signal } from "@angular/core";
-import { ComponentFixture, TestBed } from "@angular/core/testing";
+import {
+  ComponentFixture,
+  TestBed,
+  fakeAsync,
+  tick,
+} from "@angular/core/testing";
 import { Apollo } from "apollo-angular";
 import { of } from "rxjs";
 import { ErrorsService } from "../../errors/errors.service";
@@ -114,6 +119,23 @@ describe("DashboardLlmComponent", () => {
     expect(capacity.textContent).toContain("⚠");
     expect(capacity.classList.contains("warning")).toBeTrue();
   });
+
+  it("keeps the recommendation on screen after the connected flash expires", fakeAsync(() => {
+    // The "connected" flash self-clears on a 3.2s timer. It must not take the
+    // recommendation with it: five values and an Apply button are unusable if
+    // they vanish while the operator is still reading them.
+    connection = recommendedConnection();
+
+    testConnection();
+    expect(element.querySelector(".recommendation")).not.toBeNull();
+
+    tick(3300);
+    fixture.detectChanges();
+
+    expect(element.querySelector(".recommendation")).not.toBeNull();
+    expect(buttonWithText("Apply recommendation")).not.toBeNull();
+    expect(fixture.componentInstance.connectionMessage).toBe("");
+  }));
 
   it("applies exactly five recommended controls without saving", () => {
     const component = fixture.componentInstance;
