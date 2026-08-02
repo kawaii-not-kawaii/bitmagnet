@@ -1,3 +1,4 @@
+import { Clipboard } from "@angular/cdk/clipboard";
 import {
   Component,
   EventEmitter,
@@ -37,6 +38,7 @@ import { SWARM_BARS, SwarmHealth, swarmHealth } from "./swarm-health";
 export class TorrentsTableComponent implements OnInit {
   contentTypeInfo = contentTypeInfo;
   uiPreferences = inject(UiPreferences);
+  private readonly clipboard = inject(Clipboard);
   swarmBars = Array.from({ length: SWARM_BARS }, (_, i) => i + 1);
 
   @Input() dataSource: TorrentsSearchDatasource;
@@ -102,7 +104,9 @@ export class TorrentsTableComponent implements OnInit {
 
   copyMagnet(event: Event, item: generated.TorrentContent) {
     event.stopPropagation();
-    void navigator.clipboard?.writeText(item.torrent.magnetUri);
+    if (!this.clipboard.copy(item.torrent.magnetUri)) {
+      return;
+    }
     this.copiedHash = item.infoHash;
     window.setTimeout(() => {
       if (this.copiedHash === item.infoHash) {

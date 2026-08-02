@@ -1,3 +1,4 @@
+import { Clipboard } from "@angular/cdk/clipboard";
 import {
   Component,
   EventEmitter,
@@ -22,6 +23,7 @@ import { TorrentReprocessComponent } from "./torrent-reprocess.component";
 })
 export class TorrentsBulkActionsComponent implements OnInit {
   private graphQLService = inject(GraphQLService);
+  private readonly clipboard = inject(Clipboard);
   private errorsService = inject(ErrorsService);
 
   @Input() selectedItems$: Observable<generated.TorrentContent[]> =
@@ -62,7 +64,9 @@ export class TorrentsBulkActionsComponent implements OnInit {
     return this.selectedItems.map((i) => i.torrent.magnetUri).join("\n");
   }
   copySelected() {
-    void navigator.clipboard?.writeText(this.getSelectedMagnetLinks());
+    if (!this.clipboard.copy(this.getSelectedMagnetLinks())) {
+      return;
+    }
     this.copied = true;
     window.setTimeout(() => {
       this.copied = false;
