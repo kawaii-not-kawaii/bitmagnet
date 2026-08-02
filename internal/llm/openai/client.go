@@ -324,6 +324,34 @@ func effectiveMaxTokens(configured int) int {
 	return 256
 }
 
+// stripCodeFence removes a surrounding markdown code fence, which many models emit
+// around JSON even when response_format=json_object is requested — not every server
+// enforces that parameter (lemonade/llama.cpp does not), so the fence reaches us and
+// json.Unmarshal fails on the leading backtick. Content without a fence is returned
+// unchanged.
+func stripCodeFence(content string) string {
+	trimmed := strings.TrimSpace(content)
+	if !strings.HasPrefix(trimmed, "```") {
+		return content
+	}
+
+	// drop the opening fence line, which may carry a language tag (```json)
+	_, after, found := strings.Cut(trimmed, "\n")
+	if !found {
+		return content
+	}
+
+	if end := strings.LastIndex(after, "```"); end >= 0 {
+		after = after[:end]
+	}
+
+	if stripped := strings.TrimSpace(after); stripped != "" {
+		return stripped
+	}
+
+	return content
+}
+
 // doRequestRaw sends the request and returns the raw content string from the first choice.
 // Used by BatchClassify which needs the raw content for array parsing.
 func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, chatResponseUsage, error) {
@@ -422,7 +450,7 @@ func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, chat
 			return "", chatResponseUsage{}, llm.ErrNoResult
 		}
 
-		content := chatResp.Choices[0].Message.content()
+		content := stripCodeFence(chatResp.Choices[0].Message.content())
 		if content == "" {
 			return "", chatResponseUsage{}, llm.ErrNoResult
 		}
