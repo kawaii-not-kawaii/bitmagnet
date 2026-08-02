@@ -742,3 +742,34 @@ func TestCustomConfigTimeout(t *testing.T) {
 		t.Errorf("expected 5s, got %v", cfg.timeout())
 	}
 }
+
+func TestStripCodeFence(t *testing.T) {
+	t.Parallel()
+
+	const want = `{"content_type": "movie"}`
+
+	// the ```json shape is what Phi-4-mini, Ministral-3-3B and SmolLM3 actually
+	// return through lemonade, which does not enforce response_format=json_object
+	for name, input := range map[string]string{
+		"json tagged":  "```json\n" + want + "\n```",
+		"bare fence":   "```\n" + want + "\n```",
+		"trailing pad": "  ```json\n" + want + "\n```  ",
+		"no fence":     want,
+	} {
+		if got := stripCodeFence(input); got != want {
+			t.Errorf("%s: expected %q, got %q", name, want, got)
+		}
+	}
+}
+
+func TestStripCodeFenceLeavesOddInputAlone(t *testing.T) {
+	t.Parallel()
+
+	// nothing usable inside the fence: return the original so the caller's parse
+	// error names the real payload rather than an empty string
+	for _, input := range []string{"```json", "```\n```"} {
+		if got := stripCodeFence(input); got != input {
+			t.Errorf("expected %q unchanged, got %q", input, got)
+		}
+	}
+}
