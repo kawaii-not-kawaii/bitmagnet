@@ -1,3 +1,4 @@
+import { Clipboard } from "@angular/cdk/clipboard";
 import { Component, EventEmitter, inject, Input, Output } from "@angular/core";
 import { catchError, EMPTY, tap } from "rxjs";
 import { LowerCasePipe, NgOptimizedImage } from "@angular/common";
@@ -35,6 +36,7 @@ export class TorrentContentComponent {
   @Output() tabSelected = new EventEmitter<TorrentTabSelection>();
 
   graphQL = inject(GraphQLService);
+  private readonly clipboard = inject(Clipboard);
   errors = inject(ErrorsService);
   copied = false;
 
@@ -49,7 +51,12 @@ export class TorrentContentComponent {
 
   copyMagnet(event: Event) {
     event.stopPropagation();
-    void navigator.clipboard?.writeText(this.torrentContent.torrent.magnetUri);
+    // navigator.clipboard is undefined outside a secure context (plain HTTP),
+    // where `?.` would silently no-op while we still flashed "copied". The CDK
+    // service falls back to execCommand and reports whether it worked.
+    if (!this.clipboard.copy(this.torrentContent.torrent.magnetUri)) {
+      return;
+    }
     this.copied = true;
     window.setTimeout(() => {
       this.copied = false;
