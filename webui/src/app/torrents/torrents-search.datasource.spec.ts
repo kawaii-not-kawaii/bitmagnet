@@ -39,9 +39,9 @@ describe("TorrentsSearchDatasource request lifecycle", () => {
     requests[1].error(new Error("offline"));
     expect(loading).toBeFalse();
     expect(source.result).toEqual(first);
-    expect(errors.addError).toHaveBeenCalledWith(
+    expect(errors.addError.calls.mostRecent().args).toEqual([
       "Error loading item results: offline",
-    );
+    ]);
 
     source.refresh();
     requests[2].next({ data: { torrentContent: { search: next } } });
@@ -98,5 +98,59 @@ describe("TorrentsSearchDatasource request lifecycle", () => {
     source.disconnect();
     expect(requests.length).toBe(3);
     expect(source.result).toEqual(current);
+  });
+
+  it("disposes a request from a synchronous result observer", () => {
+    const params = new Subject<generated.TorrentContentSearchQueryVariables>();
+    let cancelled = false;
+    const first = { ...emptyResult, totalCount: 7 };
+    const apollo = {
+      query: () =>
+        new Observable((subscriber) => {
+          subscriber.next({ data: { torrentContent: { search: first } } });
+          subscriber.next({
+            data: {
+              torrentContent: { search: { ...emptyResult, totalCount: 8 } },
+            },
+          });
+          return () => {
+            cancelled = true;
+          };
+        }),
+    };
+    const errors = jasmine.createSpyObj<ErrorsService>("errors", ["addError"]);
+    const source = new TorrentsSearchDatasource(
+      apollo as unknown as Apollo,
+      errors,
+      params,
+    );
+    source.result$.subscribe((result) => {
+      if (result.totalCount) source.disconnect();
+    });
+    params.next({ input: { page: 1 } });
+    expect(cancelled).toBeTrue();
+    expect(source.result).toEqual(first);
+  });
+
+  it("does not start a request when a loading observer leaves search", () => {
+    const params = new Subject<generated.TorrentContentSearchQueryVariables>();
+    let requests = 0;
+    const apollo = {
+      query: () => {
+        requests++;
+        return new Subject();
+      },
+    };
+    const errors = jasmine.createSpyObj<ErrorsService>("errors", ["addError"]);
+    const source = new TorrentsSearchDatasource(
+      apollo as unknown as Apollo,
+      errors,
+      params,
+    );
+    source.loading$.subscribe((loading) => {
+      if (loading) source.disconnect();
+    });
+    params.next({ input: { page: 1 } });
+    expect(requests).toBe(0);
   });
 });

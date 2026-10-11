@@ -1,4 +1,4 @@
-import { BehaviorSubject, debounceTime, Observable } from "rxjs";
+import { BehaviorSubject, debounceTime, Observable, Subscription } from "rxjs";
 import { TranslocoService } from "@jsverse/transloco";
 import * as generated from "../graphql/generated";
 import { PageEvent } from "../paginator/paginator.types";
@@ -122,6 +122,7 @@ export const inactiveFacet = {
 };
 
 export class TorrentsSearchController {
+  private controlsSubscription: Subscription;
   private controlsSubject: BehaviorSubject<TorrentSearchControls>;
   controls$: Observable<TorrentSearchControls>;
 
@@ -142,23 +143,32 @@ export class TorrentsSearchController {
       initialControls.selectedTorrent,
     );
     this.selection$ = this.selectionSubject.asObservable();
-    this.controls$.pipe(debounceTime(100)).subscribe((ctrl) => {
-      const nextParams = controlsToQueryVariables(ctrl);
-      if (
-        JSON.stringify(this.paramsSubject.getValue()) !==
-        JSON.stringify(nextParams)
-      ) {
-        this.paramsSubject.next(nextParams);
-      }
-      if (
-        !compareTorrentSelection(
-          this.selectionSubject.getValue(),
-          ctrl.selectedTorrent,
-        )
-      ) {
-        this.selectionSubject.next(ctrl.selectedTorrent);
-      }
-    });
+    this.controlsSubscription = this.controls$
+      .pipe(debounceTime(100))
+      .subscribe((ctrl) => {
+        const nextParams = controlsToQueryVariables(ctrl);
+        if (
+          JSON.stringify(this.paramsSubject.getValue()) !==
+          JSON.stringify(nextParams)
+        ) {
+          this.paramsSubject.next(nextParams);
+        }
+        if (
+          !compareTorrentSelection(
+            this.selectionSubject.getValue(),
+            ctrl.selectedTorrent,
+          )
+        ) {
+          this.selectionSubject.next(ctrl.selectedTorrent);
+        }
+      });
+  }
+
+  disconnect(): void {
+    this.controlsSubscription.unsubscribe();
+    this.controlsSubject.complete();
+    this.paramsSubject.complete();
+    this.selectionSubject.complete();
   }
 
   update(fn: (c: TorrentSearchControls) => TorrentSearchControls) {
@@ -462,8 +472,7 @@ export const facets = [
 ];
 
 export type FacetValue<T = unknown, _allowNull extends boolean = true> =
-  | T
-  | (_allowNull extends true ? null : T);
+  T | (_allowNull extends true ? null : T);
 
 export type Agg<T, _allowNull extends boolean> = {
   value: FacetValue<T, _allowNull>;

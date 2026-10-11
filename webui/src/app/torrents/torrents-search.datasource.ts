@@ -1,11 +1,9 @@
 import { CollectionViewer, DataSource } from "@angular/cdk/collections";
 import {
   BehaviorSubject,
-  catchError,
-  EMPTY,
-  finalize,
   Observable,
   scan,
+  Subscriber,
   Subscription,
 } from "rxjs";
 import { map } from "rxjs/operators";
@@ -25,9 +23,7 @@ type BudgetedCount = {
   isEstimate: boolean;
 };
 
-export class TorrentsSearchDatasource
-  implements DataSource<generated.TorrentContent>
-{
+export class TorrentsSearchDatasource implements DataSource<generated.TorrentContent> {
   private input?: generated.TorrentContentSearchQueryInput;
 
   private currentRequest = 0;
@@ -107,8 +103,13 @@ export class TorrentsSearchDatasource
   }
 
   disconnect(): void {
+    if (this.subscriptions.closed) {
+      return;
+    }
+    ++this.currentRequest;
     this.subscriptions.unsubscribe();
     this.currentSubscription?.unsubscribe();
+    this.loadingSubject.next(false);
     this.loadingSubject.complete();
     this.resultSubject.complete();
   }
@@ -128,6 +129,9 @@ export class TorrentsSearchDatasource
     const currentRequest = ++this.currentRequest;
     this.currentSubscription?.unsubscribe();
     this.loadingSubject.next(true);
+    if (this.subscriptions.closed || currentRequest !== this.currentRequest) {
+      return;
+    }
     const result = this.apollo
       .query<
         generated.TorrentContentSearchQuery,
@@ -138,26 +142,33 @@ export class TorrentsSearchDatasource
         variables: { input: { ...variables.input, cached: undefined } },
         fetchPolicy: "no-cache",
       })
-      .pipe(map((r) => r.data.torrentContent.search))
-      .pipe(
-        catchError((err: Error) => {
-          this.errorsService.addError(
-            `Error loading item results: ${err.message}`,
-          );
-          return EMPTY;
-        }),
-        finalize(() => {
-          if (currentRequest === this.currentRequest) {
-            this.loadingSubject.next(false);
-          }
-        }),
-      );
-    this.currentSubscription = result.subscribe((r) => {
-      if (currentRequest === this.currentRequest) {
-        this.result = r;
+      .pipe(map((r) => r.data.torrentContent.search));
+    const subscriber = new Subscriber<generated.TorrentContentSearchResult>({
+      next: (r: generated.TorrentContentSearchResult) => {
+        if (currentRequest !== this.currentRequest) {
+          return;
+        }
         this.loadingSubject.next(false);
-        this.resultSubject.next(r);
-      }
+        if (currentRequest === this.currentRequest) {
+          this.result = r;
+          this.resultSubject.next(r);
+        }
+      },
+      error: (err: Error) => {
+        this.errorsService.addError(
+          `Error loading item results: ${err.message}`,
+        );
+        if (currentRequest === this.currentRequest) {
+          this.loadingSubject.next(false);
+        }
+      },
+      complete: () => {
+        if (currentRequest === this.currentRequest) {
+          this.loadingSubject.next(false);
+        }
+      },
     });
+    this.currentSubscription = subscriber;
+    result.subscribe(subscriber);
   }
 }

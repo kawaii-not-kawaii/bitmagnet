@@ -1,4 +1,11 @@
-import { waitForAsync, ComponentFixture, TestBed } from "@angular/core/testing";
+import {
+  waitForAsync,
+  ComponentFixture,
+  TestBed,
+  fakeAsync,
+  tick,
+} from "@angular/core/testing";
+import { Router } from "@angular/router";
 
 import { appConfig } from "../app.config";
 import { TorrentsSearchComponent } from "./torrents-search.component";
@@ -12,14 +19,26 @@ describe("TableComponent", () => {
   }));
 
   beforeEach(() => {
+    spyOn(TestBed.inject(Router), "navigate").and.resolveTo(true);
     fixture = TestBed.createComponent(TorrentsSearchComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
-  it("should compile", () => {
-    expect(component).toBeTruthy();
-  });
+  it("stops pending search control updates when the display is destroyed", fakeAsync(() => {
+    fixture.destroy();
+    fixture = TestBed.createComponent(TorrentsSearchComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+    const pages: number[] = [];
+    component.controller.params$.subscribe(({ input }) =>
+      pages.push(input.page ?? 1),
+    );
+    component.controller.update((controls) => ({ ...controls, page: 2 }));
+    fixture.destroy();
+    tick(100);
+    expect(pages).toEqual([1]);
+  }));
 
   describe("showContentType", () => {
     function withAggregations(values: Array<string | null>, counts = 1): void {

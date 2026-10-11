@@ -187,6 +187,7 @@ export class TorrentsSearchComponent implements OnInit, OnDestroy {
 
   ngOnDestroy() {
     this.dataSource.disconnect();
+    this.controller.disconnect();
     this.subscriptions.forEach((subscription) => subscription.unsubscribe());
     this.subscriptions = new Array<Subscription>();
   }

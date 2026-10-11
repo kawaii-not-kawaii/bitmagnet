@@ -1,6 +1,6 @@
 # Current state
 
-- SF-01 implemented; build and two lifecycle regressions pass; built-display smoke and desktop/390px visual checks pass. Preparing commit and review.
+- SF-01 implementation `60464ce` reviewed: Standards 0 findings; Spec 2 lifecycle gaps being fixed.
 - Project: Bitmagnet; Go backend, Angular web UI, PostgreSQL.
 - Branch: `main`.
 - Starting commit: `236c129d745fca499252fc40167ea1d806302e51`.
@@ -18,5 +18,10 @@
 - Branch point confirmed before implementation: `236c129d745fca499252fc40167ea1d806302e51`. Only state files were untracked before drafting.
 - Frontend dependencies installed with npm ci; cached Chromium available at `/tmp/chromium`; no language server configured.
 - Built-display smoke: initial load, manual refresh and browser reload show updated rows; criteria/page preserved; cached omitted; errors retain rows and retry; button disables; no polling or mobile overflow.
-- Full frontend suite: 82 tests passed. Initial lint invocation blocked by missing `typescript-eslint` peer; installing it locally without manifest/lockfile changes for verification.
-- Next: finish lint, commit, review both axes and resolve findings.
+- Final suite reported 84 successful tests, then runner stayed alive until 240s timeout; earlier pre-review run exited with 82 passed. Changed-file lint passes.
+- No Git identity configured; implementation commit uses explicit `Coding Assistant <assistant@localhost>` attribution, without changing Git configuration.
+- Spec findings: dispose controller's pending debounce; own request before synchronous callbacks and prevent query start/publication after disposal.
+- All three review regressions reproduced: synchronous result disposal leaked its request and accepted a second result; loading disposal still started a query; pending controller page update published after display destruction.
+- Both production fixes applied: pre-owned RxJS Subscriber and disposal guards; retained controller debounce cancelled before subject completion. Three regressions passed in full suite.
+- Display regression uses controlled navigation and constructs inside the fake-timer zone so the pending debounce is actually exercised.
+- Final embedded build and built-display smoke pass; desktop/mobile screenshots checked. Next: commit fixes, confirm review resolution, then close SF-01.
