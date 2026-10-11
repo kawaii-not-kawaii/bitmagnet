@@ -1,27 +1,18 @@
 # Current state
 
-- SF-01 implementation `60464ce` reviewed: Standards 0 findings; Spec 2 lifecycle gaps being fixed.
-- Project: Bitmagnet; Go backend, Angular web UI, PostgreSQL.
-- Branch: `main`.
-- Starting commit: `236c129d745fca499252fc40167ea1d806302e51`.
-- Running instance supplied by user: `http://192.168.1.2:3333` (Unraid via Tailscale).
-- Live search staleness reproduced: identical cached / bypassed / cached GraphQL reads return older / newer / original older rows (HTTP 200, 50 rows each).
-- Effective gorm_cache enabled with ten-minute TTL; live revision matches `236c129`.
-- Report: `/tmp/architecture-review-20261011-123800.html`; six candidates, opened and visually checked in a browser tab.
-- `xdg-open` unavailable; remote browser cannot reach workstation loopback, so report HTML was rendered directly into its tab. Temporary preview server stopped.
-- Top recommendation: live search freshness; then consistent classifier file evidence and labeled non-LLM workflow checks.
-- Classifier accuracy gains unmeasured; no local Go toolchain, no classifier tests run.
-- No GLOSSARY.md or docs/adr directory found. Production code changed locally only; no live configuration or persistent data changes.
-- Agreed minimum: every live search bypasses backend result caching; accessible Refresh preserves filters/page; loading settles on error and disposal stops owned work.
-- No polling, global cache shutdown, backend schema changes or production deployment.
-- Approved spec: `.scratch/search-freshness/SPEC.md`; ticket `.scratch/search-freshness/issues/01-fresh-search-and-refresh.md`.
-- Branch point confirmed before implementation: `236c129d745fca499252fc40167ea1d806302e51`. Only state files were untracked before drafting.
-- Frontend dependencies installed with npm ci; cached Chromium available at `/tmp/chromium`; no language server configured.
-- Built-display smoke: initial load, manual refresh and browser reload show updated rows; criteria/page preserved; cached omitted; errors retain rows and retry; button disables; no polling or mobile overflow.
-- Final suite reported 84 successful tests, then runner stayed alive until 240s timeout; earlier pre-review run exited with 82 passed. Changed-file lint passes.
-- No Git identity configured; implementation commit uses explicit `Coding Assistant <assistant@localhost>` attribution, without changing Git configuration.
-- Spec findings: dispose controller's pending debounce; own request before synchronous callbacks and prevent query start/publication after disposal.
-- All three review regressions reproduced: synchronous result disposal leaked its request and accepted a second result; loading disposal still started a query; pending controller page update published after display destruction.
-- Both production fixes applied: pre-owned RxJS Subscriber and disposal guards; retained controller debounce cancelled before subject completion. Three regressions passed in full suite.
-- Display regression uses controlled navigation and constructs inside the fake-timer zone so the pending debounce is actually exercised.
-- Final embedded build and built-display smoke pass; desktop/mobile screenshots checked. Next: commit fixes, confirm review resolution, then close SF-01.
+- SF-01 complete: fresh browser reloads and manual Refresh, preserved criteria/page/order, error recovery and full search lifecycle teardown.
+- Branch: `main`; review branch point: `236c129d745fca499252fc40167ea1d806302e51`.
+- Implementation commit: `60464ce`; lifecycle review-fix commit: `5ab56ea`.
+- Spec/ticket: `.scratch/search-freshness/SPEC.md` and `.scratch/search-freshness/issues/01-fresh-search-and-refresh.md`, both complete.
+- Final review: Standards 0 findings; Spec 0 findings. Both initial P2 lifecycle findings resolved, none deferred.
+- Verification: focused search suite 8 passed; final full suite 84 passed and exited cleanly; changed-file lint and embedded build passed.
+- One earlier full-suite run reported 84 successes but timed out after completion; final standalone run with dots reporter exited cleanly.
+- Built-display smoke verified refreshed/reloaded rows, preserved controls, no cached input, loading disable, failure retention/retry, no polling and 390px layout; screenshots visually checked.
+- Evidence: `/tmp/bitmagnet-search-freshness-desktop.png` and `/tmp/bitmagnet-search-freshness-mobile.png`; throwaway smoke script removed.
+- Changes local only; not deployed to Unraid, no live configuration or persistent data changes. No polling, backend contract change or global cache shutdown.
+- Running instance supplied by user: `http://192.168.1.2:3333` (Unraid via Tailscale); previously reproduced stale enabled ten-minute cache at revision `236c129`.
+- Architecture report: `/tmp/architecture-review-20261011-123800.html`.
+- Remaining work: labeled non-LLM classifier checks; accuracy gains unmeasured, classifier implementation unchanged.
+- Frontend dependencies initially installed with npm ci; missing typescript-eslint@8 lint peer installed transiently without tracked manifest/lockfile changes. Installed patch versions may differ from lockfile.
+- Cached Chromium: `/tmp/chromium`; no configured language server or local Go toolchain.
+- No Git identity configured; commits use explicit `Coding Assistant <assistant@localhost>` attribution without configuration changes.

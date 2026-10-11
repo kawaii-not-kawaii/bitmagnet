@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately).
 
-**Status:** in-progress
+**Status:** complete
 
 - [x] Initial loads and browser reload bypass stale backend and browser result caching.
 - [x] Accessible manual Refresh fetches current results without changing filters, sorting or pagination; disabled while loading.
@@ -12,6 +12,10 @@
 - [x] Replaced requests cannot publish stale results; leaving search disposes subscriptions and in-flight work even before table rendering.
 - [x] No polling, new backend contract, global cache shutdown or production writes.
 - [x] Deterministic checks at approved datasource seam and smoke of actual built display cover refresh, reload, errors and disposal.
-- [ ] Commit and two-axis Standards/Spec review complete; findings resolved or explicitly deferred.
+- [x] Commit and two-axis Standards/Spec review complete; findings resolved or explicitly deferred.
 
-Verification: embedded build passed; two lifecycle regressions passed (error regression failed before fix); full frontend suite 82 passed; built-display smoke passed initial load, manual refresh, browser reload, preserved page/filter/order, disabled loading state, failure retention and retry, no polling and 390px layout. Screenshots visually checked. Controlled read adapter only; no production mutations.
+Verification: final embedded build and changed-file lint passed; focused search suite 8 passed and final full frontend suite 84 passed, both with clean exits. Built-display smoke passed initial load, manual refresh, browser reload, preserved page/filter/order, disabled loading state, failure retention and retry, no polling and 390px layout. Screenshots visually checked. Controlled read adapter only; no production mutations or deployment.
+
+Review of implementation `60464ce` against fixed point `236c129d745fca499252fc40167ea1d806302e51`: Standards 0 findings; Spec 2 P2 lifecycle findings. Both fixed in `5ab56ea`: cancel the controller's owned debounce before completing its subjects; assign the datasource subscriber before synchronous emissions, invalidate disposed requests, and recheck disposal after loading publication.
+
+Review regressions failed before fixes: second synchronous result overwrote the first after disposal, request teardown did not run, loading disposal still launched a query, and pending page update published after display destruction. Final committed review of `5ab56ea`: Standards 0 findings; Spec 0 findings, both prior P2 gaps confirmed resolved; none deferred. One earlier full-suite run reported 84 successes but stayed alive until timeout; the final standalone run with dots reporter exited cleanly.

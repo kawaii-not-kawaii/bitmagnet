@@ -1,6 +1,6 @@
 # Search freshness and manual refresh
 
-Status: approved; SF-01 in progress.
+Status: complete; SF-01 implemented and reviewed with zero remaining Standards or Spec findings.
 
 ## Problem Statement
 

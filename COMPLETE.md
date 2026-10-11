@@ -1,5 +1,6 @@
 # Completed work
 
+- SF-01 complete: fresh reload/manual Refresh, retained criteria and error recovery, synchronous request/controller teardown; commits 60464ce and 5ab56ea; 84 tests, lint/build/display smoke passed; final Standards/Spec 0 findings; not deployed.
 - Settled refresh behavior: manual control only; browser reload must fetch newly committed searchable torrents; drafted search-freshness spec.
 - Completed six-candidate classifier/freshness architecture report in /tmp; opened and visually verified six before/after pairs and two Mermaid diagrams.
 - Reproduced stale live search with cached/bypassed/cached reads; verified enabled ten-minute backend cache without live data mutations.
