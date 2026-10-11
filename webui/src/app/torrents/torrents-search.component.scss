@@ -75,6 +75,7 @@
   display: flex;
   align-items: center;
   gap: 9px;
+  flex-wrap: wrap;
   flex: none;
 }
 
@@ -96,6 +97,11 @@
   &:hover,
   &.active {
     border-color: var(--faint);
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: wait;
   }
 
   b {

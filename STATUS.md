@@ -1,0 +1,22 @@
+# Current state
+
+- SF-01 implemented; build and two lifecycle regressions pass; built-display smoke and desktop/390px visual checks pass. Preparing commit and review.
+- Project: Bitmagnet; Go backend, Angular web UI, PostgreSQL.
+- Branch: `main`.
+- Starting commit: `236c129d745fca499252fc40167ea1d806302e51`.
+- Running instance supplied by user: `http://192.168.1.2:3333` (Unraid via Tailscale).
+- Live search staleness reproduced: identical cached / bypassed / cached GraphQL reads return older / newer / original older rows (HTTP 200, 50 rows each).
+- Effective gorm_cache enabled with ten-minute TTL; live revision matches `236c129`.
+- Report: `/tmp/architecture-review-20261011-123800.html`; six candidates, opened and visually checked in a browser tab.
+- `xdg-open` unavailable; remote browser cannot reach workstation loopback, so report HTML was rendered directly into its tab. Temporary preview server stopped.
+- Top recommendation: live search freshness; then consistent classifier file evidence and labeled non-LLM workflow checks.
+- Classifier accuracy gains unmeasured; no local Go toolchain, no classifier tests run.
+- No GLOSSARY.md or docs/adr directory found. Production code changed locally only; no live configuration or persistent data changes.
+- Agreed minimum: every live search bypasses backend result caching; accessible Refresh preserves filters/page; loading settles on error and disposal stops owned work.
+- No polling, global cache shutdown, backend schema changes or production deployment.
+- Approved spec: `.scratch/search-freshness/SPEC.md`; ticket `.scratch/search-freshness/issues/01-fresh-search-and-refresh.md`.
+- Branch point confirmed before implementation: `236c129d745fca499252fc40167ea1d806302e51`. Only state files were untracked before drafting.
+- Frontend dependencies installed with npm ci; cached Chromium available at `/tmp/chromium`; no language server configured.
+- Built-display smoke: initial load, manual refresh and browser reload show updated rows; criteria/page preserved; cached omitted; errors retain rows and retry; button disables; no polling or mobile overflow.
+- Full frontend suite: 82 tests passed. Initial lint invocation blocked by missing `typescript-eslint` peer; installing it locally without manifest/lockfile changes for verification.
+- Next: finish lint, commit, review both axes and resolve findings.

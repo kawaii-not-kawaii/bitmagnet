@@ -3,6 +3,7 @@ import {
   BehaviorSubject,
   catchError,
   EMPTY,
+  finalize,
   Observable,
   scan,
   Subscription,
@@ -27,9 +28,10 @@ type BudgetedCount = {
 export class TorrentsSearchDatasource
   implements DataSource<generated.TorrentContent>
 {
-  private input: generated.TorrentContentSearchQueryInput;
+  private input?: generated.TorrentContentSearchQueryInput;
 
-  private currentRequest = new BehaviorSubject(0);
+  private currentRequest = 0;
+  private subscriptions = new Subscription();
   private currentSubscription?: Subscription;
 
   private loadingSubject = new BehaviorSubject(false);
@@ -92,20 +94,12 @@ export class TorrentsSearchDatasource
     private errorsService: ErrorsService,
     searchQueryVariables: Observable<generated.TorrentContentSearchQueryVariables>,
   ) {
-    searchQueryVariables.subscribe(
-      (variables: generated.TorrentContentSearchQueryVariables) => {
+    this.subscriptions.add(
+      searchQueryVariables.subscribe((variables) => {
         this.input = variables.input;
-        this.loadResult({
-          input: {
-            ...variables.input,
-            cached: true,
-          },
-        });
-      },
+        this.refresh();
+      }),
     );
-    this.resultSubject.subscribe((result) => {
-      this.result = result;
-    });
   }
 
   connect({}: CollectionViewer): Observable<generated.TorrentContent[]> {
@@ -113,35 +107,35 @@ export class TorrentsSearchDatasource
   }
 
   disconnect(): void {
+    this.subscriptions.unsubscribe();
+    this.currentSubscription?.unsubscribe();
+    this.loadingSubject.complete();
     this.resultSubject.complete();
   }
 
   refresh() {
-    this.loadResult({
-      input: {
-        ...this.input,
-        cached: false,
-      },
-    });
+    if (this.input) {
+      this.loadResult({ input: this.input });
+    }
   }
 
   private loadResult(
     variables: generated.TorrentContentSearchQueryVariables,
   ): void {
-    if (this.currentSubscription) {
-      this.currentSubscription.unsubscribe();
-      this.currentSubscription = undefined;
+    if (this.subscriptions.closed) {
+      return;
     }
+    const currentRequest = ++this.currentRequest;
+    this.currentSubscription?.unsubscribe();
     this.loadingSubject.next(true);
-    const currentRequest = this.currentRequest.getValue() + 1;
-    this.currentRequest.next(currentRequest);
     const result = this.apollo
       .query<
         generated.TorrentContentSearchQuery,
         generated.TorrentContentSearchQueryVariables
       >({
         query: generated.TorrentContentSearchDocument,
-        variables,
+        // Omitted cached bypasses both backend cache reads and writes.
+        variables: { input: { ...variables.input, cached: undefined } },
         fetchPolicy: "no-cache",
       })
       .pipe(map((r) => r.data.torrentContent.search))
@@ -152,9 +146,15 @@ export class TorrentsSearchDatasource
           );
           return EMPTY;
         }),
+        finalize(() => {
+          if (currentRequest === this.currentRequest) {
+            this.loadingSubject.next(false);
+          }
+        }),
       );
     this.currentSubscription = result.subscribe((r) => {
-      if (currentRequest === this.currentRequest.getValue()) {
+      if (currentRequest === this.currentRequest) {
+        this.result = r;
         this.loadingSubject.next(false);
         this.resultSubject.next(r);
       }

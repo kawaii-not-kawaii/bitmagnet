@@ -54,6 +54,15 @@
       <div class="control-actions">
         <button
           type="button"
+          class="control-button"
+          [disabled]="dataSource.loading$ | async"
+          (click)="dataSource.refresh()"
+        >
+          {{ t("torrents.refresh") }}
+        </button>
+
+        <button
+          type="button"
           class="select-mode"
           [class.active]="selectMode"
           (click)="

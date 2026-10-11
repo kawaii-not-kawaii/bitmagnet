@@ -6,6 +6,12 @@ This project was generated with [Angular CLI](https://github.com/angular/angular
 
 Run `ng serve` for a dev server. Navigate to `http://localhost:4200/`. The application will automatically reload if you change any of the source files.
 
+### Torrent search freshness
+
+Opening or reloading torrent search reads current committed searchable torrents without using the backend result cache. Use **Refresh results** to repeat the current search while keeping its filters, sorting and page. The button is disabled while a request is loading; failed requests retain the previous results and can be retried.
+
+Search does not refresh automatically. Torrents still waiting for processing will not appear until their searchable torrent content is committed. Estimated counts remain approximate.
+
 ## Code scaffolding
 
 Run `ng generate component component-name` to generate a new component. You can also use `ng generate directive|pipe|service|class|guard|interface|enum|module`.
