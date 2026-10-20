@@ -98,6 +98,8 @@ var episodesXFormatTokens = rex.Group.Define(
 // standaloneEpisodeToken matches an explicitly prefixed episode number with no
 // season: 'Title E376.261011' (Korean daily TV), 'Title EP01'. The letter
 // prefix is the numeric-noise guard; bare numbers are never matched here.
+// Digits run to 3 (up to 999) because daily-TV episode counts reach the
+// hundreds (E376).
 var standaloneEpisodeToken = rex.Group.Define(
 	rex.Group.Composite(
 		keywords.MustNewRexTokensFromKeywords("episode", "ep", "e")...,
@@ -106,7 +108,7 @@ var standaloneEpisodeToken = rex.Group.Define(
 		rex.Chars.Whitespace().Repeat().ZeroOrOne(),
 		rex.Chars.Single('.').Repeat().ZeroOrOne(),
 	),
-	rex.Group.Define(rex.Chars.Digits().Repeat().Between(1, 3)).WithName("saEpisode"),
+	rex.Group.Define(rex.Chars.Digits().Repeat().Between(1, 3)).WithName("standaloneEpisode"),
 ).NonCaptured()
 
 // capEpisodeToken matches Spanish 'Cap.NNN' markers, optionally preceded by a
@@ -195,14 +197,21 @@ func EpisodesMatchToEpisodes(re *regexp.Regexp, match []string) Episodes {
 	episodes := Episodes{}
 
 	switch {
-	case nm("saEpisode") != "":
+	case nm("standaloneEpisode") != "":
 		// standalone prefixed episode, no season
-		episode, _ := strconv.ParseInt(nm("saEpisode"), 10, 16)
+		episode, _ := strconv.ParseInt(nm("standaloneEpisode"), 10, 16)
 		episodes = episodes.AddEpisode(0, int(episode))
 	case nm("capEpisode") != "":
-		// Spanish 'Cap.NNN', no season
-		episode, _ := strconv.ParseInt(nm("capEpisode"), 10, 16)
-		episodes = episodes.AddEpisode(0, int(episode))
+		// Spanish 'Cap.NNN': the hundreds digit encodes the season
+		// ('Temporada 6 ... Cap.605' -> S06E05, bare 'Cap.105' -> S01E05)
+		n, _ := strconv.ParseInt(nm("capEpisode"), 10, 16)
+		season, episode := 0, int(n)
+
+		if n >= 100 {
+			season, episode = int(n)/100, int(n)%100
+		}
+
+		episodes = episodes.AddEpisode(season, episode)
 	case nm("brEpisode") != "":
 		// bracket-guarded episode, no season
 		episode, _ := strconv.ParseInt(nm("brEpisode"), 10, 16)

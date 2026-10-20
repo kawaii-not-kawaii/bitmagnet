@@ -30,10 +30,9 @@ func TestParseTitleYearEpisodesEpisodePatterns(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
-		name       string
-		episodes   []int
-		seasonOnly bool
-		season     int
+		name     string
+		episodes []int
+		season   int
 	}{
 		{
 			name:     "[SubsPlease] Necronomico no Cosmic Horror Show - 11 (720p) [3731CD79].mkv",
@@ -44,16 +43,20 @@ func TestParseTitleYearEpisodesEpisodePatterns(t *testing.T) {
 			episodes: []int{376},
 		},
 		{
+			// Spanish convention: Cap.605 -> season 6, episode 5
 			name:     "Peaky Blinders - Temporada 6 [HDTV 720p][Cap.605][AC3 5.1 Castellano][www.AtomoHD.XYZ]",
-			episodes: []int{605},
+			episodes: []int{5},
+			season:   6,
 		},
 		{
 			name:     "Privilegios [HDTV][Cap.105]",
-			episodes: []int{105},
+			episodes: []int{5},
+			season:   1,
 		},
 		{
 			name:     "S03E06 - Family Guy - 306 - Death Lives.avi",
 			episodes: []int{6},
+			season:   3,
 		},
 	}
 	for _, tt := range tests {
@@ -63,6 +66,10 @@ func TestParseTitleYearEpisodesEpisodePatterns(t *testing.T) {
 			_, _, episodes, _, err := ParseTitleYearEpisodes(model.NullContentType{}, tt.name)
 			require.NoError(t, err)
 			assert.ElementsMatch(t, tt.episodes, flattenEpisodes(episodes))
+
+			if tt.season != 0 {
+				assert.Contains(t, episodes, tt.season)
+			}
 		})
 	}
 }
