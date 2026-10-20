@@ -88,6 +88,16 @@ func TestInferLanguages(t *testing.T) {
 			input: "en, eng, English, moldovan, fr, French, fr, fr, fr, fr",
 			want:  []Language{Language("en"), Language("fr"), Language("ro")},
 		},
+		{
+			// (live DB false positive: 'sa' via alpha3 'san' inside 'Shikimori-san')
+			input: "[Anistar.org] Kawaii dake ja Nai Shikimori-san [TV-1] - 09 [720p].mkv",
+			want:  []Language{},
+		},
+		{
+			// hyphen-joined fragments excluded, but bracket/dot/underscore boundaries still match
+			input: "Movie [JPN_SUB] FRENCH.WEB x-rus y",
+			want:  []Language{Language("fr"), Language("ja")},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.input, func(t *testing.T) {

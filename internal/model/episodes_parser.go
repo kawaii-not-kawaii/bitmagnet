@@ -95,9 +95,71 @@ var episodesXFormatTokens = rex.Group.Define(
 	).NonCaptured().Repeat().ZeroOrOne(),
 ).NonCaptured()
 
+// standaloneEpisodeToken matches an explicitly prefixed episode number with no
+// season: 'Title E376.261011' (Korean daily TV), 'Title EP01'. The letter
+// prefix is the numeric-noise guard; bare numbers are never matched here.
+var standaloneEpisodeToken = rex.Group.Define(
+	rex.Group.Composite(
+		keywords.MustNewRexTokensFromKeywords("episode", "ep", "e")...,
+	).NonCaptured(),
+	rex.Group.NonCaptured(
+		rex.Chars.Whitespace().Repeat().ZeroOrOne(),
+		rex.Chars.Single('.').Repeat().ZeroOrOne(),
+	),
+	rex.Group.Define(rex.Chars.Digits().Repeat().Between(1, 3)).WithName("saEpisode"),
+).NonCaptured()
+
+// capEpisodeToken matches Spanish 'Cap.NNN' markers, optionally preceded by a
+// single bracketed technical group: 'Privilegios [HDTV][Cap.105]'.
+// ponytail: only one bracket group is allowed before 'cap'; extend to a repeat
+// if a labeled corpus shows multi-bracket forms matter.
+var capEpisodeToken = rex.Group.Define(
+	rex.Group.NonCaptured(
+		rex.Chars.Single('['),
+		rex.Chars.Any().Repeat().ZeroOrMore(),
+		rex.Chars.Single(']'),
+	).Repeat().ZeroOrOne(),
+	rex.Group.Composite(
+		keywords.MustNewRexTokensFromKeywords("cap")...,
+	).NonCaptured(),
+	rex.Group.NonCaptured(
+		rex.Chars.Whitespace().Repeat().ZeroOrOne(),
+		rex.Chars.Single('.').Repeat().ZeroOrOne(),
+	),
+	rex.Group.Define(rex.Chars.Digits().Repeat().Between(1, 3)).WithName("capEpisode"),
+).NonCaptured()
+
+// bracketEpisodeToken matches a hyphen-separated episode number immediately
+// followed by an ASCII bracket: anime '- 11 (720p)' / '- 202 [1080p]'.
+// The bracket is the numeric-noise guard: bare '- N' (Chinese prose, counts)
+// and fullwidth-bracket forms stay unmatched.
+var bracketEpisodeToken = rex.Group.Define(
+	rex.Group.NonCaptured(
+		rex.Chars.Whitespace().Repeat().ZeroOrOne(),
+		rex.Chars.Single('-'),
+		rex.Chars.Whitespace().Repeat().ZeroOrOne(),
+	),
+	rex.Group.Define(rex.Chars.Digits().Repeat().Between(1, 3)).WithName("brEpisode"),
+	rex.Group.NonCaptured(
+		rex.Chars.Whitespace().Repeat().ZeroOrOne(),
+		rex.Chars.Runes("(["),
+	),
+).NonCaptured()
+
 var EpisodesToken = rex.Group.Composite(
 	episodesRegularTokens,
 	episodesXFormatTokens,
+	standaloneEpisodeToken,
+	capEpisodeToken,
+)
+
+// EpisodesWithBracketsToken additionally matches bracket-guarded episode
+// numbers. Kept separate because the bracket form can shadow a preceding
+// season marker (e.g. 'Title S4 - 02 (1080p)'), so callers must try
+// EpisodesToken first.
+var EpisodesWithBracketsToken = rex.Group.Composite(
+	EpisodesToken,
+	bracketEpisodeToken,
 )
 
 var episodesRegex = rex.New(
@@ -132,7 +194,20 @@ func EpisodesMatchToEpisodes(re *regexp.Regexp, match []string) Episodes {
 
 	episodes := Episodes{}
 
-	if nm("seasonStart") != "" {
+	switch {
+	case nm("saEpisode") != "":
+		// standalone prefixed episode, no season
+		episode, _ := strconv.ParseInt(nm("saEpisode"), 10, 16)
+		episodes = episodes.AddEpisode(0, int(episode))
+	case nm("capEpisode") != "":
+		// Spanish 'Cap.NNN', no season
+		episode, _ := strconv.ParseInt(nm("capEpisode"), 10, 16)
+		episodes = episodes.AddEpisode(0, int(episode))
+	case nm("brEpisode") != "":
+		// bracket-guarded episode, no season
+		episode, _ := strconv.ParseInt(nm("brEpisode"), 10, 16)
+		episodes = episodes.AddEpisode(0, int(episode))
+	case nm("seasonStart") != "":
 		// regular format
 		seasonStart, _ := strconv.ParseInt(nm("seasonStart"), 10, 16)
 
@@ -213,7 +288,7 @@ func EpisodesMatchToEpisodes(re *regexp.Regexp, match []string) Episodes {
 				episodes = episodes.AddEpisode(int(seasonStart), int(episodeStart))
 			}
 		}
-	} else {
+	default:
 		// x format
 		season, _ := strconv.ParseInt(nm("xSeason"), 10, 16)
 		episodeStart, _ := strconv.ParseInt(nm("xEpisodeStart"), 10, 16)

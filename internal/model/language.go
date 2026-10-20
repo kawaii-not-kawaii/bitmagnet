@@ -8,9 +8,11 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"unicode"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/keywords"
 	"github.com/facette/natsort"
+	"github.com/hedhyw/rex/pkg/rex"
 )
 
 type Language string
@@ -91,7 +93,33 @@ func newLanguagesRegex() *regexp.Regexp {
 		tokens = append(tokens, namesToLower(lang.Aliases()...)...)
 	}
 
-	return keywords.MustNewRegexFromKeywords(tokens...)
+	// ponytail: hyphen is excluded from token boundaries because alpha3 codes collide with
+	// hyphenated fragments in titles (e.g. 'san' inside 'Shikimori-san'); if hyphenated
+	// language tags like '-ENG-' ever matter, allow the hyphen selectively by token length.
+	boundary := rex.Group.Composite(
+		rex.Chars.Begin(),
+		rex.Common.NotClass(
+			rex.Chars.Unicode(unicode.L),
+			rex.Chars.Digits(),
+			rex.Chars.Single('-'),
+		).Repeat().OneOrMore(),
+	).NonCaptured()
+	endBoundary := rex.Group.Composite(
+		rex.Chars.End(),
+		rex.Common.NotClass(
+			rex.Chars.Unicode(unicode.L),
+			rex.Chars.Digits(),
+			rex.Chars.Single('-'),
+		).Repeat().OneOrMore(),
+	).NonCaptured()
+
+	return rex.New(
+		boundary,
+		rex.Group.Composite(
+			keywords.MustNewRexTokensFromKeywords(tokens...)...,
+		),
+		endBoundary,
+	).MustCompile()
 }
 
 var languagesRegex *regexp.Regexp

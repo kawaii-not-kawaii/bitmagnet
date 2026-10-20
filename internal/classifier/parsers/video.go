@@ -1,6 +1,7 @@
 package parsers
 
 import (
+	"regexp"
 	"strconv"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier/classification"
@@ -58,6 +59,18 @@ var titleEpisodesRegex = rex.New(
 	rex.Group.NonCaptured(
 		rex.Group.NonCaptured(titleTokens...),
 		model.EpisodesToken,
+	),
+).MustCompile()
+
+// titleEpisodesLooseRegex additionally allows an optional title (leading
+// 'S03E06 - Title') and bracket-guarded episode numbers ('- 11 (720p)');
+// tried only after titleEpisodesRegex, whose season-aware forms take
+// precedence.
+var titleEpisodesLooseRegex = rex.New(
+	rex.Chars.Begin(),
+	rex.Group.NonCaptured(
+		rex.Group.NonCaptured(titleTokens...).Repeat().ZeroOrOne(),
+		model.EpisodesWithBracketsToken,
 	),
 ).MustCompile()
 
@@ -136,20 +149,22 @@ func parseTitle(input string) (title string, rest string, err error) {
 }
 
 func parseTitleYearEpisodes(input string) (string, model.Year, model.Episodes, string, error) {
-	if match := titleEpisodesRegex.FindStringSubmatch(input); match != nil {
-		title := match[titleEpisodesRegex.SubexpIndex("title")]
-		year := model.Year(0)
+	for _, re := range []*regexp.Regexp{titleEpisodesRegex, titleEpisodesLooseRegex} {
+		if match := re.FindStringSubmatch(input); match != nil {
+			title := match[re.SubexpIndex("title")]
+			year := model.Year(0)
 
-		if t, y, _, err := parseTitleYear(title); err == nil {
-			title = t
-			year = y
-		} else {
-			title = cleanTitle(title)
+			if t, y, _, err := parseTitleYear(title); err == nil {
+				title = t
+				year = y
+			} else {
+				title = cleanTitle(title)
+			}
+
+			episodes := model.EpisodesMatchToEpisodes(re, match)
+
+			return title, year, episodes, input[len(match[0]):], nil
 		}
-
-		episodes := model.EpisodesMatchToEpisodes(titleEpisodesRegex, match)
-
-		return title, year, episodes, input[len(match[0]):], nil
 	}
 
 	return "", 0, nil, "", classification.ErrUnmatched
