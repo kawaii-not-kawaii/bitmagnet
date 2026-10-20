@@ -1,18 +1,14 @@
 # Current state
+- parser-patterns COMPLETE: language hyphen-boundary fix + four episode forms; commits d0af495, 8af7f7a (fixed point 5793f5c); two-scout review closed (P2 Cap-decode addressed, P3 polish addressed/deferred in ticket); suites/build/lint green; 200-name sample: +17 real extractions, 0 noise, 2 false-'sa' removals. Not deployed; existing DB rows unchanged.
 
-- SF-01 complete: fresh browser reloads and manual Refresh, preserved criteria/page/order, error recovery and full search lifecycle teardown.
-- Branch: `main`; review branch point: `236c129d745fca499252fc40167ea1d806302e51`.
-- Implementation commit: `60464ce`; lifecycle review-fix commit: `5ab56ea`.
-- Spec/ticket: `.scratch/search-freshness/SPEC.md` and `.scratch/search-freshness/issues/01-fresh-search-and-refresh.md`, both complete.
-- Final review: Standards 0 findings; Spec 0 findings. Both initial P2 lifecycle findings resolved, none deferred.
-- Verification: focused search suite 8 passed; final full suite 84 passed and exited cleanly; changed-file lint and embedded build passed.
-- One earlier full-suite run reported 84 successes but timed out after completion; final standalone run with dots reporter exited cleanly.
-- Built-display smoke verified refreshed/reloaded rows, preserved controls, no cached input, loading disable, failure retention/retry, no polling and 390px layout; screenshots visually checked.
-- Evidence: `/tmp/bitmagnet-search-freshness-desktop.png` and `/tmp/bitmagnet-search-freshness-mobile.png`; throwaway smoke script removed.
-- Changes local only; not deployed to Unraid, no live configuration or persistent data changes. No polling, backend contract change or global cache shutdown.
-- Running instance supplied by user: `http://192.168.1.2:3333` (Unraid via Tailscale); previously reproduced stale enabled ten-minute cache at revision `236c129`.
+- Parser comparison COMPLETE (read-only): report `.scratch/classifier-parser-research/COMPARISON.md`; sample+raw outputs in `sample/` (200 names, versions in `sample/VERSIONS.txt`). Headline: current parser misses 14/17 clear episode patterns (bracket anime, Korean E376, Spanish Cap.NNN, leading/lowercase sxxexx) that all four candidates catch; candidates bring false episode guesses on numeric noise (jhin/go-ptt ~15), autobrr types 41/200 as movie (mostly wrong here), release-group extraction gap (bitmagnet 4 vs 35-81). Live-DB confirmed bitmagnet `InferLanguages` false positive ('sa' from Shikimori-san). No adoption decision; needs labeled check first.
+- Harness was an isolated throwaway copy at `/tmp/bitmagnet-parser-harness` (go1.26.0 via goproxy.cn); production tree and go.mod untouched.
+- Go release-parser research complete: `.scratch/classifier-parser-research/RESEARCH.md`; source/maintenance review only, no package installed or executed.
+- Maintained shortlist: autobrr/rls, dreulavelle/jhin, chill-institute/torrentname and MunifTanjim/go-ptt (all MIT). ProfChaos excluded pending license.
+- SF-01 complete: fresh browser reloads and manual Refresh, preserved criteria/page/order, error recovery and full search lifecycle teardown; commits 60464ce, 5ab56ea, 5793f5c; reviews closed, not deployed.
+- Branch: `main`; review branch point: `236c129d745fca499252fc40167ea1d806302e51`; latest commit `5793f5c`.
+- Running instance: `http://192.168.1.2:3333` (revision 236c129); access is read-only for this experiment.
+- Remaining work: labeled non-LLM classification check (after comparison informs it).
+- Cached Chromium: `/tmp/chromium`; no configured language server; no Git identity (per-command attribution when needed).
+- SF-01 verification detail: spec/ticket complete in `.scratch/search-freshness/`; Standards/Spec reviews 0 findings; focused suite 8 passed, full suite 84 passed; lint, embedded build and built-display smoke passed; local only, not deployed.
 - Architecture report: `/tmp/architecture-review-20261011-123800.html`.
-- Remaining work: labeled non-LLM classifier checks; accuracy gains unmeasured, classifier implementation unchanged.
-- Frontend dependencies initially installed with npm ci; missing typescript-eslint@8 lint peer installed transiently without tracked manifest/lockfile changes. Installed patch versions may differ from lockfile.
-- Cached Chromium: `/tmp/chromium`; no configured language server or local Go toolchain.
-- No Git identity configured; commits use explicit `Coding Assistant <assistant@localhost>` attribution without configuration changes.

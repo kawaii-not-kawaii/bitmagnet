@@ -1,0 +1,4298 @@
+{
+ "meta": {
+  "collectedAt": "2026-10-11T14:10:22.571Z",
+  "source": "bitmagnet instance http://192.168.1.2:3333 (UI revision 236c129), authenticated browser GraphQL read, cached omitted (ModeNoCache)",
+  "strata": [
+   {
+    "name": "recent_published",
+    "input": {
+     "limit": 100,
+     "facets": {
+      "contentType": {
+       "filter": [
+        null
+       ]
+      }
+     },
+     "orderBy": [
+      {
+       "field": "published_at",
+       "descending": true
+      }
+     ]
+    },
+    "returned": 100
+   },
+   {
+    "name": "hash_asc_p1",
+    "input": {
+     "limit": 100,
+     "offset": 0,
+     "facets": {
+      "contentType": {
+       "filter": [
+        null
+       ]
+      }
+     },
+     "orderBy": [
+      {
+       "field": "info_hash",
+       "descending": false
+      }
+     ]
+    },
+    "returned": 100
+   },
+   {
+    "name": "hash_asc_p2_fetched_not_retained",
+    "input": {
+     "limit": 100,
+     "offset": 100,
+     "facets": {
+      "contentType": {
+       "filter": [
+        null
+       ]
+      }
+     },
+     "orderBy": [
+      {
+       "field": "info_hash",
+       "descending": false
+      }
+     ]
+    },
+    "returned": 100,
+    "note": "300 unique rows fetched; only first 200 retained (100 recent + 100 hash-ordered) to bound artifact size"
+   }
+  ],
+  "notes": "totalCount returned 0 with totalCountIsEstimate false on these no-cache searches; UI showed Unknown ~4,600,000. Recent stratum reflects active DHT ingestion at collection time; info_hash ascending is effectively uniform over the unknown population."
+ },
+ "items": [
+  {
+   "infoHash": "d31393f305999c8f6b235942f9a5c76a8af23e33",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V1080p",
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.607645Z",
+   "torrent": {
+    "name": "Lola Red & Vilena - Fiery Red_1080p.mp4",
+    "size": 3577749218,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "d127e3a71e3413b9e997519c147f93d881842abf",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.607645Z",
+   "torrent": {
+    "name": "Nikki Fatale - Erotic Hypnosis",
+    "size": 368207002,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 1,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "acd0ee35370beff9202b531604b4ea586b2bd8b5",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.607645Z",
+   "torrent": {
+    "name": "欧美wife.mp4",
+    "size": 3138608504,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "a8752344e6aae81952873936cafc33204e7360c2",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.607645Z",
+   "torrent": {
+    "name": "Anissa Kate - Stepmom Lets Loose On Halloween.mp4",
+    "size": 2328427938,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "689748d7e616a1ae0c6daec115eaa65ca3265d48",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.607645Z",
+   "torrent": {
+    "name": "БесогонTV",
+    "size": 23332989380,
+    "fileType": null,
+    "filesStatus": "over_threshold",
+    "filesCount": 144,
+    "hasFilesInfo": false,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "ffbbfb68ccbf53a639497c3e56f454b4da071aa1",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "Coven.Academy.S01E06.480p.x264-mSD[EZTVx.to].mkv",
+    "size": 59236070,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "fee65da334094564bb9400bddc1393e5231e49b7",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "51原创小姨子的秘密 小姨子瑜伽球翘臀扭腰球上口交 姐夫抓奶猛插到后入逼水四溅！",
+    "size": 324534430,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 5,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "fab0b0f0c71a5778cf038f92e2996a7f3adff5ee",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "(同人ゲーム) [200504][RJ284452][ダイジョビ研究所] 魔王のハーレムは冒険者町にて ～分裂乱交日記～【ボイス＆イベント追加】.rar",
+    "size": 1025758739,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "d77cf7713b1f8b7e06f46a3ce33b4fe1dd7b6e87",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "islandhop.map",
+    "size": 26025570,
+    "fileType": null,
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "d516e18115ed74644d6ffa9ddd20cd0a4b69bd23",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "MXGS-595",
+    "size": 1157764715,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 1,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "d4f9942829c486ede6e7231d072e9d01631aca90",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "LarasPlayground.13.10.10.Savannah.Bum.Fun.With.Big.Bush.Babe.XXX.1080p.MP4-KTR",
+    "size": 1966888818,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 42,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "d2c99890100d8b1f0570371a49ced511866e0f2b",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "Gunman.Contracts.Stand.Alone",
+    "size": 20451398491,
+    "fileType": null,
+    "filesStatus": "over_threshold",
+    "filesCount": 140,
+    "hasFilesInfo": false,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "d0e52741fb2afa1b83187675763be7b405abedd9",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "【LinLin_cpp】9月19 纹身嫩妹被按着口交深喉做爱 抓着小奶子狂顶嫩逼 暴操内射灌满！$",
+    "size": 354597005,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 6,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "d0e50a84de8ced009e1ace25a5e886225dfed0d8",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "[Saji] T.M.Revolution - RAIMEI.rar",
+    "size": 15380236,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "cfb3baa9cef32f853441a56dc3962bb557b2fad4",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "theesperantistvo49234gut",
+    "size": 1386817,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 12,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "bdde61c29990e5118deabc2c703d1edcfbbe3d86",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "[Thz.la]pkpd-025",
+    "size": 4683957824,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 1,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "ab5f1bd18525f0be133077d99e8e9bcb2a393d67",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "0488-【新片】麻豆传媒  苏畅纯子韩语嫣 处男转生乱伦家庭无尽做爱 下集大年初三操逼拜年庆团圆",
+    "size": 1270411458,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 46,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "a936c9228f17c9cffc273347546e88bd7fa76942",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "kabukichogirls-12-HDwhole-RMVB.rmvb",
+    "size": 839983122,
+    "fileType": null,
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "a676f4841e773196e34f598d9541eb94c78917ae",
+   "contentType": null,
+   "languages": [
+    {
+     "id": "ja"
+    }
+   ],
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V1080p",
+   "videoSource": "WEBDL",
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "[MagicStar] Oishii no Tsukurikata EP01 [WEBDL] [1080p] [AMZN] [JPN_SUB]",
+    "size": 4665640160,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 2,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "a63ee7af2ec704a22794869be965151f05f93eb7",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "MultipointEage_Plugin_Rtdetrv2Det_bm1684x_v1.0.0.tar.gz",
+    "size": 182765609,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "a5b0dc5f7cb94568f54f8d96224faab70c84faa4",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "御姐小少妇全程露脸一个人在家发骚，逼里塞着跳蛋自慰，高频震动爽到颤抖，道具直接往里插浪叫不止表情好骚",
+    "size": 1133514146,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 5,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "a41b7c91ef72b23f48aace3f077294c28427cbb8",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V720p",
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "[SubsPlease] Necronomico no Cosmic Horror Show - 11 (720p) [3731CD79].mkv",
+    "size": 741704698,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "a366b0c3d0f71e786a90f569f83a0402a8444d93",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "【原档泄密】苏州学舞蹈的艺术生酒店被金主爸爸随意玩弄 摁头强制深喉假鸡巴不当人似的插 最后再干一炮$",
+    "size": 106060585,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 32,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "a2822ab3fb89de5744da59db5ef86548e2657113",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "[AI Generated] 逆兔真唯的赌场日常.zip",
+    "size": 33514310,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "93efd69d0cb433a1ee361e8358eebd0eb23e4338",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "kss55.cc@DVDMS-922",
+    "size": 2743294730,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 25,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "776fc4e79d95ab2cfc186025f01ca583d897112c",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "ZGSHLWAYP1[9V1.8G]",
+    "size": 1974468608,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 11,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "6e008bf2b2693c099ea1013b436299502f99b999",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V4320p",
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "Empty_Balls_for_Empty_Card_MileySin_8K_original_p_VRixxens_video_180_LR.mp4",
+    "size": 16838706999,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "64dc6df6062679d5128654e074e6be9d2bdd1cc4",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V1080p",
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "[orion origin] Mahoutsukai Reimeiki [06] [1080p+] [H265 AAC] [GB].mkv",
+    "size": 1056948049,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "4ea0e84cbc264e0320cf41e4b367a6bfe9e75f59",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "[パイレーツキャット] 勝ったら何でもシてアゲる♥ [中国翻訳] [DL版] [Amerins漢化].zip",
+    "size": 570432626,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "4dff4f4f793ca1e62aac8ef7b2240a763f1f94e2",
+   "contentType": null,
+   "languages": [
+    {
+     "id": "sa"
+    }
+   ],
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V720p",
+   "videoSource": "TV",
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "[Anistar.org] Kawaii dake ja Nai Shikimori-san [TV-1] - 09 [720p].mkv",
+    "size": 521422338,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "4cfe120025098bd962b6637fb49e1ec8b1d43d3e",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "【在线成人影院 aa1bb.cc】天然美乳，白皙佳人，~【胸无大痣】丰乳肥臀高颜值~小姐妹让人欲火焚身，前凸后翘，妩媚中拿捏了一众粉丝",
+    "size": 1059946510,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 2,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "4b4b07b338fda735223306cc5de3be9180c901f6",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": "H264",
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "[QTS] Theatrical feature Martian Successor Nadesico - The prince of darkness (BD H264 1280x720 24fps AAC 5.1ch).mp4",
+    "size": 1456092678,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "49c538c24f1f2de0539cf9f8e8d282c321fcc4cf",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "[Naizou Kenkyuujyo (Yasashii Naizou)] Downer Kenkyuusha Onee-san (32) to Cosplay Ecchi shitai! ︱ 다우너 연구원 누나(32세)와 코스프레 섹스하고 싶어! [Korean].zip",
+    "size": 316893955,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "491c9f4593cd4eced18c622874b579edade86b8f",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "【在线成人影院 aa1bb.cc】【绿帽淫妻 ️性爱狂】绿奴男友看单男狠操自己的00后嫩女友 淫乱女友喜欢骑乘耸动高潮 完美露脸",
+    "size": 630273216,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 2,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "490a646b34b74b073fc4101997bdcd54b9e8aa15",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "推荐，新人下海！逆天颜值，【五花肉】，清秀四川小美女，年轻脸蛋全是胶原蛋白，毛茸茸少女逼，超赞",
+    "size": 2665380321,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 9,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "48e3e91d12be1e4c2b77cd35fd7e3995bb394e6a",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "KMVR-426.mp4",
+    "size": 2081543686,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "3d629188dd6a32a35cdb484b7930452883f59686",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V1080p",
+   "videoSource": "WEBRip",
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "[Erai-raws] Yoroi-Shinden Samurai Troopers Part 2 - 07 [1080p CR WEBRip HEVC AAC][MultiSub][58DB7293].mkv",
+    "size": 761994455,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "3c6ea028243c5fa38a6be4d1e40d0106fd67c3ad",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "巨乳少女 米粒奇怪 定制合集 宿舍跟榜一大哥偷玩裸聊 三点全露花式扣逼抽插自慰 母狗本性暴露无遗！",
+    "size": 323223708,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 5,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "199e2c6a8b9f319e423f67cef02307f5726cf16a",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "Met-Art 2019-05-25",
+    "size": 1297511731,
+    "fileType": null,
+    "filesStatus": "over_threshold",
+    "filesCount": 451,
+    "hasFilesInfo": false,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "05957d6b75731ae4990dffb2a53abf09f59e6504",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "(同人CG集) [Mケイフ] 魔王を嫁にするためには。.zip",
+    "size": 838325529,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "04f60975658cf9066ec1e16fa9c755c753a8ea98",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "Reincarnated in a stone in a different world.zip",
+    "size": 630531495,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "0086c26d8b0ef004c2f8cfabe83c88e23cf4fb56",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V1080p",
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:08:46.578741Z",
+   "torrent": {
+    "name": "FHD-nacr-093.mp4",
+    "size": 3173494716,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "ff7a60f49b29df23ee6f19152117485840c82a11",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "Louna - Клипы",
+    "size": 333984223,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 5,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "fba1e133c81ea6d61b895ae6532ed76553e44a2b",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "藤原纪香",
+    "size": 40597082,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 3,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "f9e310ce06de323a741351880d101300f13a3d19",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "良家漂亮嫂子 大奶肥逼超诱惑 用大黄瓜插逼 淫水喷不停 看来很久没有被滋润了",
+    "size": 54992199,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 1,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "f0bbfbd89155a7fed89ac7f44b78190b9f155770",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "HBAD-274  性感老师学生没法正常上课了.XLSub.srt",
+    "size": 29261,
+    "fileType": "subtitles",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "efd162ff3a332707a5119e2d8a795a51e2ea3e0c",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "[Pixiv] [Twitter] [Bilibili] ATDAN丨小原原原子Dan 2026.09.06.zip",
+    "size": 848831553,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "efc11a910fe2ee9e4f485e1b92ebff9f56148fd5",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "虫声新透绿窗纱0",
+    "size": 1244467967,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 45,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "d0425a65678e80b6d9ec505dd54e2fda925240c9",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "emilyaddisonts092712-p01",
+    "size": 100667034,
+    "fileType": null,
+    "filesStatus": "over_threshold",
+    "filesCount": 140,
+    "hasFilesInfo": false,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "c575a7d7522df7adeaafbfb2531264b2c8cf7067",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "Hades.II-InsaneRamZes",
+    "size": 11755342590,
+    "fileType": null,
+    "filesStatus": "over_threshold",
+    "filesCount": 5901,
+    "hasFilesInfo": false,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "c564ba0e6c74cb2e55899842088a64d222804291",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "Звёзды. 3 сезон",
+    "size": 6885749305,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 3,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "c44026abf1855b5760b27dd45f1060ff0a9e0914",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "[Spyman001] (117p) ナース 調月リオ Ntr (CN, EN, JP) (Patreon) [AI Generated].zip",
+    "size": 35826100,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "c1bda38623c04e96bb07e7409247da30ffc7bda3",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "(同人CG集) [なのかえいち (ぎしゅ、なのかH)] 再婚妻と義娘とこたつ催淫正月挨拶で親戚一同ハメまくり催眠元旦.zip",
+    "size": 217011513,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "afe1612793e4ce19a0488f4774933e23fee5082b",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V1080p",
+   "videoSource": "TV",
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "Kyuuketsuki Sugu Shinu - AniLibria.TV [WEBRip 1080p]",
+    "size": 1149917933,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 1,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "aee8f3afdf3cc9758a796a3db4d3efac50c10bf1",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "272【欢乐谷原创】被捆绑放置在泳池别墅里尤物以及深度尺度调教完整版  调教SM",
+    "size": 1595570720,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 6,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "a904189e405c21fd12722ccb39438e2c9a3db2c9",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "Nympho_Tamer",
+    "size": 4245626028,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 4,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "9fbfdd455f54a9b02e2ce48e125c1726f6bd0ab0",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "HODV21185.avi",
+    "size": 1218306096,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "949c50be6f18d8a781ce032b5f2486e21dda92c7",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "EroMomo - Suguha Kirigaya 桐ヶ谷直葉 262P (Patreon) (AI Generated).zip",
+    "size": 109100947,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "93e04c69b0aea3a92292d746af001c99f6cbedde",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "Caticornplay - Lucy.zip",
+    "size": 98321270,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "932d83219363438c089042daf291bbd592a1e672",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "[YamiMa3.0] Kurikoma Komaru あおぎり高校_栗駒こまる(439p) [AI Generated].zip",
+    "size": 74932589,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "9327605813b8b211ddb826f855083bd78402e2f1",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "(C108) [Noir Complex (NR)] Liliweiss to Mendan Suru | Meeting with Liliweiss (Goddess Of Victory∶ Nikke) [English] [na0kun]-1280x.zip",
+    "size": 11026419,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "8c667260fd63645498243e58632b43671960614b",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "[spreeds] [AI Generated] 百瀬 あゆむ(俺は彼女を信じてる).zip",
+    "size": 218932212,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "8a4d38d150be6c313ba13ab325be9cab504020df",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "Princess Survivors.zip",
+    "size": 516551480,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "8a4d2dcda8af093016e861a13213212d6a098d55",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "Benelli M4 Shotshell Saddle.zip",
+    "size": 2631035,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "86825505c02b1c3be5b7e6c001b0a0769137bc30",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "Arma_Reforger_ZoS_1.8_[Release]",
+    "size": 23895613590,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 18,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "8008e3cfc2f9b12aa0cf5235b4001110b2c5c80b",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V1080p",
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "Aleksa Mink, Zeus, 1080p.mp4",
+    "size": 2065386817,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "61784dcf7265b642a020962735c9bcc1bc7a53af",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "neko_menber　島村卯月(THE IDOLM@STER CINDERELLA GIRLS)　87枚 (Patreon) [AI Generated].zip",
+    "size": 118935263,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "3e472d7dccc943ee3396354b9559fb2267b44e5e",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V720p",
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "사장님 귀는 당나귀 귀.E376.261011.720p-NEXT.mp4",
+    "size": 2043878104,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "1416a2cd971a5071105caaa04fe392f30b7f1123",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "(同人誌) [水張月] 制服ギャル絶頂快楽堕ち総集編 おまけ (オリジナル).zip",
+    "size": 5555772,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "05954f6962d57ad6526b3647e7544982a279ebf6",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:07:46.584202Z",
+   "torrent": {
+    "name": "PoppaChan - Nanyong Yu 15Videos.zip",
+    "size": 424647488,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "ef29a8694aea917622b4e2d5299dba99f0c794a5",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.609391Z",
+   "torrent": {
+    "name": "Sekai Saikyou no Majo, Hajimemashita",
+    "size": 737817595,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 2,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "ea751cd78194204d34f268fe523bc8ab9d5b3fd7",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.609391Z",
+   "torrent": {
+    "name": "[patreon] msichana75443 Gakumas (1) [AI Generated].zip",
+    "size": 283901909,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "e8ca908fb87e1dc3b70cdaed67a508a2a1c1238f",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.609391Z",
+   "torrent": {
+    "name": "美国肛交就是强悍！.wmv",
+    "size": 900371500,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "debdfd131caf428f13b32a9a45c2163bb0fbd66d",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": "x264",
+   "videoModifier": null,
+   "videoResolution": "V720p",
+   "videoSource": "BluRay",
+   "publishedAt": "2026-10-11T14:06:46.609391Z",
+   "torrent": {
+    "name": "[异域-11番小队][妄想学生会合集 Seitokai Yakuindomo][BDRIP][720P][X264-10bit_AAC]",
+    "size": 9319111640,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 67,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "88fc01ba7146634e4d577dd71546e0b72069357b",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.609391Z",
+   "torrent": {
+    "name": "260421142",
+    "size": 1551796279,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 1,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "65d8a842197025e400472fa9c18aebcc0176bc57",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.609391Z",
+   "torrent": {
+    "name": "T-Girls On Film 3",
+    "size": 771063797,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 4,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "651a3691149a7191180d33bdbdcf0270d5e2b415",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.609391Z",
+   "torrent": {
+    "name": "all_lady_do_it[576-312](1h32m)(Tinto_brass)",
+    "size": 579765841,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 2,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "64f71c4c5d3fce01fa830aaef5ba2b4251b824a8",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.609391Z",
+   "torrent": {
+    "name": "(tokusatsu.org)Kamen_Rider_Zeztz_-_Series_of_Sister's_Substory_Agent_Minami_33_WEBDL_1080p_h264_aac_[A45B30EC].mp4",
+    "size": 85125418,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "64bfe339809dd81bdd9f71a3e4a199d2589540d6",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.609391Z",
+   "torrent": {
+    "name": "chas_pik_1.46_[torrents.ru]_by_bm11.avi",
+    "size": 1562763264,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "6437aabfd72cd92ea74b974719d65f06473a3ba4",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.609391Z",
+   "torrent": {
+    "name": "[RAG] Kuchiba Chisa 朽葉千咲 [485pics] (Patreon) [AI Generated].zip",
+    "size": 122354814,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "6050f475089597677f8528ffcd5985915ff5a53e",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.609391Z",
+   "torrent": {
+    "name": "漂亮少妇 油亮蓝色连体情趣丝袜 奶子大鲍鱼肥 被无套输出 喷水不停",
+    "size": 117860343,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 1,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "601e4205c7c8a7939089021db51e9c8884e4cb18",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.609391Z",
+   "torrent": {
+    "name": "[蜂巣 (Apoidea)] ゲーム開発部VS先生の股間に潜む、大いなる輝く機械 (ブルーアーカイブ) [中国語] [無修正] [DL版].zip",
+    "size": 42523451,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "fe233f1ac0c00115762985ed3e25894f817255ee",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.57788Z",
+   "torrent": {
+    "name": "Анклавы",
+    "size": 25194718,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 16,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "fdfa5d0fdcb333eab7567172ce6d6d8110b8c0b6",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.57788Z",
+   "torrent": {
+    "name": "madoubt.com 259298.com fc2ppv-4785772",
+    "size": 7942136344,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 2,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "fc5ff6d137028f23d955c341ffe1401e81b336ac",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.57788Z",
+   "torrent": {
+    "name": "nClear Audio - Gluon v1.0.0",
+    "size": 86530991,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 27,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "f50008a4418a163305bfd2e0b62b359cbfbc8b4a",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.57788Z",
+   "torrent": {
+    "name": "Project_Venus",
+    "size": 6484166935,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 4,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "f411546228ad6551b0a09ad3bf25c3342bb71cb4",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.57788Z",
+   "torrent": {
+    "name": "重金购买【网红-Ria 久留美】全网首发【银发天使-艾米莉娅】之【两个仆人来抚摸湿透、颤抖的阴部】用力操她，举到空中，她反复高潮，直到她失去理智，用两股大精液填满她的阴户！高清无水原版",
+    "size": 500225344,
+    "fileType": null,
+    "filesStatus": "over_threshold",
+    "filesCount": 553,
+    "hasFilesInfo": false,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "f3f03909997548d08920dba1a0c9830dfdd0cae1",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V720p",
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.57788Z",
+   "torrent": {
+    "name": "전지적 참견 시점.E420.261010.720p-NEXT.mp4",
+    "size": 2010241577,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "f16a7d176cba1852d1ab7b86815d960f73cd07be",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.57788Z",
+   "torrent": {
+    "name": "Raining Blood Demo v14.02.2023.rar",
+    "size": 50616557,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "f0e0f09850459d4c9a5ff007b093dfa5df9c9098",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.57788Z",
+   "torrent": {
+    "name": "The Survivalist (2021) PL.480p.BRRip.x264.AC3-CrOOnos   Lektor PL.mkv.mts",
+    "size": 1403198959,
+    "fileType": null,
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "ef85b08960546fac3d250d28a95728f812f802ed",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.57788Z",
+   "torrent": {
+    "name": "大陆迷奸14岁小女孩",
+    "size": 86032560,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 13,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "e9aa79d9efb7c4f675fff8d745821657c97e8c71",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.57788Z",
+   "torrent": {
+    "name": "[analucia]nana[AI GENERATED].zip",
+    "size": 30583776,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "ca52fe8859bd05b4a6718f216501672e9ea6fc34",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.57788Z",
+   "torrent": {
+    "name": "kss55.cc@261ARA-384",
+    "size": 1150305816,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 25,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "c9b1db452a9a264086384e05064ceec9842cb55a",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.57788Z",
+   "torrent": {
+    "name": "XMOM-095",
+    "size": 4876891802,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 2,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "c90c636e3028cf02fb5745cbf7b11aa9edaeaf9c",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.57788Z",
+   "torrent": {
+    "name": "Герман Горшенев_Звездная Кровь Архераил",
+    "size": 6659396,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 6,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "b90cfc1cab248a7e36a97f52b98762236347951d",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V1080p",
+   "videoSource": "WEBRip",
+   "publishedAt": "2026-10-11T14:06:46.57788Z",
+   "torrent": {
+    "name": "[Doomdos] - Urban Miracle Doctor - 202 [1080p IQ WEB-DL].mkv",
+    "size": 191930315,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "ac862a2313fed600a0d065645769f5be866b00ef",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.57788Z",
+   "torrent": {
+    "name": "[ WebToolTip.com ] Udemy - Learn to Host your Own LLM and Build Agent",
+    "size": 757713356,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 19,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "a07351a8555cb9b6800ff2e2f1b5934b7c8eba81",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.57788Z",
+   "torrent": {
+    "name": "SGA-012 .avi",
+    "size": 1082508389,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "8c975de563e01dfdef28a2653191f1cc38630f5a",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.57788Z",
+   "torrent": {
+    "name": "[むちまろ] 生徒会にも穴はある！ 第13巻.rar",
+    "size": 55137154,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "8659952ad45ccfc60ac5f7fc3cdf43efb453f4ea",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-10-11T14:06:46.57788Z",
+   "torrent": {
+    "name": "极品混血学妹魔鬼身材爆乳与富豪激情啪啪",
+    "size": 567080374,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 1,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "00000e4e8677a5d3697b1a01b6aaa80857f291fb",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-04T21:24:21.949641Z",
+   "torrent": {
+    "name": "Linda Ray - Tamed Teens 3214 (Upscale).mp4",
+    "size": 1833617841,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00000fc0764b4f669689e3cd03c710b9af1a31c9",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-14T20:44:02.75487Z",
+   "torrent": {
+    "name": "charts.noaa.gov",
+    "size": 840887863,
+    "fileType": null,
+    "filesStatus": "over_threshold",
+    "filesCount": 11554,
+    "hasFilesInfo": false,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "000011bb8bc1f5cd91cd7f19d0685d85e10dfd00",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V1080p",
+   "videoSource": null,
+   "publishedAt": "2026-03-13T18:20:02.592234Z",
+   "torrent": {
+    "name": "[HorribleSubs] Asobi Asobase - 03 [1080p].mkv",
+    "size": 780289436,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "000012c40ab5db58211e8e68b4b50c5f986fc12f",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-03T09:34:31.141216Z",
+   "torrent": {
+    "name": "Opening in Moscow",
+    "size": 757512974,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 2,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "000019d1dcdf092e3f125a1acc1e8b6498790b9c",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-06-14T19:28:35.578979Z",
+   "torrent": {
+    "name": "Call_of_Beyond",
+    "size": 11434701914,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 4,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "000020235ff376570f4c152bbee83ee13a679cef",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-30T23:15:21.849967Z",
+   "torrent": {
+    "name": "[Gokusaishiki (Aya Shachou)] Deviation Princess [English] {Hennojin} [Digital]",
+    "size": 9970976,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 26,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0000222da313d6eb47e6515a856f09b43bdf997b",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V1080p",
+   "videoSource": "WEBRip",
+   "publishedAt": "2026-03-31T03:04:53.32646Z",
+   "torrent": {
+    "name": "[Erai-raws] Kimi to Idol Precure - 20 [1080p CR WEBRip HEVC EAC3][MultiSub][7C935E83].mkv",
+    "size": 727891735,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00003284049e62057eb6f6b518779ba6fcf4d46f",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-06-10T11:20:32.380894Z",
+   "torrent": {
+    "name": "08 Ibiza DivxTotaL.avi",
+    "size": 1799030004,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00003ce5dc43974f9e1fc41abe903c3ae45b137d",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-04-01T08:57:58.647552Z",
+   "torrent": {
+    "name": "Oninekoya",
+    "size": 19235629,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 74,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "00004df1d9426a843295baca95ea8ae98017c217",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-30T10:57:21.476454Z",
+   "torrent": {
+    "name": "aosogo.cc@KSBJ429J",
+    "size": 1503990341,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 39,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "00006883e670fd34eda2a050653fd6afbb9da875",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-26T19:17:37.292758Z",
+   "torrent": {
+    "name": "Цикл - «Ал»",
+    "size": 3723684,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 3,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "00008b8a94529a9bd606a30fdfdad4de1a777d5f",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-04-24T10:46:40.028707Z",
+   "torrent": {
+    "name": "Backpack.Survivors.rar",
+    "size": 305618198,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00008d5888616a88e72fe9a9b7764991548be4d3",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-04-06T19:19:50.605951Z",
+   "torrent": {
+    "name": "Queen_DSD_Stig",
+    "size": 56359715229,
+    "fileType": null,
+    "filesStatus": "over_threshold",
+    "filesCount": 285,
+    "hasFilesInfo": false,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0000989679fbb6a85367d1debf43b62abd000e5b",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V1080p",
+   "videoSource": null,
+   "publishedAt": "2026-04-25T23:02:41.140268Z",
+   "torrent": {
+    "name": "Girlhood 1080p WWW.DescargasMix.COM.mkv",
+    "size": 8601679850,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00009e55835c93d7e68eb0c50e7388f3dda2ccb4",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-18T03:02:05.161573Z",
+   "torrent": {
+    "name": "HQ - 3D - Landscape.Ландшафт - 3200х1200 - 35 шт. (картинки)",
+    "size": 19371691,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 35,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0000a04ec29848a63dc1948b8c12443a39b13773",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": "x264",
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-04-24T10:46:40.028707Z",
+   "torrent": {
+    "name": "The.Last.Days.Of.Series.1.1of6.Mary.Queen.of.Scots.PDTV.x264.AAC.MVGroup.org.mp4",
+    "size": 624047187,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "0000a4dce31bcd99a9efd5da8aa685a1ea8d95b3",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-15T19:56:03.449837Z",
+   "torrent": {
+    "name": "BFD Stanton Moore Grooves",
+    "size": 32212766,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 65,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0000a6166fcd6905bd877cf7fab79187f2f2ae5e",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-17T19:37:04.928553Z",
+   "torrent": {
+    "name": "Taboo Charming Mother",
+    "size": 1516728529,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 6,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0000a9ccf6451d69b2499f9d38103dab4dc9617d",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-04-06T19:19:52.418198Z",
+   "torrent": {
+    "name": "GUT-Jukuyo-Series_1 01 by RipeSluts.mp4",
+    "size": 181260354,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "0000ab19969ae5834b1cdf05ade10c6bc435fb7b",
+   "contentType": null,
+   "languages": [
+    {
+     "id": "es"
+    }
+   ],
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V720p",
+   "videoSource": "TV",
+   "publishedAt": "2026-03-07T16:42:27.099261Z",
+   "torrent": {
+    "name": "Peaky Blinders - Temporada 6 [HDTV 720p][Cap.605][AC3 5.1 Castellano][www.AtomoHD.XYZ]",
+    "size": 1078402630,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 3,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0000af9c2c20049beb97e5d8abe2781434d86c26",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-27T01:24:19.01704Z",
+   "torrent": {
+    "name": "TERRARIA (XBOX360) RF SOPARAXBOX360JOGOSTORRENT.COM",
+    "size": 7386195172,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 1,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0000ba470284433e40a237028f9195b5af4f3add",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-04-06T19:19:52.418198Z",
+   "torrent": {
+    "name": "unlocker 1.8.7.rar",
+    "size": 213280,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "0000c7334825a20aab638ae45387d073795b705f",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-08T16:57:24.145551Z",
+   "torrent": {
+    "name": "(全网最真实美女裸聊 suu55.com)27 最新流出，PK欧美大屌猛男捅主任付费作品，极品小姐姐珠珠，穿着华伦天奴高跟被花式爆肏",
+    "size": 443417660,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 1,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0000d2d890ff29e7f8b62519f5da3e3c1f9e7366",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-22T14:20:20.465261Z",
+   "torrent": {
+    "name": "TMG012到府男私教强奸女学员-莉莉",
+    "size": 908990581,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 1,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0000d3f58a2027853193084eae0ce444ae12bc42",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-22T14:20:20.465261Z",
+   "torrent": {
+    "name": "c24cd415b51c3ae6b75d9248cd07d00c",
+    "size": 50378084352,
+    "fileType": null,
+    "filesStatus": "over_threshold",
+    "filesCount": 121,
+    "hasFilesInfo": false,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0000d81ce45245337e8f0f19d928c1e88cd0bc00",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-17T19:37:05.71953Z",
+   "torrent": {
+    "name": "Heartbreak High",
+    "size": 5136738650,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 15,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0000ea31e75f8b873b1a09b46ed427c2fa0b6a1b",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-30T15:50:21.628928Z",
+   "torrent": {
+    "name": "City on fire.mkv",
+    "size": 64793934380,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "0000f557e0c93880e8e6fc94dff53f20d79890e8",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-04T21:25:21.346134Z",
+   "torrent": {
+    "name": "Unicorn Overlord [NSZ]",
+    "size": 2843713589,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 2,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0000fa4df35408940c6b679f23ee2028ddb6daa9",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V480p",
+   "videoSource": null,
+   "publishedAt": "2026-03-30T22:34:53.193984Z",
+   "torrent": {
+    "name": "PSA_Candy_Alexa_SD.mp4",
+    "size": 477351054,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "0000fccf4ce14d5848916d7575202c71542004b6",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-04T21:24:21.949641Z",
+   "torrent": {
+    "name": "绝世战魂167.mp4",
+    "size": 236349943,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00010408e057e67ed8e4595e443e82ed9e2fe4ac",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-10T13:30:32.981502Z",
+   "torrent": {
+    "name": "(成年コミック) [きのもと杏] ちいさなカラダの抱き心地 + イラストカード.zip",
+    "size": 421995943,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00011af78c0a7f416afeaed1bc93f6ecf029cd5c",
+   "contentType": null,
+   "languages": [
+    {
+     "id": "fr"
+    }
+   ],
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": "H264",
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": "WEBRip",
+   "publishedAt": "2026-06-02T20:40:23.97659Z",
+   "torrent": {
+    "name": "Dopesick.(Accros).Saison.1.FRENCH.WEB.H264",
+    "size": 19411716127,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 8,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "000122d68ac04e7abac7397e29e3978f11bb6657",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-21T21:00:39.303636Z",
+   "torrent": {
+    "name": "Darya Kasatkina - Gil Belen Teichmann.mkv",
+    "size": 3956374649,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00012aa7013903f33eda50a6c7b55179d8f5d699",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-04-25T02:08:40.500417Z",
+   "torrent": {
+    "name": "American.Dad.S19E07.480p.x264-RUBiK",
+    "size": 75219971,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 6,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "00012fa5c76965609ead05d1d91af2a10217d7ea",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": "TV",
+   "publishedAt": "2026-05-08T17:24:23.410569Z",
+   "torrent": {
+    "name": "Privilegios [HDTV][Cap.105]",
+    "size": 553328536,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 2,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0001313e6053e50deb1216181c77bc78b585cd29",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V480p",
+   "videoSource": null,
+   "publishedAt": "2026-05-31T03:18:21.975522Z",
+   "torrent": {
+    "name": "H4610-ki180724-SD",
+    "size": 657693705,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 3,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "000135ae10538fdb7c867cf7bc58c1f9c2042bf1",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-21T15:41:19.935048Z",
+   "torrent": {
+    "name": "我爱上了朋友的姐姐",
+    "size": 422928842,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 7,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "00013617e4023eb1fc46f04c2fb4efd3415799df",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-10T13:29:34.018108Z",
+   "torrent": {
+    "name": "MANGA-ZIP.INFO_Jinrui metsubo chokuzen nanoni vol 01-03.rar",
+    "size": 282954522,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00013c2a0664df1abcde69d53e881c7a03473599",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-06-08T14:02:14.655222Z",
+   "torrent": {
+    "name": "Wale - Clappers",
+    "size": 234672128,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 5,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "00013f3fd9e6e8a6bb94e0018050702767c0872e",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-29T08:22:20.67631Z",
+   "torrent": {
+    "name": "ELO-202.avi",
+    "size": 1727592448,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00013f5761a947f412afea38414e7c3b66a129b2",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-10T13:29:34.018108Z",
+   "torrent": {
+    "name": "[Noriko のり子] Hayase Yuuka 3 [AI Generated].zip",
+    "size": 19255605,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00014173036aaa13ab27ef5ed5668ca31bb33b21",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-20T19:37:38.504844Z",
+   "torrent": {
+    "name": "아사미 오가와 SRXV-368.avi",
+    "size": 683449344,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "000141bc83ea2d0d935d192ab560f9fb994eb50e",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-07T10:30:23.204048Z",
+   "torrent": {
+    "name": "dccdom.com@XMOM097C",
+    "size": 1505359071,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 36,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "00014b350c95543c775cd8d8a5b4aefbc0241707",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-27T03:34:19.076935Z",
+   "torrent": {
+    "name": "El ultimo mercenario (2021) [BluRay Rip][AC3 5.1 Castellano][www.maxitorrent.com]",
+    "size": 2086240077,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 1,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "00015277fcbbffe50452e09f672f210c1077abd5",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-10T11:45:38.675084Z",
+   "torrent": {
+    "name": "【牛仔裤白鞋踩踏】.mp4",
+    "size": 6555714,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00015456b5e5c56e77fd04fddc44f5b519c11364",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V720p",
+   "videoSource": null,
+   "publishedAt": "2026-05-13T04:08:26.726107Z",
+   "torrent": {
+    "name": "[SubsPlease] Watashi no Oshi wa Akuyaku Reijou - 02 (720p) [98D05802].mkv",
+    "size": 746657372,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "0001547b7bc46290df9c9f7e756a17b0f6f346b4",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-14T17:48:02.655537Z",
+   "torrent": {
+    "name": "[uni] Kirameki Project",
+    "size": 2137967453,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 10,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "00015f229ed516839121d8ce4c9a8108c743ac2a",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-04-17T16:25:35.148182Z",
+   "torrent": {
+    "name": "MARKED  Nyssa Nevers, Sister Dee",
+    "size": 665521993,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 1,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "00016163de82123eb1740d556a854e3a587c1c64",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-04-22T11:39:38.597474Z",
+   "torrent": {
+    "name": "meteority.intervju.avi",
+    "size": 180414554,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "000162e27f715a45f8b579393486c5f98e06ba01",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-08T16:55:29.070569Z",
+   "torrent": {
+    "name": "KAGP-292",
+    "size": 5351536135,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 1,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0001661aa6438091440a0ac17048099b2d37033f5",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-22T22:56:20.547836Z",
+   "torrent": {
+    "name": "I.Know.What.You.Did.Last.Summer.avi",
+    "size": 1570659740,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00016cdb8b4aa1c116decfc836f20f2b3e2aa531",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-12T21:53:13.828032Z",
+   "torrent": {
+    "name": "沖田彩花",
+    "size": 583090375,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 9,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0001718a3769c0ffe86f0693d20348b0ce85e1db",
+   "contentType": null,
+   "languages": [
+    {
+     "id": "ru"
+    }
+   ],
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-24T05:28:16.947755Z",
+   "torrent": {
+    "name": "Koutetsu Tenshi Kurumi RUS",
+    "size": 1664724180,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 27,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0001772ca40c807260fc9851b84b5e1133dae5ef",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-16T09:53:06.799264Z",
+   "torrent": {
+    "name": "ЖИВАЯ СТАЛЬ 1-2",
+    "size": 2757122272,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 2,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "00017aa69bbf20771369df649fd8cd514dcd1050",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-02T05:56:51.40387Z",
+   "torrent": {
+    "name": "Mercenaries",
+    "size": 1351644836,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 4,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "000183a7be3c493b26562390e8d731e882410342",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-07T09:28:26.619471Z",
+   "torrent": {
+    "name": "Без палева! Родители молодых-4 или «Вот я дура!» (наши).avi",
+    "size": 2878705032,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "000190b45390c8fb3c5a43e4ad4a1cb37be06216",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-04-03T08:43:52.655539Z",
+   "torrent": {
+    "name": "【破解家庭摄像头】偷拍家中年轻夫妻日常啪啪生活玩的挺花，长腿大奶推进，白虎女友，风韵少妇，出租屋女友等",
+    "size": 2604949105,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 14,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "000192adeffc3d8d516a8aba6f327198d08bbfe2",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V720p",
+   "videoSource": null,
+   "publishedAt": "2026-06-01T11:47:22.966946Z",
+   "torrent": {
+    "name": "Carib-071211-749-HD-ALL",
+    "size": 2725155120,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 7,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0001a68dc9475f2997e0b9633055b4967a1aba42",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": "TV",
+   "publishedAt": "2026-06-03T05:08:24.242733Z",
+   "torrent": {
+    "name": "Hitsugi_no_Chaika_[AniMedia.TV]",
+    "size": 4724978412,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 12,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0001a9304b37d5db7e915d56f2eff955482a9123",
+   "contentType": null,
+   "languages": [
+    {
+     "id": "es"
+    }
+   ],
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V720p",
+   "videoSource": "TV",
+   "publishedAt": "2026-04-21T20:24:38.131495Z",
+   "torrent": {
+    "name": "Good Trouble - Temporada 2 [HDTV 720p][Cap.211_214][AC3 5.1 Castellano][www.maxitorrent.com]",
+    "size": 6381931077,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 8,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0001ac6823b0553be0c22c2043f637295a7007ca",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-06-01T13:08:23.006189Z",
+   "torrent": {
+    "name": "voss-072",
+    "size": 780625099,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 3,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0001b1e8af637d482cf8969582cb4d4b0a1016ba",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-06-06T08:38:26.519166Z",
+   "torrent": {
+    "name": "Конофальский Борис",
+    "size": 88432049,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 46,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0001b525c9168360f314f1729b4bc6a8317d9cf4",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": "x264",
+   "videoModifier": null,
+   "videoResolution": "V720p",
+   "videoSource": "TV",
+   "publishedAt": "2026-03-23T00:40:20.603454Z",
+   "torrent": {
+    "name": "Discovery.Austin.Stevens.Adventures.Night.of.the.Hyena.HDTV.x264.720p.AC3.MVGroup.org.mkv",
+    "size": 1509460283,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "0001b83ab3f58fa1450485f37186dba5c571340e",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-02T16:40:35.738737Z",
+   "torrent": {
+    "name": "KMVR-226",
+    "size": 1881669649,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 15,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0001bbfabc91e9b8071c932a7dfaf23cb32e9e4d",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-21T22:00:39.334141Z",
+   "torrent": {
+    "name": "[EMBER] Taisou Zamurai - 09.mkv",
+    "size": 328178671,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "0001ceedc0a33de1527658129b2aaf322f393ec6",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-04-22T21:50:38.910295Z",
+   "torrent": {
+    "name": "XPW-Best Of The Enterprise",
+    "size": 409000678,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 1,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0001d3622b019b17f9cedd4482e5b9e4419afce0",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-31T09:11:22.153811Z",
+   "torrent": {
+    "name": "Big.Wet.Butts.5",
+    "size": 1461364736,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 2,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0001d5408aa9e67c65de77939add96a01012bbea",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-10T19:28:24.969848Z",
+   "torrent": {
+    "name": "Anatolij Papanov.avi",
+    "size": 537335808,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "0001d9ad60b715a1117ab38bbcc63e0aea2cb7db",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-12T02:02:25.904743Z",
+   "torrent": {
+    "name": "Kissy - Tia langray (Breakers Revenge).zip",
+    "size": 174910118,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "0001dbdb3c6a4547f7a6782ecf54d7337f0250d8",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-25T19:42:18.102016Z",
+   "torrent": {
+    "name": "私房站最新流出售價180大洋作品臺灣PUA大神風流財子約戰00後舞蹈系萌萌噠大學美女各種高難度解鎖顏射臉",
+    "size": 1010151740,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 8,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0001e91d4b658b356fc1611927b5b865b9d591c9",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V1080p",
+   "videoSource": null,
+   "publishedAt": "2026-03-07T09:28:26.619471Z",
+   "torrent": {
+    "name": "Carib-083117-490-FHD",
+    "size": 2195211361,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 10,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0001eab198f23456a2c150241cf33aeb47abaa6f",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-13T22:40:27.295711Z",
+   "torrent": {
+    "name": "Big clit playing.flv",
+    "size": 2162429,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "0001f13105f61ea3abea99f8192b67d067ec45f0",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-23T12:21:20.961092Z",
+   "torrent": {
+    "name": "DRIVING GAMES",
+    "size": 154090819975,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 6,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0001ffe6d39cf030c4ded91c7f052317debbe5c1",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-06-03T23:46:24.797836Z",
+   "torrent": {
+    "name": "S03E06 - Family Guy - 306 - Death Lives.avi",
+    "size": 160491520,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "0002001d870ad2affadaa80cfc3838b5d6067a2f",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-20T21:35:38.564668Z",
+   "torrent": {
+    "name": "Blind Fury (Гаврилов, MVO Видеосервис, DUB Варус, MVO)",
+    "size": 4370378752,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 11,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "000200d349127196ac6191a8b28a023da86e5192",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-20T21:35:38.564668Z",
+   "torrent": {
+    "name": "[無碼]七海",
+    "size": 333607682,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 14,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "000200f3daec3e81d78f06abc196d871302f44fb",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V1080p",
+   "videoSource": null,
+   "publishedAt": "2026-05-25T16:48:18.020105Z",
+   "torrent": {
+    "name": "C0930-hitozuma1392-FHD",
+    "size": 2978300956,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 5,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0002016e8d3a377fc9ba4ba6c91a88d2a89889dc",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-10T02:33:32.658706Z",
+   "torrent": {
+    "name": "SGRS-017",
+    "size": 3071799632,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 4,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "000202b0ca80f9f7884c7212cc6a26e16264aacf",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-04-03T09:39:52.679841Z",
+   "torrent": {
+    "name": "[Yami ni Ugomeku (Dokurosan)] Musume no Tsugi wa Mama Onaho - Onaho Gasshuku 2 Omake [Chinese] [臭鼬娘漢化組][DECENSORED]",
+    "size": 18073983,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 54,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "00020331ee95d55ce311e7aa9d3d5bb20830ee08",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-04-25T12:09:40.814164Z",
+   "torrent": {
+    "name": "Marvel.Studios.Legends.S02E19.1080p.HEVC.x265-MeGusta[eztv.re].mkv",
+    "size": 82638754,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00020b86a529296a990361168ae8476f90dde003",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V1080p",
+   "videoSource": null,
+   "publishedAt": "2026-03-02T16:41:30.611044Z",
+   "torrent": {
+    "name": "bobross-bobross-s15e13-1080p[EZTVx.to].mkv",
+    "size": 1065089221,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00020eb3159fd995e9ecba74c59b138e1be9a0ef",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-20T06:04:38.062554Z",
+   "torrent": {
+    "name": "ccc11.cc@MIDA-628J",
+    "size": 2229571615,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 25,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0002197e7f1c532e31f2aab049d6d9f80685ed34",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-06-08T15:29:14.699096Z",
+   "torrent": {
+    "name": "(同人CG集) [割り箸効果] 社員の妻子寝取り放題～洗◯社宅の住人は今日も俺に接待セックス!～.zip",
+    "size": 332564951,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00021cb0a0ebe390fb19c35756f9f490e96e50fc",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V1080p",
+   "videoSource": null,
+   "publishedAt": "2026-03-27T10:52:37.756045Z",
+   "torrent": {
+    "name": "[ASW] Osananajimi to wa Love Comedy ni Naranai - 12 [1080p HEVC][B0E5849C].mkv",
+    "size": 288246462,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00021f20b8bcb4e0e11f14aaac2199e8e12fc9c9",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": "H264",
+   "videoModifier": null,
+   "videoResolution": "V1080p",
+   "videoSource": "WEBDL",
+   "publishedAt": "2026-02-28T18:38:49.811958Z",
+   "torrent": {
+    "name": "[Erai-raws] Tamon-kun Ima Docchi - 06 [1080p CR WEB-DL AVC AAC][MultiSub][A8956063].mkv",
+    "size": 1456915329,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00022ee3595f708c18efbae5ed926630e0259511",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-02-28T18:38:49.811958Z",
+   "torrent": {
+    "name": "2637.zip",
+    "size": 284717451,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "0002301b957aef2e794219e852a456a638384d9e",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-04-25T12:08:40.813922Z",
+   "torrent": {
+    "name": "The Amazing World of Gumball",
+    "size": 7891833090,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 18,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "00023e58eb25a908a25f0402b60348e48780f5e1",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-02T15:00:16.951323Z",
+   "torrent": {
+    "name": "NIGHTMARE",
+    "size": 430636536,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 8,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "000251349b3f6120a8feecd06d918e91f02fc8f1",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-06T04:00:22.475627Z",
+   "torrent": {
+    "name": "Muži pod ochranou.mkv",
+    "size": 4061694189,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "0002582324a17ed698c0ef78ec6864721469515d",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-12T00:40:13.16392Z",
+   "torrent": {
+    "name": "(同人誌) [限界少女 (いるいる)] おっぱいみるくで触手を育ててみた結果… (オリジナル) [DL版].zip",
+    "size": 44403018,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "0002614f459fbbd6c9b685bef83f14cbbe232a05",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-03-28T10:52:38.471501Z",
+   "torrent": {
+    "name": "CAWD-829ch",
+    "size": 6225328898,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 1,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "0002680f9a5091124bd3f95d0239ad045b4a14f0",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-16T09:51:29.096212Z",
+   "torrent": {
+    "name": "Sandwalkers-STEAM.CHS.rar",
+    "size": 743449549,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00026b6ae1904b0dd0777931c0b776897fcfd3bc",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V1080p",
+   "videoSource": null,
+   "publishedAt": "2026-05-16T21:22:29.450537Z",
+   "torrent": {
+    "name": "[ASW] Cheat Kusushi no Slow Life - Isekai ni Tsukurou Drugstore - 03 [1080p HEVC][71109A60].mkv",
+    "size": 180052951,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "000272d65fe1c925ab636b412774f4dac4c8104a",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-04-23T22:41:39.658751Z",
+   "torrent": {
+    "name": "FC2-PPV 876643 -2【2次元体型】19歳♥小柄Loli美巨乳　生ハメ完堕ち彼氏号泣ｗ「おちんちん洗ってあげる♥」ぬるぬる亀頭×乳首シコシコ射精必至パイズリ＆フェラ顔ご奉仕フルコース【モザ無】.mp4",
+    "size": 810398226,
+    "fileType": "video",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00027deb0abbfd63cb0b00457caa5e04cc75acaf",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-30T14:45:21.600268Z",
+   "torrent": {
+    "name": "Carl Hiaasen - Team Rodent-How Disney Devours the World.htm",
+    "size": 96780,
+    "fileType": "document",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "00027f3b7df7531138d3ed77185ad0ca6a3f43b3",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-28T17:09:20.213319Z",
+   "torrent": {
+    "name": "326FCT-221",
+    "size": 4078760904,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 3,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "000280b24d53c7ddef026d4f738ee11fed6b0c7d",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-21T23:40:39.387435Z",
+   "torrent": {
+    "name": "NM_USGS_NationalMap_ImageryOnly_Analogbit",
+    "size": 26117650302,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 9,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "00028173a4c72cc7f881084647ef09370d1a5167",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": null,
+   "publishedAt": "2026-05-21T06:20:38.840431Z",
+   "torrent": {
+    "name": "(C92) [ガジェット工房 (A-10)] 公開種付け変態交尾 (アイドルマスター) [中国翻訳].zip",
+    "size": 100316006,
+    "fileType": "archive",
+    "filesStatus": "single",
+    "filesCount": null,
+    "hasFilesInfo": true,
+    "singleFile": true
+   }
+  },
+  {
+   "infoHash": "0002884fa02784e9163112959acd62c6a678ff45",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": "V720p",
+   "videoSource": null,
+   "publishedAt": "2026-05-29T01:45:20.46361Z",
+   "torrent": {
+    "name": "10Musume-051816_01-HD-84631547",
+    "size": 2063583868,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 1,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  },
+  {
+   "infoHash": "00028c2d5820b6fc4972065ddecc6727fe84d9ec",
+   "contentType": null,
+   "languages": null,
+   "episodes": null,
+   "video3d": null,
+   "videoCodec": null,
+   "videoModifier": null,
+   "videoResolution": null,
+   "videoSource": "DVD",
+   "publishedAt": "2026-03-14T18:47:05.459479Z",
+   "torrent": {
+    "name": "How to Get Ahead in Advertising DVD-5_Criterion#120",
+    "size": 4296505344,
+    "fileType": null,
+    "filesStatus": "multi",
+    "filesCount": 10,
+    "hasFilesInfo": true,
+    "singleFile": false
+   }
+  }
+ ]
+}

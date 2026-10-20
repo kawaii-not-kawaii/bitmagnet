@@ -1,0 +1,7 @@
+bitmagnet parsers: repo main @ 5793f5c (internal/classifier/parsers, unchanged from running revision 236c129 parser code)
+github.com/autobrr/rls v0.9.0        commit 5050cd3d0f8f2e6485ca9224d9ee2b14b008ab2f (2026-08-23)
+github.com/dreulavelle/jhin v0.8.0   commit ee5459bbecde85ccc1d1084a1e63fa737c89faaf (2026-09-16)
+github.com/chill-institute/torrentname v1.4.4  commit 27aba485afede7c8b2522c801cb36288f93cf091 (2026-10-10)
+github.com/MunifTanjim/go-ptt v0.14.1         commit ae29382778dbe9ec6eeac3755626b227833a6f0e (2026-02-16)
+toolchain: go1.26.0 linux/amd64 (auto-downloaded via goproxy.cn into isolated copy /tmp/bitmagnet-parser-harness)
+run date: 2026-10-11; input: sample/names.txt (200); output: sample/results_raw.jsonl (200 rows)
