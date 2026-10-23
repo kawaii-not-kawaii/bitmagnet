@@ -6,7 +6,7 @@
 - Go release-parser research complete: `.scratch/classifier-parser-research/RESEARCH.md`; source/maintenance review only, no package installed or executed.
 - Maintained shortlist: autobrr/rls, dreulavelle/jhin, chill-institute/torrentname and MunifTanjim/go-ptt (all MIT). ProfChaos excluded pending license.
 - SF-01 complete: fresh browser reloads and manual Refresh, preserved criteria/page/order, error recovery and full search lifecycle teardown; commits 60464ce, 5ab56ea, 5793f5c; reviews closed, not deployed.
-- Branch: `main`; latest commit `f505667` (parser work; prior SF-01 branch point `236c129`).
+- Branch: `main`, in sync with `origin/main` (github.com/kawaii-not-kawai/bitmagnet) at latest commit; prior SF-01 branch point `236c129`.
 - Running instance: `http://192.168.1.2:3333` (revision 236c129); access is read-only for this experiment.
 - Labeled classification check COMPLETE (2026-10-23): `.scratch/classifier-parser-research/labeled/` — 200 hand-labeled names; TV recall 0.079→0.526 at 1.0 precision; movie unchanged (0.154/0.40 — 3 false positives all pre-existing year-token/date false positives); 29/51 movie/tv untyped by policy (needs TMDB matching, not parser). Next candidate fix if wanted: year heuristic guard.
 - Deployment PREPARED, not executed (no SSH/UI credentials on Unraid): local image `bitmagnet:local-8af7f7a` built and verified (banner f505667), archive `~/bitmagnet-local-8af7f7a.tar` (sha256 e0902c4b…473e5, 24MB); run `.scratch/classifier-parser-research/deploy-wizard.sh` for the guided 6-stage manual deploy. Running instance still at revision 236c129; no DB migration needed (rollback = image swap).
