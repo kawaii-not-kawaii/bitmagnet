@@ -6,9 +6,10 @@
 - Go release-parser research complete: `.scratch/classifier-parser-research/RESEARCH.md`; source/maintenance review only, no package installed or executed.
 - Maintained shortlist: autobrr/rls, dreulavelle/jhin, chill-institute/torrentname and MunifTanjim/go-ptt (all MIT). ProfChaos excluded pending license.
 - SF-01 complete: fresh browser reloads and manual Refresh, preserved criteria/page/order, error recovery and full search lifecycle teardown; commits 60464ce, 5ab56ea, 5793f5c; reviews closed, not deployed.
-- Branch: `main`; review branch point: `236c129d745fca499252fc40167ea1d806302e51`; latest commit `5793f5c`.
+- Branch: `main`; latest commit `f505667` (parser work; prior SF-01 branch point `236c129`).
 - Running instance: `http://192.168.1.2:3333` (revision 236c129); access is read-only for this experiment.
-- Remaining work: labeled non-LLM classification check (after comparison informs it).
+- Labeled classification check COMPLETE (2026-10-23): `.scratch/classifier-parser-research/labeled/` — 200 hand-labeled names; TV recall 0.079→0.526 at 1.0 precision; movie unchanged (0.154/0.40 — 3 false positives all pre-existing year-token/date false positives); 29/51 movie/tv untyped by policy (needs TMDB matching, not parser). Next candidate fix if wanted: year heuristic guard.
+- Deployment PREPARED, not executed (no SSH/UI credentials on Unraid): local image `bitmagnet:local-8af7f7a` built and verified (banner f505667), archive `~/bitmagnet-local-8af7f7a.tar` (sha256 e0902c4b…473e5, 24MB); run `.scratch/classifier-parser-research/deploy-wizard.sh` for the guided 6-stage manual deploy. Running instance still at revision 236c129; no DB migration needed (rollback = image swap).
 - Cached Chromium: `/tmp/chromium`; no configured language server; no Git identity (per-command attribution when needed).
 - SF-01 verification detail: spec/ticket complete in `.scratch/search-freshness/`; Standards/Spec reviews 0 findings; focused suite 8 passed, full suite 84 passed; lint, embedded build and built-display smoke passed; local only, not deployed.
 - Architecture report: `/tmp/architecture-review-20261011-123800.html`.
