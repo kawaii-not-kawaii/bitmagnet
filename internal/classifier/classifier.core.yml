@@ -9,56 +9,58 @@ workflows:
     - if_else:
         condition: "result.contentType == contentType.unknown"
         if_action:
-          find_match:
-            # match audiobooks:
-            - if_else:
-                condition:
-                  and:
-                    - "torrent.files.map(f, f.extension in extensions.audio ? f.size : - f.size).sum() > 50*mb"
-                    - or:
-                        - "torrent.baseName.matches(keywords.audiobook)"
-                        - "torrent.files.filter(f, f.extension in extensions.audiobook).size() > 0"
-                if_action:
-                  set_content_type: audiobook
-                else_action: unmatched
-            # match comics:
-            - if_else:
-                condition: "torrent.files.map(f, f.extension in extensions.comic ? f.size : - f.size).sum() > 0"
-                if_action:
-                  set_content_type: comic
-                else_action: unmatched
-            # match ebooks:
-            - if_else:
-                condition: "torrent.files.map(f, f.extension in extensions.ebook ? f.size : - f.size).sum() > 0"
-                if_action:
-                  set_content_type: ebook
-                else_action: unmatched
-            # match music:
-            - if_else:
-                condition:
-                  or:
-                    - "torrent.files.map(f, f.extension in extensions.music ? f.size : - f.size).sum() > 0"
-                    - and:
-                        - "torrent.baseName.matches(keywords.music)"
-                        - "torrent.files.map(f, f.extension in extensions.audio ? f.size : - f.size).sum() > 0"
-                if_action:
-                  set_content_type: music
-                else_action: unmatched
-            # match software:
-            - if_else:
-                condition: "torrent.files.map(f, f.extension in extensions.software ? f.size : - f.size).sum() > 0"
-                if_action:
-                  set_content_type: software
-                else_action: unmatched
-            # match xxx:
-            - if_else:
-                condition:
-                  and:
-                    - "torrent.files.map(f, (f.extension in extensions.video || f.extension in extensions.image) ? f.size : - f.size).sum() > 0"
-                    - "([torrent.baseName] + torrent.files.map(f, f.basePath)).join(' ').matches(keywords.xxx)"
-                if_action:
-                  set_content_type: xxx
-                else_action: llm_classify
+          # shadow mode: records armiger's prediction as tags only (no-op unless `classifier.armiger.enabled`):
+          - armiger_classify
+          - find_match:
+              # match audiobooks:
+              - if_else:
+                  condition:
+                    and:
+                      - "torrent.files.map(f, f.extension in extensions.audio ? f.size : - f.size).sum() > 50*mb"
+                      - or:
+                          - "torrent.baseName.matches(keywords.audiobook)"
+                          - "torrent.files.filter(f, f.extension in extensions.audiobook).size() > 0"
+                  if_action:
+                    set_content_type: audiobook
+                  else_action: unmatched
+              # match comics:
+              - if_else:
+                  condition: "torrent.files.map(f, f.extension in extensions.comic ? f.size : - f.size).sum() > 0"
+                  if_action:
+                    set_content_type: comic
+                  else_action: unmatched
+              # match ebooks:
+              - if_else:
+                  condition: "torrent.files.map(f, f.extension in extensions.ebook ? f.size : - f.size).sum() > 0"
+                  if_action:
+                    set_content_type: ebook
+                  else_action: unmatched
+              # match music:
+              - if_else:
+                  condition:
+                    or:
+                      - "torrent.files.map(f, f.extension in extensions.music ? f.size : - f.size).sum() > 0"
+                      - and:
+                          - "torrent.baseName.matches(keywords.music)"
+                          - "torrent.files.map(f, f.extension in extensions.audio ? f.size : - f.size).sum() > 0"
+                  if_action:
+                    set_content_type: music
+                  else_action: unmatched
+              # match software:
+              - if_else:
+                  condition: "torrent.files.map(f, f.extension in extensions.software ? f.size : - f.size).sum() > 0"
+                  if_action:
+                    set_content_type: software
+                  else_action: unmatched
+              # match xxx:
+              - if_else:
+                  condition:
+                    and:
+                      - "torrent.files.map(f, (f.extension in extensions.video || f.extension in extensions.image) ? f.size : - f.size).sum() > 0"
+                      - "([torrent.baseName] + torrent.files.map(f, f.basePath)).join(' ').matches(keywords.xxx)"
+                  if_action:
+                    set_content_type: xxx
+                  else_action: llm_classify
     # if the name contains a full date, attach it to the result as it's a good indicator of content type:
     - find_match:
         - parse_date

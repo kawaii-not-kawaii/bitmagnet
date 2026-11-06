@@ -29,6 +29,10 @@
       ],
       "type": "object"
     },
+    "action__armiger_classify": {
+      "const": "armiger_classify",
+      "description": "Record an armiger classifier prediction as tags (shadow mode: never changes content type or any other attribute, never fails)"
+    },
     "action__attach_local_content_by_id": {
       "const": "attach_local_content_by_id",
       "description": "Use the torrent hint to attach locally stored content by ID"
@@ -92,6 +96,10 @@
         "if_else"
       ],
       "type": "object"
+    },
+    "action__llm_classify": {
+      "const": "llm_classify",
+      "description": "Classify a torrent using an LLM provider when normal classification fails"
     },
     "action__parse_date": {
       "const": "parse_date",
@@ -193,6 +201,12 @@
         },
         {
           "$ref": "#/definitions/action__set_content_type"
+        },
+        {
+          "$ref": "#/definitions/action__llm_classify"
+        },
+        {
+          "$ref": "#/definitions/action__armiger_classify"
         }
       ]
     },

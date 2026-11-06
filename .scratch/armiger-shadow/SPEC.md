@@ -1,6 +1,6 @@
 # SPEC: shadow-mode `armiger_classify` action
 
-Status: ready-for-agent
+Status: done
 
 Evidence: `.scratch/classifier-parser-research/armiger/METRICS.md` and `.scratch/classifier-parser-research/llm/METRICS.md` (200 hand-labeled names).
 
@@ -59,3 +59,30 @@ Add a workflow action, `armiger_classify`, that sends the torrent's metadata to 
 
 - Comparison after a week: group torrents by `armiger-<type>` and `armiger-conf-<n>` against their final content type and whether TMDB matched; the labeled set suggests ~0.7–0.8 as a starting threshold, varying by type (TV and xxx strong; comic, ebook and software noisy).
 - armiger never abstained on the labeled set, so expect few `armiger-unknown` tags.
+
+## Comments
+
+Implemented as `armiger_classify` (tags only, never errors).
+
+Verification:
+
+- Tests written first against the workflow seam (`internal/classifier/action_armiger_classify_test.go`: core workflow compiled, `workflow.Run`, real `armiger.Client` against `httptest`). Red run before the action existed: `TestArmigerClassify_TagsOnly` and `_RequestCarriesNameSizeAndFiles` failed on assertions. Green after.
+- Covered: confident `tv_show` -> `armiger-tv-show` + `armiger-conf-90`; bucket edges (0, 0.37, 0.7, 1.0 -> 90); `unknown`; unrecognised category -> `armiger-unknown`; HTTP 500, timeout, malformed JSON, missing confidence head and unreachable server -> no armiger tags, no error, result identical to a disabled run; disabled/unconfigured and hinted content type -> server never called; request body has name, size and files.
+- Also: config defaults/snake_case override test, live-apply test (`classifierllm`), `TestJSONSchema` (core workflow validates against the schema).
+- `go test ./...` passes. golangci-lint (CI config): 13 findings, all pre-existing.
+- Smoke check against the real service (`127.0.0.1:18096`): `Breaking.Bad.S01E01.720p.BluRay.x264` -> `tv_show`, confidence 0.955 (~0.9 s including cold connection).
+- `bitmagnet.io/schemas/classifier-0.1.json` regenerated with `go run . classifier schema --format json`; the committed file was already stale (missing `llm_classify`), so the diff also adds that entry.
+
+Example config:
+
+```yaml
+classifier:
+  armiger:
+    enabled: true
+    url: http://armiger:8080
+    timeout: 2s
+```
+
+Notes: applied live via the `classifier` LiveApplier (the shared client's config is swapped atomically; the action reads it per call). Single-file torrents send no `files` (the list is only sent when file rows exist). Run armiger with `ARMIGER_UPDATE_CHANNEL=off` and sharing off.
+
+Review (9976dad): single-file torrents now send the torrent itself as their one file (the input the labeled-set evaluation used, so shadow data stays comparable with the measured 0.892), and file lists are capped at 100 paths. Tests added for both.

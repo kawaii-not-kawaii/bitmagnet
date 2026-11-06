@@ -3,6 +3,7 @@ package classifier
 import (
 	"fmt"
 
+	"github.com/bitmagnet-io/bitmagnet/internal/armiger"
 	"github.com/bitmagnet-io/bitmagnet/internal/database/search"
 	"github.com/bitmagnet-io/bitmagnet/internal/lazy"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
@@ -20,6 +21,7 @@ type Params struct {
 	TmdbClient  lazy.Lazy[tmdb.Client]
 	LlmRegistry *llm.Registry    `optional:"true"`
 	Recorder    *llmobs.Recorder `optional:"true"`
+	Armiger     *armiger.Client  `optional:"true"`
 	Controller  *ConcurrencyController
 	Logger      *zap.SugaredLogger
 }
@@ -50,6 +52,12 @@ func New(params Params) Result {
 			logger = params.Logger
 		}
 
+		// A nil *armiger.Client must not become a non-nil interface value.
+		var armigerClient armigerClassifier
+		if params.Armiger != nil {
+			armigerClient = params.Armiger
+		}
+
 		return compiler{
 			options: []compilerOption{
 				compilerFeatures(defaultFeatures),
@@ -74,6 +82,7 @@ func New(params Params) Result {
 				llmEnabled: func() bool {
 					return params.LlmRegistry == nil || params.LlmRegistry.Enabled()
 				},
+				armiger:     armigerClient,
 				recorder:    params.Recorder,
 				concurrency: params.Controller,
 				_logger:     logger,

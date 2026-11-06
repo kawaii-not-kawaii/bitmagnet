@@ -1,9 +1,11 @@
 package classifier
 
 import (
+	"context"
 	"encoding/json"
 	"regexp"
 
+	"github.com/bitmagnet-io/bitmagnet/internal/armiger"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmobs"
 	"github.com/bitmagnet-io/bitmagnet/internal/model"
@@ -19,7 +21,10 @@ type dependencies struct {
 	// when no registry is wired (e.g. tests without LLM).
 	llmProviders func() map[string]llm.Provider
 	// llmEnabled reads the registry's current enabled state.
-	llmEnabled  func() bool
+	llmEnabled func() bool
+	// armiger is the shadow-mode armiger client; nil or disabled makes the
+	// armiger_classify action a no-op.
+	armiger     armigerClassifier
 	recorder    *llmobs.Recorder
 	concurrency *ConcurrencyController
 	_logger     *zap.SugaredLogger
@@ -67,4 +72,12 @@ func (dependencies) CleanObj(o interface{}) map[string]any {
 	}
 
 	return m
+}
+
+// armigerClassifier is the part of armiger.Client the armiger_classify action
+// needs. The client's configuration is read at call time, so runtime config
+// updates are observed without recompiling the workflow.
+type armigerClassifier interface {
+	Enabled() bool
+	Classify(ctx context.Context, name string, size uint, files []armiger.File) (string, float64, error)
 }
