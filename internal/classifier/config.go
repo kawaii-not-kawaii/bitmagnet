@@ -1,6 +1,10 @@
 package classifier
 
-import "time"
+import (
+	"time"
+
+	"github.com/bitmagnet-io/bitmagnet/internal/armiger"
+)
 
 // Config holds the runtime configuration for the classifier subsystem.
 type Config struct {
@@ -15,6 +19,16 @@ type Config struct {
 	AutoScale bool
 	Verbose   bool
 	Llm       LlmConfig
+	Armiger   ArmigerConfig
+}
+
+// ArmigerConfig configures the shadow-mode armiger_classify action, which
+// records armiger-ultra predictions as tags only.
+type ArmigerConfig struct {
+	Enabled bool
+	// URL is the base URL of the armiger service, e.g. http://armiger:8080.
+	URL     string
+	Timeout time.Duration
 }
 
 // LlmConfig holds the configuration for LLM-based classification.
@@ -36,6 +50,9 @@ func NewDefaultConfig() Config {
 	return Config{
 		Workflow:    "default",
 		Concurrency: 10,
+		Armiger: ArmigerConfig{
+			Timeout: 2 * time.Second,
+		},
 		Llm: LlmConfig{
 			Enabled:    true,
 			BatchSize:  1,
@@ -45,4 +62,9 @@ func NewDefaultConfig() Config {
 			Timeout:    30 * time.Second,
 		},
 	}
+}
+
+// ClientConfig maps the config section onto the armiger client's config.
+func (c ArmigerConfig) ClientConfig() armiger.Config {
+	return armiger.Config{Enabled: c.Enabled, URL: c.URL, Timeout: c.Timeout}
 }

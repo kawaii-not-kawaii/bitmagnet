@@ -45,5 +45,6 @@ var defaultFeatures = newFeatures(
 		runWorkflowAction{},
 		setContentTypeAction{},
 		llmClassifyAction{},
+		armigerClassifyAction{},
 	),
 )

@@ -94,7 +94,7 @@ The response reports whether the section took effect immediately:
 
 - `tmdb`, `torznab`, and `client` apply live.
 - `log` applies its level live; other logging settings take effect after restart.
-- `classifier` swaps its LLM provider configuration live; other classifier settings take effect after restart.
+- `classifier` swaps its LLM provider and armiger configuration live; other classifier settings take effect after restart.
 - Every other section is persisted and returns `RESTART_REQUIRED`.
 
 The connection-critical sections `postgres`, `auth`, `http_server`, and `dht_server` cannot be changed through this API. This prevents an API request from locking the operator out of the database or server.

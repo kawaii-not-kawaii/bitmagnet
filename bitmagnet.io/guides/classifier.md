@@ -281,6 +281,20 @@ TMDB_ENABLED=false \ # disable the TMDB API integration
   bitmagnet worker run --all
 ```
 
+### Armiger shadow mode
+
+The default workflow calls the `armiger_classify` action for torrents without a hinted content type, before any other rule runs. It sends the torrent name, size and file list to an armiger-ultra classifier service and records its prediction as tags only: `armiger-<category>` (e.g. `armiger-tv-show`, `armiger-unknown`) and `armiger-conf-<n>`, the confidence rounded down to a tenth (`armiger-conf-0` to `armiger-conf-90`). It never changes the content type or any other attribute, and if the service is down, slow or returns something unexpected a warning is logged and classification carries on unchanged. It does nothing unless enabled:
+
+```yaml
+classifier:
+  armiger:
+    enabled: true
+    url: http://armiger:8080 # base URL of the armiger service
+    timeout: 2s # per-request timeout (default 2s)
+```
+
+These settings are applied live when the `classifier` section is updated through the runtime configuration API. Run armiger with its update channel and result sharing turned off.
+
 ## Validation
 
 The classifier source is compiled on initial load, and all structural and syntax errors should be caught at compile time. If there are errors in your classifier source, **bitmagnet** should exit with an error message indicating the location of the problem.

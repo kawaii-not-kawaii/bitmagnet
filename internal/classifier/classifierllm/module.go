@@ -6,6 +6,7 @@ import (
 	"sort"
 	"time"
 
+	"github.com/bitmagnet-io/bitmagnet/internal/armiger"
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
 	"github.com/bitmagnet-io/bitmagnet/internal/config/configapply"
 	"github.com/bitmagnet-io/bitmagnet/internal/config/configwrite"
@@ -22,6 +23,8 @@ type Params struct {
 	Logger     *zap.SugaredLogger
 	Lifecycle  fx.Lifecycle
 	Controller *classifier.ConcurrencyController
+	// Armiger is updated on live apply; optional so tests can omit it.
+	Armiger *armiger.Client `optional:"true"`
 }
 
 type Result struct {
@@ -160,6 +163,12 @@ func New(p Params) Result {
 
 				after := registry.Swap(regCfg)
 				p.Controller.Configure(cfg.Concurrency, cfg.AutoScale)
+
+				// The armiger action reads the client config per call, so this
+				// takes effect on the next classification.
+				if p.Armiger != nil {
+					p.Armiger.Update(cfg.Armiger.ClientConfig())
+				}
 
 				return after, nil
 			},

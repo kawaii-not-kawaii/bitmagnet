@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/bitmagnet-io/bitmagnet/internal/armiger"
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
 	"github.com/bitmagnet-io/bitmagnet/internal/concurrency"
 	configpkg "github.com/bitmagnet-io/bitmagnet/internal/config"
@@ -253,4 +254,34 @@ func TestConfigMutationSurfacesEnabledProviderValidation(t *testing.T) {
 	_, statErr := os.Stat(path)
 	require.ErrorIs(t, statErr, os.ErrNotExist)
 	assert.Empty(t, result.Registry.All())
+}
+
+func TestLiveApplierUpdatesArmiger(t *testing.T) {
+	t.Parallel()
+
+	config := classifier.Config{Concurrency: 8}
+	lifecycle := fxtest.NewLifecycle(t)
+	client := armiger.NewClient(config.Armiger.ClientConfig())
+	result := New(Params{
+		Config:     config,
+		Logger:     zap.NewNop().Sugar(),
+		Lifecycle:  lifecycle,
+		Controller: classifier.NewConcurrencyController(config, nil, lifecycle),
+		Armiger:    client,
+	})
+
+	require.False(t, client.Enabled())
+
+	after, err := result.LiveApplier.Apply(classifier.Config{
+		Concurrency: 8,
+		Armiger:     classifier.ArmigerConfig{Enabled: true, URL: "http://armiger:8080"},
+	})
+	require.NoError(t, err)
+	after()
+	assert.True(t, client.Enabled())
+
+	after, err = result.LiveApplier.Apply(classifier.Config{Concurrency: 8})
+	require.NoError(t, err)
+	after()
+	assert.False(t, client.Enabled())
 }

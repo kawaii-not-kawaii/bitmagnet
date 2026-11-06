@@ -1,6 +1,7 @@
 package classifierfx
 
 import (
+	"github.com/bitmagnet-io/bitmagnet/internal/armiger"
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier"
 	"github.com/bitmagnet-io/bitmagnet/internal/config/configfx"
 	"github.com/bitmagnet-io/bitmagnet/internal/llm/llmobs"
@@ -15,6 +16,13 @@ func New() fx.Option {
 		fx.Provide(
 			classifier.NewConcurrencyController,
 			classifier.New,
+			newArmigerClient,
 		),
 	)
+}
+
+// newArmigerClient builds the armiger client from the startup config; runtime
+// changes are pushed to it by the classifier config live applier.
+func newArmigerClient(cfg classifier.Config) *armiger.Client {
+	return armiger.NewClient(cfg.Armiger.ClientConfig())
 }
