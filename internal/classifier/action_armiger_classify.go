@@ -48,6 +48,30 @@ func armigerTags(category string, confidence float64) ([]string, error) {
 	return tags, nil
 }
 
+// armigerMaxFiles caps the file list sent per torrent; a name plus the first
+// files is enough evidence, and huge torrents must not send thousands of paths.
+const armigerMaxFiles = 100
+
+// armigerFiles is the file list armiger sees. Single-file torrents have no file
+// rows, so the torrent itself is sent as its only file, matching the input the
+// labeled-set evaluation used.
+func armigerFiles(torrent model.Torrent) []armiger.File {
+	if len(torrent.Files) == 0 {
+		if torrent.FilesStatus == model.FilesStatusSingle {
+			return []armiger.File{{Path: torrent.Name, Size: torrent.Size}}
+		}
+
+		return nil
+	}
+
+	files := make([]armiger.File, 0, min(len(torrent.Files), armigerMaxFiles))
+	for _, f := range torrent.Files[:min(len(torrent.Files), armigerMaxFiles)] {
+		files = append(files, armiger.File{Path: f.Path, Size: f.Size})
+	}
+
+	return files
+}
+
 func (armigerClassifyAction) compileAction(ctx compilerContext) (action, error) {
 	if _, err := armigerClassifyPayloadSpec.Unmarshal(ctx); err != nil {
 		return action{}, ctx.error(err)
@@ -62,13 +86,7 @@ func (armigerClassifyAction) compileAction(ctx compilerContext) (action, error) 
 				return cl, nil
 			}
 
-			var files []armiger.File
-			if len(ctx.torrent.Files) > 0 {
-				files = make([]armiger.File, len(ctx.torrent.Files))
-				for i, f := range ctx.torrent.Files {
-					files[i] = armiger.File{Path: f.Path, Size: f.Size}
-				}
-			}
+			files := armigerFiles(ctx.torrent)
 
 			category, confidence, err := ctx.armiger.Classify(
 				ctx,

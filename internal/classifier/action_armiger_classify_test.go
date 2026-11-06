@@ -3,6 +3,7 @@ package classifier
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -299,4 +300,65 @@ func TestArmigerClassify_RequestCarriesNameSizeAndFiles(t *testing.T) {
 			{"path": "Some Obscure Title/info.nfo", "size": 23456}
 		]
 	}`, string(raw))
+}
+
+// capturedArmigerRequest runs the workflow for torrent and returns the decoded
+// request body armiger received.
+func capturedArmigerRequest(t *testing.T, torrent model.Torrent) map[string]any {
+	t.Helper()
+
+	var (
+		calls atomic.Int32
+		body  atomic.Value
+	)
+
+	srv := armigerServer(t, &calls, func(w http.ResponseWriter, r *http.Request) {
+		raw, _ := io.ReadAll(r.Body)
+		body.Store(raw)
+		armigerResponse("movie", 0.5)(w, r)
+	})
+
+	_, err := runArmigerWorkflow(t, armiger.Config{Enabled: true, URL: srv.URL, Timeout: time.Second}, torrent)
+	require.NoError(t, err)
+	require.Equal(t, int32(1), calls.Load())
+
+	raw, ok := body.Load().([]byte)
+	require.True(t, ok)
+
+	req := map[string]any{}
+	require.NoError(t, json.Unmarshal(raw, &req))
+
+	return req
+}
+
+// Single-file torrents have no file rows; armiger gets the torrent itself as
+// its one file, which is the input the labeled-set evaluation used.
+func TestArmigerClassify_SingleFileTorrentSendsItselfAsFile(t *testing.T) {
+	t.Parallel()
+
+	req := capturedArmigerRequest(t, model.Torrent{
+		Name:        "Some Obscure Title.mkv",
+		FilesStatus: model.FilesStatusSingle,
+		Size:        5000,
+	})
+
+	assert.Equal(t, []any{map[string]any{"path": "Some Obscure Title.mkv", "size": float64(5000)}}, req["files"])
+}
+
+// Very large torrents must not send every file on every classification.
+func TestArmigerClassify_FileListIsCapped(t *testing.T) {
+	t.Parallel()
+
+	torrent := armigerTestTorrent()
+	torrent.Files = make([]model.TorrentFile, armigerMaxFiles+50)
+
+	for i := range torrent.Files {
+		torrent.Files[i] = model.TorrentFile{Path: fmt.Sprintf("dir/file%03d.bin", i), Size: 1}
+	}
+
+	req := capturedArmigerRequest(t, torrent)
+
+	files, ok := req["files"].([]any)
+	require.True(t, ok)
+	assert.Len(t, files, armigerMaxFiles)
 }
