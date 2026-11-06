@@ -1,6 +1,6 @@
 # SPEC: year-heuristic guard
 
-Status: ready-for-agent
+Status: done
 
 Evidence: `.scratch/classifier-parser-research/labeled/LABELED-CHECK.md` (200 hand-labeled unknown-bucket names).
 
@@ -46,3 +46,14 @@ The parser stops accepting a year candidate that is part of a larger date or ver
 ## Further Notes
 
 - In the full workflow, `parse_date` runs before video parsing and a valid full date currently pushes untyped video names toward `tv_show`; if the labeled re-run shows date names moving from `movie` to `tv_show` rather than to untyped, record it as a follow-up rather than widening this spec.
+
+## Comments
+
+2026-11-06: implemented in `internal/classifier/parsers/video.go` as a post-match check in `parseTitleYear` (`isYearInDateOrVersion`): the matched year is rejected when the text before it ends with `D.`/`DD.` (any of `. - / _`) or a `vN.N.` version prefix, or the text after it starts with `.D`/`-DD` etc. A rejected year falls through to the title-only parse, so no year and no movie typing.
+
+- Tests: `TestParseTitleYearDateAndVersionGuard` (3 labeled false positives plus date/version variants must have no year and not be `movie`; positive controls `The Regular Movie (2000)`, `Title.2000.1080p.BluRay.x264`, `Title 2019 1080p`, `Title 2019`, `Blade Runner 2049 (2017) 1080p`). Confirmed red before the fix (7 failures, positives green), green after. `go test ./...` passes.
+- Labeled re-run (`../classifier-parser-research/labeled/LABELED-CHECK.md`, "Year-guard re-run"): movie precision 0.400 to 1.000, recall 0.154 unchanged; tv 0.526 / 1.000 unchanged; only the three target rows changed.
+- Deviation: implemented as a post-match check rather than in the rex token grammar, since Go regexp has no lookaround. Only the first year match is checked; a name with a date followed by a later lone year is not retried.
+- Follow-up (not done): parser-only measurement; the full workflow's `parse_date` may still type full-date names as `tv_show`.
+
+Review (efad6ee): the first version treated a single 1–2 digit number before the year as a date part, which dropped the year from sequel names (`Apollo.13.1995`, `District.9.2009`) and treated `.10bit` after a year as a month. Dates now need two numeric parts on one side; regression cases for both added. Labeled-set result unchanged.

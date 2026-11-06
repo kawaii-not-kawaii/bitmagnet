@@ -11,10 +11,10 @@ Date: 2026-10-23 · Closes the TODO item "labeled non-LLM classification check".
 
 ## Results (n=200; labeled: 38 tv_show, 13 movie, 149 non-movie/tv)
 
-| class | pre-fix tp/fp | pre recall/precision | post-fix tp/fp | post recall/precision |
-|---|---|---|---|---|
-| tv_show | 3/0 | 0.079 / 1.000 | 20/0 | **0.526 / 1.000** |
-| movie | 2/3 | 0.154 / 0.400 | 2/3 | 0.154 / 0.400 |
+| class   | pre-fix tp/fp | pre recall/precision | post-fix tp/fp | post recall/precision |
+| ------- | ------------- | -------------------- | -------------- | --------------------- |
+| tv_show | 3/0           | 0.079 / 1.000        | 20/0           | **0.526 / 1.000**     |
+| movie   | 2/3           | 0.154 / 0.400        | 2/3            | 0.154 / 0.400         |
 
 - False-typed on non-movie/tv labels: 3/149 (2.0%), identical before and after the fix — the episode work added **zero** new false classifications.
 - All 3 false positives are the same pre-existing failure mode: **date-like tokens parsed as years** → `movie`: `Met-Art 2019-05-25`, `[Pixiv] ... 2026.09.06.zip`, `Raining Blood Demo v14.02.2023.rar`.
@@ -25,3 +25,15 @@ Date: 2026-10-23 · Closes the TODO item "labeled non-LLM classification check".
 1. The episode-pattern fix (d0af495/8af7f7a) raised TV recall from 8% to 53% on genuinely unknown-bucket names at **100% TV precision** — measured, not assumed.
 2. The one measured weakness left in the parser is the year heuristic: any delimited `19xx/20xx` token ⇒ movie, including full dates and version strings. A guard (reject year candidates embedded in date/version patterns like `YYYY.MM.DD` / `vDD.MM.YYYY`) would take movie precision from 0.40 toward 1.0 on this bucket. Candidate next fix; not authorized here.
 3. No basis for adopting an external parser library: the remaining gap is matching, not extraction (see `../COMPARISON.md`).
+
+## Year-guard re-run
+
+Date: 2026-11-06 · Spec: `../../year-guard/SPEC.md`. Rule: a year candidate is rejected when it is the first or last part of a `YYYY.MM.DD` / `DD.MM.YYYY` / `MM-DD-YYYY` date (1-2 digit part adjacent through `.`, `-`, `/` or `_`) or follows a `vN.N.` version prefix. Predictions: `../sample/results_yearguard.jsonl` (same call as before: `ParseVideoContent(Torrent{Name}, Result{})`, n=200).
+
+| class   | before recall / precision (tp/fp) | after recall / precision (tp/fp) |
+| ------- | --------------------------------- | -------------------------------- |
+| movie   | 0.154 / 0.400 (2/3)               | 0.154 / **1.000** (2/0)          |
+| tv_show | 0.526 / 1.000 (20/0)              | 0.526 / 1.000 (20/0)             |
+
+- Exactly three rows changed, all `movie` to untyped: `Met-Art 2019-05-25`, `[Pixiv] ... 2026.09.06.zip`, `Raining Blood Demo v14.02.2023.rar`. Nothing else moved: movie recall is unchanged (the 2 true movies kept their year), tv is unchanged.
+- Scope caveat: this measures the parser alone. In the full workflow `parse_date` runs first, so a valid full date may still push such names to `tv_show` (SPEC further notes); not measured here, recorded as a follow-up.
