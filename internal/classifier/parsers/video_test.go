@@ -199,3 +199,81 @@ func TestParseTitleYearDateAndVersionGuard(t *testing.T) {
 		})
 	}
 }
+
+// A leading site/tracker advert must not become part of the title sent to TMDB:
+// on the live instance, movie/tv names starting with "www." were 88% unmatched
+// versus 38% for everything else.
+func TestParseTitleYearEpisodesSitePrefix(t *testing.T) {
+	t.Parallel()
+
+	//nolint:gosmopolitan // corpus verbatim: CJK release-site advert from the live DB
+	cjkAdvert := "【高清影视之家发布 www.WHATMV.com】峡谷[简繁英字幕].The.Gorge.2025.2160p.Apple.TV+.WEB-DL"
+
+	tests := []struct {
+		name     string
+		title    string
+		year     model.Year
+		episodes string
+	}{
+		{"www.UIndex.org    -    Chicago.Fire.S14E17.1080p.AV1.10bit-MeGusta", "Chicago Fire", 0, "S14E17"},
+		{
+			"www.UIndex.org    -    Family.Guy.S21E15.Adoptation.720p.HEVC.x265-MeGusta",
+			"Family Guy",
+			0,
+			"S21E15",
+		},
+		{
+			"www.Torrenting.com - A Quiet Place Day One (2024) 1080p BluRay 5.1-LAMA",
+			"A Quiet Place Day One",
+			2024,
+			"",
+		},
+		{
+			"www.Torrenting.org       Obsession Dark Desires S03E06 Beauty in the Bronx 1080p WEB h2",
+			"Obsession Dark Desires", 0, "S03E06",
+		},
+		{
+			"www.5MovieRulz.luxe - Veera Dheera Sooran (2025) 1080p Telugu HDRip - x264",
+			"Veera Dheera Sooran",
+			2025,
+			"",
+		},
+		{"[ www.Torrenting.com ] - Storage.Wars.NY.S01.480p.HDTV.x264-mSD", "Storage Wars NY", 0, "S01"},
+		// controls: no prefix, and a domain that is not a leading advert
+		{"Caddo Lake 2024 1080p WEBRip x265-DH", "Caddo Lake", 2024, ""},
+		{"The.1.Percent.Club.S03E11.1080p.HEVC.x265-MeGusta[EZTVx.to].mkv", "The 1 Percent Club", 0, "S03E11"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			title, year, episodes, _, err := ParseTitleYearEpisodes(model.NullContentType{}, tt.name)
+			require.NoError(t, err)
+			assert.Equal(t, tt.title, title)
+			assert.Equal(t, tt.year, year)
+			assert.Equal(t, tt.episodes, episodes.String())
+		})
+	}
+
+	// A bracketed advert is dropped; splitting the remaining bilingual title
+	// ("峡谷 … The Gorge") is a separate problem.
+	t.Run("cjk advert", func(t *testing.T) {
+		t.Parallel()
+
+		title, year, _, _, err := ParseTitleYearEpisodes(model.NullContentType{}, cjkAdvert)
+		require.NoError(t, err)
+		assert.NotContains(t, title, "www")
+		assert.NotContains(t, title, "WHATMV")
+		assert.Equal(t, model.Year(2025), year)
+	})
+
+	// Nothing left after the prefix: keep the old behaviour rather than an empty title.
+	t.Run("prefix only", func(t *testing.T) {
+		t.Parallel()
+
+		title, _, _, _, err := ParseTitleYearEpisodes(model.NullContentType{}, "www.example.com")
+		require.NoError(t, err)
+		assert.NotEmpty(t, title)
+	})
+}

@@ -3,6 +3,7 @@ package parsers
 import (
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/classifier/classification"
 	"github.com/bitmagnet-io/bitmagnet/internal/keywords"
@@ -193,10 +194,38 @@ func parseTitleYearEpisodes(input string) (string, model.Year, model.Episodes, s
 	return "", 0, nil, "", classification.ErrUnmatched
 }
 
+// sitePrefixRegex matches a leading release-site advert: a bare domain
+// ("www.UIndex.org - ", "www.Torrenting.org   ") or a bracketed group that
+// contains one ("[ www.Torrenting.com ] - ", "【高清影视之家发布 www.WHATMV.com】").
+// A bare domain must be followed by whitespace or a separator, so a name like
+// "www.site.com.Movie.2020" is never cut mid-token.
+var sitePrefixRegex = regexp.MustCompile(
+	`^\s*(?:` +
+		`(?:https?://)?www\.[\p{L}\p{N}-]+(?:\.[\p{L}\p{N}-]+)+(?:\s*[-–—:|]+\s*|\s+)` +
+		`|\[[^\]]*www\.[^\]]*\]\s*[-–—:|]*\s*` +
+		`|【[^】]*www\.[^】]*】\s*[-–—:|]*\s*` +
+		`|\([^)]*www\.[^)]*\)\s*[-–—:|]*\s*` +
+		`)`,
+)
+
+// stripSitePrefix removes a leading release-site advert so it can't become
+// part of the title searched on TMDB. The name is returned unchanged when
+// nothing would be left.
+func stripSitePrefix(input string) string {
+	loc := sitePrefixRegex.FindStringIndex(input)
+	if loc == nil || strings.TrimSpace(input[loc[1]:]) == "" {
+		return input
+	}
+
+	return input[loc[1]:]
+}
+
 func ParseTitleYearEpisodes(
 	contentType model.NullContentType,
 	input string,
 ) (string, model.Year, model.Episodes, string, error) {
+	input = stripSitePrefix(input)
+
 	if !contentType.Valid || contentType.ContentType == model.ContentTypeTvShow {
 		if title, year, episodes, rest, err := parseTitleYearEpisodes(input); err == nil {
 			return title, year, episodes, rest, nil
