@@ -126,12 +126,14 @@ func cleanTitle(title string) string {
 
 // yearBeforeDatePartRegex matches the tail of the text preceding a year
 // candidate when that candidate is the last part of a date ('25.05.', '05-25-')
-// or of a version ('v14.02.', 'v1.2.').
-var yearBeforeDatePartRegex = regexp.MustCompile(`(?:^|\W)(?:\d{1,2}|[vV]\d+(?:\.\d+)*)[./_-]$`)
+// or of a version ('v14.02.', 'v1.2.'). A date needs two numeric parts: a single
+// number before the year is usually a sequel ('Apollo.13.1995', 'District.9.2009').
+var yearBeforeDatePartRegex = regexp.MustCompile(`(?:^|\W)(?:\d{1,2}[./_-]\d{1,2}|[vV]\d+(?:\.\d+)*)[./_-]$`)
 
 // yearAfterDatePartRegex matches the text following a year candidate when it
-// is the first part of a date ('.05.25', '-05-25', '/05/25').
-var yearAfterDatePartRegex = regexp.MustCompile(`^[./_-]\d{1,2}(?:\D|$)`)
+// is the first part of a date ('.05.25', '-05-25', '/05/25'). Two numeric parts
+// are required so tokens like '.10bit' or ' 5.1' after a year don't count.
+var yearAfterDatePartRegex = regexp.MustCompile(`^[./_-]\d{1,2}[./_-]\d{1,2}(?:\D|$)`)
 
 // isYearInDateOrVersion reports whether the year at input[start:end] is part
 // of a full date or version string rather than a standalone release year.

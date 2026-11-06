@@ -177,6 +177,12 @@ func TestParseTitleYearDateAndVersionGuard(t *testing.T) {
 		{name: "Title 2019 1080p", title: "Title", year: 2019},
 		{name: "Title 2019", title: "Title", year: 2019},
 		{name: "Blade Runner 2049 (2017) 1080p", title: "Blade Runner 2049", year: 2017},
+		// sequel numbers and bit-depth tokens next to the year are not date parts
+		{name: "Apollo.13.1995.1080p.BluRay.x264", title: "Apollo 13", year: 1995},
+		{name: "District.9.2009.720p.BluRay", title: "District 9", year: 2009},
+		{name: "Toy Story 3 2010 1080p", title: "Toy Story 3", year: 2010},
+		{name: "Movie.2019.10bit.x265", title: "Movie", year: 2019},
+		{name: "Movie 2019 5.1 Audio", title: "Movie", year: 2019},
 	}
 	for _, tt := range withYear {
 		t.Run("year/"+tt.name, func(t *testing.T) {
