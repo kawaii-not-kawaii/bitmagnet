@@ -51,3 +51,40 @@ func TestConfigLlmBatchSizeDefaultAndExplicitOverride(t *testing.T) {
 	require.True(t, ok)
 	assert.Equal(t, 10, resolved.Llm.BatchSize)
 }
+
+// Batching only groups classifier runs that wait on the LLM at the same time,
+// so a batch can never be larger than the number of runs admitted at once.
+// With batching on, admission must allow at least one full batch, and the
+// latency-driven autoscaler (which starts at 1) is paused.
+func TestConfigConcurrencyLimits(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name          string
+		concurrency   int
+		autoScale     bool
+		llmEnabled    bool
+		batchSize     int
+		wantCeiling   int
+		wantAutoScale bool
+	}{
+		{"no batching", 10, true, true, 1, 10, true},
+		{"batching raises ceiling and pauses autoscale", 10, true, true, 100, 100, false},
+		{"concurrency already above batch", 200, false, true, 100, 200, false},
+		{"llm disabled ignores batch size", 10, true, false, 100, 10, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			cfg := NewDefaultConfig()
+			cfg.Concurrency, cfg.AutoScale = tt.concurrency, tt.autoScale
+			cfg.Llm.Enabled, cfg.Llm.BatchSize = tt.llmEnabled, tt.batchSize
+
+			ceiling, autoScale := cfg.ConcurrencyLimits()
+			assert.Equal(t, tt.wantCeiling, ceiling)
+			assert.Equal(t, tt.wantAutoScale, autoScale)
+		})
+	}
+}

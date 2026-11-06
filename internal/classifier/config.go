@@ -46,3 +46,20 @@ func NewDefaultConfig() Config {
 		},
 	}
 }
+
+// ConcurrencyLimits returns the admission ceiling and autoscaling switch the
+// ConcurrencyController should run with.
+//
+// LLM batching only groups classifier runs that are waiting on the LLM at the
+// same time, so a batch can never exceed the number of runs admitted at once.
+// When batching is on, the ceiling is raised to at least one full batch and
+// the latency-driven autoscaler is paused: it starts at 1, and a batch's
+// fill wait plus its long request would read as a latency spike and keep
+// halving admission, so batches would never fill.
+func (c Config) ConcurrencyLimits() (ceiling int, autoScale bool) {
+	if c.Llm.Enabled && c.Llm.BatchSize > 1 {
+		return max(c.Concurrency, c.Llm.BatchSize), false
+	}
+
+	return c.Concurrency, c.AutoScale
+}

@@ -159,7 +159,7 @@ func New(p Params) Result {
 				}
 
 				after := registry.Swap(regCfg)
-				p.Controller.Configure(cfg.Concurrency, cfg.AutoScale)
+				p.Controller.Configure(cfg.ConcurrencyLimits())
 
 				return after, nil
 			},

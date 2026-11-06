@@ -77,6 +77,7 @@ func (r *Recorder) Record(e Event) {
 			llm.CategoryBadStatus,
 			llm.CategoryInvalidJSON,
 			llm.CategoryEmptyContent,
+			llm.CategoryOutputTruncated,
 			llm.CategoryOther:
 		default:
 			e.Category = llm.CategoryOther

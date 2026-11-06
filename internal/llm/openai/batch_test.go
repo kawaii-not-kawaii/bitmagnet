@@ -1,8 +1,10 @@
 package openai
 
 import (
+	"context"
 	"errors"
 	"testing"
+	"time"
 
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 )
@@ -137,5 +139,58 @@ func TestParseBatchResponse_EmptyResultsArray(t *testing.T) {
 
 	if len(results) != 0 {
 		t.Fatalf("expected 0 results, got %d", len(results))
+	}
+}
+
+type deadlineRecordingProvider struct {
+	deadlines chan time.Duration
+	perBatch  time.Duration
+}
+
+func (*deadlineRecordingProvider) Name() string { return "rec" }
+
+func (*deadlineRecordingProvider) Classify(context.Context, llm.ClassifyInput) (*llm.ClassifyResult, error) {
+	return nil, errors.New("unexpected single classify")
+}
+
+func (p *deadlineRecordingProvider) BatchClassify(
+	ctx context.Context, inputs []llm.ClassifyInput,
+) ([]*llm.ClassifyResult, error) {
+	deadline, _ := ctx.Deadline()
+	p.deadlines <- time.Until(deadline)
+
+	out := make([]*llm.ClassifyResult, len(inputs))
+	for i := range out {
+		out[i] = &llm.ClassifyResult{ContentType: "movie"}
+	}
+
+	return out, nil
+}
+
+func (p *deadlineRecordingProvider) BatchDeadline(int) time.Duration { return p.perBatch }
+
+// A large batch on a slow remote API can legitimately take minutes; the flush
+// deadline must come from the provider (which knows its per-request timeout and
+// retry policy), not the fixed single-request constant.
+func TestBatchClient_FlushDeadlineFromProvider(t *testing.T) {
+	t.Parallel()
+
+	rec := &deadlineRecordingProvider{deadlines: make(chan time.Duration, 1), perBatch: 30 * time.Minute}
+	bc := NewBatchClient(rec, 2, time.Hour)
+
+	done := make(chan struct{})
+
+	for range 2 {
+		go func() {
+			_, _ = bc.Classify(context.Background(), llm.ClassifyInput{Name: "x"})
+			done <- struct{}{}
+		}()
+	}
+
+	<-done
+	<-done
+
+	if got := <-rec.deadlines; got <= flushTimeout || got > 30*time.Minute {
+		t.Fatalf("flush deadline = %v, want provider's 30m (> fallback %v)", got, flushTimeout)
 	}
 }

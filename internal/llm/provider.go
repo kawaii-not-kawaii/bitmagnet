@@ -24,6 +24,11 @@ var (
 	// (429). Providers SHOULD wrap non-2xx responses with it so callers can
 	// distinguish "the URL/endpoint is wrong" from other failures.
 	ErrBadStatus = errors.New("llm: provider returned a non-success HTTP status")
+	// ErrOutputTruncated means the model stopped at its max_tokens budget
+	// (finish_reason "length") before finishing the JSON answer. Reasoning
+	// models hit this when their thinking uses up the budget; the fix is a
+	// larger max_tokens, not a retry.
+	ErrOutputTruncated = errors.New("llm: output hit max_tokens before the answer finished; raise max_tokens")
 )
 
 // ErrorCategory is a stable, low-cardinality classification of a provider error,
@@ -38,7 +43,9 @@ const (
 	CategoryBadStatus    ErrorCategory = "bad-status"
 	CategoryInvalidJSON  ErrorCategory = "invalid-json"
 	CategoryEmptyContent ErrorCategory = "empty-content"
-	CategoryOther        ErrorCategory = "other"
+	// CategoryOutputTruncated: the model ran out of max_tokens before answering.
+	CategoryOutputTruncated ErrorCategory = "output-truncated"
+	CategoryOther           ErrorCategory = "other"
 )
 
 // Categorize maps a provider error to a stable ErrorCategory. It returns the
@@ -53,6 +60,9 @@ func Categorize(err error) ErrorCategory {
 		return CategoryRateLimited
 	case errors.Is(err, ErrBadStatus):
 		return CategoryBadStatus
+	// Checked before invalid-json and empty-content, which it wraps.
+	case errors.Is(err, ErrOutputTruncated):
+		return CategoryOutputTruncated
 	case errors.Is(err, ErrInvalidJSON):
 		return CategoryInvalidJSON
 	case errors.Is(err, ErrNoResult):

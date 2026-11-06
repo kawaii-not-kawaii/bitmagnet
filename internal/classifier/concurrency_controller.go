@@ -69,17 +69,18 @@ func NewConcurrencyController(
 }
 
 func newConcurrencyController(config Config, recorder *llmobs.Recorder) *ConcurrencyController {
-	ceiling := max(1, config.Concurrency)
+	limit, autoScale := config.ConcurrencyLimits()
+	ceiling := max(1, limit)
 
 	effective := ceiling
-	if config.AutoScale {
+	if autoScale {
 		effective = 1
 	}
 
 	controller := &ConcurrencyController{
 		ceiling:   ceiling,
 		effective: effective,
-		autoScale: config.AutoScale,
+		autoScale: autoScale,
 		notify:    make(chan struct{}),
 		recorder:  recorder,
 		stop:      make(chan struct{}),

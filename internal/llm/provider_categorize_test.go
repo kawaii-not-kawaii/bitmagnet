@@ -32,6 +32,11 @@ func TestCategorize(t *testing.T) {
 			CategoryInvalidJSON,
 		},
 		{"empty content", ErrNoResult, CategoryEmptyContent},
+		{
+			"output truncated",
+			fmt.Errorf("%w: %w", ErrOutputTruncated, ErrNoResult),
+			CategoryOutputTruncated,
+		},
 		{"connection", fmt.Errorf("openai: request failed: %w", dnsErr), CategoryConnection},
 		{"other", errors.New("something unexpected"), CategoryOther},
 	}

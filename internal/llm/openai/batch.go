@@ -12,9 +12,16 @@ import (
 	"github.com/bitmagnet-io/bitmagnet/internal/llm"
 )
 
-// flushTimeout is the maximum wall-clock time a single batch HTTP call may take,
-// sized to cover the worst-case retry chain: (maxRetries+1) × per-request HTTP timeout.
+// flushTimeout is the fallback flush deadline for providers that don't report
+// their own (see batchDeadliner), sized to the worst-case retry chain at the
+// default per-request timeout: (maxRetries+1) × defaultTimeout.
 const flushTimeout = (maxRetries + 1) * defaultTimeout
+
+// batchDeadliner is implemented by providers that know how long a batch of n
+// may take, including retries; *client sizes it from its configured timeout.
+type batchDeadliner interface {
+	BatchDeadline(n int) time.Duration
+}
 
 // BatchClient wraps a Provider and accumulates single Classify requests
 // into batch calls of up to batchSize, flushing on size or timer.
@@ -142,7 +149,12 @@ func (bc *BatchClient) flush() {
 		return
 	}
 
-	ctx, cancel := context.WithTimeout(bc.lifecycleCtx, flushTimeout)
+	deadline := flushTimeout
+	if d, ok := bc.provider.(batchDeadliner); ok {
+		deadline = d.BatchDeadline(len(inputs))
+	}
+
+	ctx, cancel := context.WithTimeout(bc.lifecycleCtx, deadline)
 	defer cancel()
 
 	results, err := bp.BatchClassify(ctx, inputs)

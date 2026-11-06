@@ -773,3 +773,94 @@ func TestStripCodeFenceLeavesOddInputAlone(t *testing.T) {
 		}
 	}
 }
+
+// A reasoning model that spends its whole max_tokens budget thinking returns
+// finish_reason "length" with no answer. That must surface as a distinct,
+// actionable error rather than a generic empty result.
+func TestClassify_OutputTruncated(t *testing.T) {
+	t.Parallel()
+
+	for name, content := range map[string]string{
+		"empty":        "",
+		"partial json": `{"content_type":"mov`,
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
+			srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				_, _ = fmt.Fprintf(
+					w,
+					`{"choices":[{"message":{"content":%s},"finish_reason":"length"}]}`,
+					mustMarshalString(content),
+				)
+			}))
+			defer srv.Close()
+
+			p := New(Config{Name: "test", BaseURL: srv.URL, Model: "test"})
+
+			_, err := p.Classify(context.Background(), llm.ClassifyInput{Name: "Test"})
+			if !errors.Is(err, llm.ErrOutputTruncated) {
+				t.Fatalf("error = %v, want ErrOutputTruncated", err)
+			}
+
+			if got := llm.Categorize(err); got != llm.CategoryOutputTruncated {
+				t.Fatalf("category = %q, want %q", got, llm.CategoryOutputTruncated)
+			}
+		})
+	}
+}
+
+func TestBatchRequestTimeout(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		base time.Duration
+		n    int
+		want time.Duration
+	}{
+		{30 * time.Second, 1, 30 * time.Second},
+		{30 * time.Second, 4, 2 * time.Minute},
+		{30 * time.Second, 100, maxBatchRequestTimeout},
+		{20 * time.Minute, 2, 20 * time.Minute}, // never below the configured per-request timeout
+	}
+
+	for _, tt := range tests {
+		if got := batchRequestTimeout(tt.base, tt.n); got != tt.want {
+			t.Errorf("batchRequestTimeout(%v, %d) = %v, want %v", tt.base, tt.n, got, tt.want)
+		}
+	}
+}
+
+// The configured timeout is per torrent: a batch of 3 gets three times as long
+// per HTTP attempt, so a response that would time out a single Classify still
+// completes for the batch.
+func TestBatchClassify_TimeoutScalesWithBatchSize(t *testing.T) {
+	t.Parallel()
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		time.Sleep(100 * time.Millisecond)
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(makeChoiceResp(
+			`{"results":[{"content_type":"movie"},{"content_type":"movie"},{"content_type":"movie"}]}`))
+	}))
+	defer srv.Close()
+
+	p := New(Config{Name: "test", BaseURL: srv.URL, Model: "test", Timeout: 60 * time.Millisecond})
+
+	bp, ok := p.(llm.BatchProvider)
+	if !ok {
+		t.Fatal("client must implement BatchProvider")
+	}
+
+	inputs := []llm.ClassifyInput{{Name: "a"}, {Name: "b"}, {Name: "c"}}
+
+	results, err := bp.BatchClassify(context.Background(), inputs)
+	if err != nil {
+		t.Fatalf("batch of 3 timed out at the single-request timeout: %v", err)
+	}
+
+	if len(results) != 3 {
+		t.Fatalf("got %d results, want 3", len(results))
+	}
+}

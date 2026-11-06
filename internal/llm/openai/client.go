@@ -7,6 +7,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"math"
@@ -20,7 +21,28 @@ import (
 const (
 	defaultTimeout = 30 * time.Second
 	maxRetries     = 3
+	// maxBatchRequestTimeout caps one batched HTTP attempt. Measured on the
+	// OpenRouter free tier: 100 torrents per request took ~150s, 25 took up to ~180s.
+	maxBatchRequestTimeout = 10 * time.Minute
+	// retryBackoffSlack covers the backoff sleeps between attempts in BatchDeadline.
+	retryBackoffSlack = time.Minute
 )
+
+// batchRequestTimeout is the per-attempt HTTP timeout for a request carrying n
+// torrents. The configured timeout is per torrent, so it scales with n, capped
+// at maxBatchRequestTimeout and never below the configured value.
+func batchRequestTimeout(base time.Duration, n int) time.Duration {
+	if n <= 1 {
+		return base
+	}
+
+	scaled := base * time.Duration(n)
+	if scaled > maxBatchRequestTimeout || scaled/time.Duration(n) != base {
+		scaled = maxBatchRequestTimeout
+	}
+
+	return max(base, scaled)
+}
 
 // Config holds the configuration for an OpenAI-compatible provider.
 type Config struct {
@@ -32,7 +54,8 @@ type Config struct {
 	Model string
 	// APIKey is an optional bearer token for authenticated endpoints.
 	APIKey string
-	// Timeout is the per-request HTTP timeout. Default 30s.
+	// Timeout is the HTTP timeout per torrent: a single request gets this much,
+	// a batch of n gets n times as much (see batchRequestTimeout). Default 30s.
 	Timeout time.Duration
 	// SystemPrompt is the system message template. Uses {{.ContentTypes}} variable.
 	SystemPrompt string
@@ -61,13 +84,19 @@ type client struct {
 func New(cfg Config) llm.Provider {
 	return &client{
 		config: cfg,
-		http: &http.Client{
-			Timeout: cfg.timeout(),
-		},
+		// No client-wide timeout: each attempt gets its own deadline sized to
+		// the request (see doRequestRaw / batchRequestTimeout).
+		http: &http.Client{},
 	}
 }
 
 func (c *client) Name() string { return c.config.Name }
+
+// BatchDeadline is the longest a BatchClassify call for n torrents may take,
+// including every retry. BatchClient uses it to size its flush deadline.
+func (c *client) BatchDeadline(n int) time.Duration {
+	return (maxRetries+1)*batchRequestTimeout(c.config.timeout(), n) + retryBackoffSlack
+}
 
 // chatMessage is a single message in the OpenAI chat format.
 type chatMessage struct {
@@ -130,19 +159,19 @@ func (c *client) Classify(ctx context.Context, input llm.ClassifyInput) (*llm.Cl
 		return nil, fmt.Errorf("openai: build request: %w", err)
 	}
 
-	content, usage, err := c.doRequestRaw(ctx, reqBytes)
+	raw, err := c.doRequestRaw(ctx, reqBytes, c.config.timeout())
 	if err != nil {
 		return nil, err
 	}
 
 	var result llm.ClassifyResult
 
-	parseErr := json.Unmarshal([]byte(content), &result)
-	result.PromptTokens = usage.PromptTokens
-	result.CompletionTokens = usage.CompletionTokens
+	parseErr := json.Unmarshal([]byte(raw.content), &result)
+	result.PromptTokens = raw.usage.PromptTokens
+	result.CompletionTokens = raw.usage.CompletionTokens
 
 	if parseErr != nil {
-		return &result, fmt.Errorf("%w: %w", llm.ErrInvalidJSON, parseErr)
+		return &result, raw.wrapTruncated(fmt.Errorf("%w: %w", llm.ErrInvalidJSON, parseErr))
 	}
 
 	if result.ContentType == "" {
@@ -213,12 +242,17 @@ func (c *client) BatchClassify(ctx context.Context, inputs []llm.ClassifyInput) 
 		return nil, fmt.Errorf("openai: build batch request: %w", err)
 	}
 
-	content, _, err := c.doRequestRaw(ctx, reqBytes)
+	raw, err := c.doRequestRaw(ctx, reqBytes, batchRequestTimeout(c.config.timeout(), len(inputs)))
 	if err != nil {
 		return nil, err
 	}
 
-	return ParseBatchResponse(content)
+	results, err := ParseBatchResponse(raw.content)
+	if err != nil {
+		return nil, raw.wrapTruncated(err)
+	}
+
+	return results, nil
 }
 
 func (c *client) buildRequest(input llm.ClassifyInput) ([]byte, error) {
@@ -352,9 +386,28 @@ func stripCodeFence(content string) string {
 	return content
 }
 
-// doRequestRaw sends the request and returns the raw content string from the first choice.
-// Used by BatchClassify which needs the raw content for array parsing.
-func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, chatResponseUsage, error) {
+// rawResponse is the first choice of a successful chat completion.
+type rawResponse struct {
+	content      string
+	usage        chatResponseUsage
+	finishReason string
+}
+
+// wrapTruncated marks a parse failure as ErrOutputTruncated when the model
+// stopped at its token budget: the JSON is cut off, not malformed.
+func (r rawResponse) wrapTruncated(err error) error {
+	if r.finishReason == finishReasonLength {
+		return fmt.Errorf("%w: %w", llm.ErrOutputTruncated, err)
+	}
+
+	return err
+}
+
+const finishReasonLength = "length"
+
+// doRequestRaw sends the request and returns the raw content of the first
+// choice. timeout bounds each HTTP attempt separately (retries get a fresh one).
+func (c *client) doRequestRaw(ctx context.Context, reqBody []byte, timeout time.Duration) (rawResponse, error) {
 	baseURL := strings.TrimSuffix(strings.TrimRight(c.config.BaseURL, "/"), "/v1")
 	url := baseURL + "/v1/chat/completions"
 
@@ -375,55 +428,41 @@ func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, chat
 
 			select {
 			case <-ctx.Done():
-				return "", chatResponseUsage{}, ctx.Err()
+				return rawResponse{}, ctx.Err()
 			case <-time.After(backoff):
 			}
 		}
 
-		httpReq, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(reqBody))
+		resp, err := c.attempt(ctx, url, reqBody, timeout)
 		if err != nil {
-			return "", chatResponseUsage{}, fmt.Errorf("openai: create request: %w", err)
-		}
+			if errors.Is(err, errCreateRequest) {
+				return rawResponse{}, err
+			}
 
-		httpReq.Header.Set("Content-Type", "application/json")
+			lastErr = err
 
-		if c.config.APIKey != "" {
-			httpReq.Header.Set("Authorization", "Bearer "+c.config.APIKey)
-		}
-
-		resp, err := c.http.Do(httpReq)
-		if err != nil {
-			lastErr = fmt.Errorf("openai: request failed: %w", err)
 			continue
 		}
 
-		body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
-		_ = resp.Body.Close()
-
-		if err != nil {
-			lastErr = fmt.Errorf("openai: read response: %w", err)
-			continue
-		}
-
-		if resp.StatusCode < http.StatusOK || resp.StatusCode >= http.StatusMultipleChoices {
-			detail := fmt.Sprintf("HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(body)))
-			if resp.StatusCode == http.StatusTooManyRequests {
+		if resp.status < http.StatusOK || resp.status >= http.StatusMultipleChoices {
+			detail := fmt.Sprintf("HTTP %d: %s", resp.status, strings.TrimSpace(string(resp.body)))
+			if resp.status == http.StatusTooManyRequests {
 				lastErr = fmt.Errorf("openai: %w: %s", llm.ErrRateLimited, detail)
-				retryDelay, hasRetryDelay = parseRetryAfter(resp.Header.Get("Retry-After"))
+				retryDelay, hasRetryDelay = parseRetryAfter(resp.retryAfter)
 
 				continue
 			}
 
 			lastErr = fmt.Errorf("openai: %w: %s", llm.ErrBadStatus, detail)
-			if resp.StatusCode >= 400 && resp.StatusCode < 500 {
-				return "", chatResponseUsage{}, lastErr
+			if resp.status >= 400 && resp.status < 500 {
+				return rawResponse{}, lastErr
 			}
 
 			continue
 		}
 
 		var chatResp chatResponse
-		if err := json.Unmarshal(body, &chatResp); err != nil {
+		if err := json.Unmarshal(resp.body, &chatResp); err != nil {
 			lastErr = fmt.Errorf("openai: parse response: %w", err)
 			continue
 		}
@@ -438,7 +477,7 @@ func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, chat
 
 				lastErr = fmt.Errorf("openai: API error: %s (type=%s)", msg, chatResp.Error.Type)
 
-				return "", chatResponseUsage{}, lastErr
+				return rawResponse{}, lastErr
 			}
 			// Both fields empty — ambiguous transient condition; retry.
 			lastErr = fmt.Errorf("openai: API error: empty error object")
@@ -447,18 +486,68 @@ func (c *client) doRequestRaw(ctx context.Context, reqBody []byte) (string, chat
 		}
 
 		if len(chatResp.Choices) == 0 {
-			return "", chatResponseUsage{}, llm.ErrNoResult
+			return rawResponse{}, llm.ErrNoResult
 		}
 
-		content := stripCodeFence(chatResp.Choices[0].Message.content())
-		if content == "" {
-			return "", chatResponseUsage{}, llm.ErrNoResult
+		choice := chatResp.Choices[0]
+		raw := rawResponse{
+			content:      stripCodeFence(choice.Message.content()),
+			usage:        chatResp.Usage,
+			finishReason: choice.FinishReason,
 		}
 
-		return content, chatResp.Usage, nil
+		if raw.content == "" {
+			return rawResponse{}, raw.wrapTruncated(llm.ErrNoResult)
+		}
+
+		return raw, nil
 	}
 
-	return "", chatResponseUsage{}, fmt.Errorf("openai: %w (after %d retries)", lastErr, maxRetries)
+	return rawResponse{}, fmt.Errorf("openai: %w (after %d retries)", lastErr, maxRetries)
+}
+
+var errCreateRequest = errors.New("openai: create request")
+
+// attemptResponse is the part of an HTTP response doRequestRaw needs, captured
+// before the body is closed.
+type attemptResponse struct {
+	status     int
+	retryAfter string
+	body       []byte
+}
+
+// attempt performs one HTTP round trip under its own timeout and returns the
+// fully read body, so the per-attempt deadline also covers reading it.
+func (c *client) attempt(
+	ctx context.Context, url string, reqBody []byte, timeout time.Duration,
+) (attemptResponse, error) {
+	attemptCtx, cancel := context.WithTimeout(ctx, timeout)
+	defer cancel()
+
+	httpReq, err := http.NewRequestWithContext(attemptCtx, http.MethodPost, url, bytes.NewReader(reqBody))
+	if err != nil {
+		return attemptResponse{}, fmt.Errorf("%w: %w", errCreateRequest, err)
+	}
+
+	httpReq.Header.Set("Content-Type", "application/json")
+
+	if c.config.APIKey != "" {
+		httpReq.Header.Set("Authorization", "Bearer "+c.config.APIKey)
+	}
+
+	resp, err := c.http.Do(httpReq)
+	if err != nil {
+		return attemptResponse{}, fmt.Errorf("openai: request failed: %w", err)
+	}
+
+	body, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
+	_ = resp.Body.Close()
+
+	if err != nil {
+		return attemptResponse{}, fmt.Errorf("openai: read response: %w", err)
+	}
+
+	return attemptResponse{status: resp.StatusCode, retryAfter: resp.Header.Get("Retry-After"), body: body}, nil
 }
 
 func parseRetryAfter(value string) (time.Duration, bool) {
