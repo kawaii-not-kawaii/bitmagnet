@@ -137,3 +137,59 @@ func TestParseVideoContentEpisodePatterns(t *testing.T) {
 		assert.Equal(t, model.ContentTypeMovie, attrs.ContentType.ContentType)
 	})
 }
+
+func TestParseTitleYearDateAndVersionGuard(t *testing.T) {
+	t.Parallel()
+
+	//nolint:gosmopolitan // corpus verbatim: CJK name from the labeled set
+	pixiv := "[Pixiv] [Twitter] [Bilibili] ATDAN丨小原原原子Dan 2026.09.06.zip"
+
+	noYear := []string{
+		"Met-Art 2019-05-25",
+		pixiv,
+		"Raining Blood Demo v14.02.2023.rar",
+		"Some Show 25.05.2019",
+		"Some Show 05-25-2019",
+		"Some Show 2019/05/25",
+		"Some Tool v1.2.2020",
+	}
+	for _, name := range noYear {
+		t.Run("no year/"+name, func(t *testing.T) {
+			t.Parallel()
+
+			_, year, _, _, _ := ParseTitleYearEpisodes(model.NullContentType{}, name)
+			assert.True(t, year.IsNil(), "year: %v", year)
+
+			attrs, err := ParseVideoContent(model.Torrent{Name: name}, classification.Result{})
+			if err == nil {
+				assert.NotEqual(t, model.ContentTypeMovie, attrs.ContentType.ContentType)
+			}
+		})
+	}
+
+	withYear := []struct {
+		name  string
+		title string
+		year  model.Year
+	}{
+		{name: "The Regular Movie (2000)", title: "The Regular Movie", year: 2000},
+		{name: "Title.2000.1080p.BluRay.x264", title: "Title", year: 2000},
+		{name: "Title 2019 1080p", title: "Title", year: 2019},
+		{name: "Title 2019", title: "Title", year: 2019},
+		{name: "Blade Runner 2049 (2017) 1080p", title: "Blade Runner 2049", year: 2017},
+	}
+	for _, tt := range withYear {
+		t.Run("year/"+tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			title, year, _, _, err := ParseTitleYearEpisodes(model.NullContentType{}, tt.name)
+			require.NoError(t, err)
+			assert.Equal(t, tt.title, title)
+			assert.Equal(t, tt.year, year)
+
+			attrs, err := ParseVideoContent(model.Torrent{Name: tt.name}, classification.Result{})
+			require.NoError(t, err)
+			assert.Equal(t, model.ContentTypeMovie, attrs.ContentType.ContentType)
+		})
+	}
+}

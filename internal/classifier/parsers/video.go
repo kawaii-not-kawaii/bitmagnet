@@ -124,13 +124,34 @@ func cleanTitle(title string) string {
 	return title
 }
 
-func parseTitleYear(input string) (string, model.Year, string, error) {
-	if match := titleYearRegex.FindStringSubmatch(input); match != nil {
-		yearMatch, _ := strconv.ParseUint(match[titleYearRegex.SubexpIndex("year")], 10, 16)
-		title := cleanTitle(match[titleYearRegex.SubexpIndex("title")])
+// yearBeforeDatePartRegex matches the tail of the text preceding a year
+// candidate when that candidate is the last part of a date ('25.05.', '05-25-')
+// or of a version ('v14.02.', 'v1.2.').
+var yearBeforeDatePartRegex = regexp.MustCompile(`(?:^|\W)(?:\d{1,2}|[vV]\d+(?:\.\d+)*)[./_-]$`)
 
-		if title != "" {
-			return title, model.Year(yearMatch), input[len(match[0]):], nil
+// yearAfterDatePartRegex matches the text following a year candidate when it
+// is the first part of a date ('.05.25', '-05-25', '/05/25').
+var yearAfterDatePartRegex = regexp.MustCompile(`^[./_-]\d{1,2}(?:\D|$)`)
+
+// isYearInDateOrVersion reports whether the year at input[start:end] is part
+// of a full date or version string rather than a standalone release year.
+func isYearInDateOrVersion(input string, start, end int) bool {
+	return yearBeforeDatePartRegex.MatchString(input[:start]) ||
+		yearAfterDatePartRegex.MatchString(input[end:])
+}
+
+func parseTitleYear(input string) (string, model.Year, string, error) {
+	if idx := titleYearRegex.FindStringSubmatchIndex(input); idx != nil {
+		yearIdx := titleYearRegex.SubexpIndex("year")
+		titleIdx := titleYearRegex.SubexpIndex("title")
+
+		if !isYearInDateOrVersion(input, idx[2*yearIdx], idx[2*yearIdx+1]) {
+			yearMatch, _ := strconv.ParseUint(input[idx[2*yearIdx]:idx[2*yearIdx+1]], 10, 16)
+			title := cleanTitle(input[idx[2*titleIdx]:idx[2*titleIdx+1]])
+
+			if title != "" {
+				return title, model.Year(yearMatch), input[idx[1]:], nil
+			}
 		}
 	}
 
