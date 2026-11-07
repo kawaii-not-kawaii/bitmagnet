@@ -109,7 +109,7 @@ func newRequester(ctx context.Context, config Config, logger *zap.SugaredLogger)
 					},
 					limiter: rate.NewLimiter(rate.Every(config.RateLimit), config.RateLimitBurst),
 				},
-				semaphore: semaphore.NewWeighted(2),
+				semaphore: semaphore.NewWeighted(maxConcurrentRequests(config)),
 			},
 			isUnauthorized: &concurrency.AtomicValue[bool]{},
 		},
