@@ -92,7 +92,18 @@ type Genre struct {
 	Name string `json:"name"`
 }
 
+// AlternativeTitle is one entry of TMDB's alternative_titles (append_to_response).
+type AlternativeTitle struct {
+	ISO31661 string `json:"iso_3166_1"`
+	Title    string `json:"title"`
+	Type     string `json:"type"`
+}
+
 type MovieDetailsResponse struct {
+	// Only populated when "alternative_titles" is in AppendToResponse.
+	AlternativeTitles struct {
+		Titles []AlternativeTitle `json:"titles"`
+	} `json:"alternative_titles"`
 	Adult               bool   `json:"adult"`
 	BackdropPath        string `json:"backdrop_path"`
 	BelongsToCollection struct {
@@ -143,6 +154,10 @@ type TvDetailsRequest struct {
 }
 
 type TvDetailsResponse struct {
+	// Only populated when "alternative_titles" is in AppendToResponse.
+	AlternativeTitles struct {
+		Results []AlternativeTitle `json:"results"`
+	} `json:"alternative_titles"`
 	BackdropPath string `json:"backdrop_path"`
 	CreatedBy    []struct {
 		ID          int64  `json:"id"`
