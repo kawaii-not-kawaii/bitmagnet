@@ -124,7 +124,7 @@ func Run(
 	}
 
 	if opts.Progress != nil {
-		fmt.Fprintf(
+		_, _ = fmt.Fprintf(
 			opts.Progress,
 			"Benchmarking %s on %d torrents (concurrency %d)...\n",
 			providerName,

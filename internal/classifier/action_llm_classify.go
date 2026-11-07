@@ -267,7 +267,7 @@ func sanitizeTag(tag string) string {
 
 	for _, r := range tag {
 		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') || r == '-' {
-			b.WriteRune(r)
+			_, _ = b.WriteRune(r) // strings.Builder writes never fail
 		}
 	}
 

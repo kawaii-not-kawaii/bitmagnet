@@ -67,16 +67,16 @@ func PrintJSON(result *BenchmarkResult) error {
 }
 
 func PrintSummary(result *BenchmarkResult) {
-	fmt.Fprintf(os.Stdout, "\n=== Benchmark Results ===\n")
-	fmt.Fprintf(os.Stdout, "Provider:        %s\n", result.Provider)
-	fmt.Fprintf(os.Stdout, "Torrents:        %d\n", result.TorrentCount)
-	fmt.Fprintf(os.Stdout, "Matched:         %d\n", result.Matched)
-	fmt.Fprintf(os.Stdout, "Unmatched:       %d\n", result.Unmatched)
-	fmt.Fprintf(os.Stdout, "Errored:         %d\n", result.Errored)
-	fmt.Fprintf(os.Stdout, "Total Duration:  %s\n", result.TotalDuration.Round(time.Millisecond))
-	fmt.Fprintf(os.Stdout, "Avg/Torrent:     %s\n", result.AvgPerTorrent.Round(time.Millisecond))
-	fmt.Fprintf(os.Stdout, "Throughput:      %.2f torrents/sec\n", result.Throughput)
-	fmt.Fprintf(os.Stdout, "\nClassification Distribution:\n")
+	_, _ = fmt.Fprintf(os.Stdout, "\n=== Benchmark Results ===\n")
+	_, _ = fmt.Fprintf(os.Stdout, "Provider:        %s\n", result.Provider)
+	_, _ = fmt.Fprintf(os.Stdout, "Torrents:        %d\n", result.TorrentCount)
+	_, _ = fmt.Fprintf(os.Stdout, "Matched:         %d\n", result.Matched)
+	_, _ = fmt.Fprintf(os.Stdout, "Unmatched:       %d\n", result.Unmatched)
+	_, _ = fmt.Fprintf(os.Stdout, "Errored:         %d\n", result.Errored)
+	_, _ = fmt.Fprintf(os.Stdout, "Total Duration:  %s\n", result.TotalDuration.Round(time.Millisecond))
+	_, _ = fmt.Fprintf(os.Stdout, "Avg/Torrent:     %s\n", result.AvgPerTorrent.Round(time.Millisecond))
+	_, _ = fmt.Fprintf(os.Stdout, "Throughput:      %.2f torrents/sec\n", result.Throughput)
+	_, _ = fmt.Fprintf(os.Stdout, "\nClassification Distribution:\n")
 
 	distribution := make(map[string]int)
 
@@ -87,6 +87,6 @@ func PrintSummary(result *BenchmarkResult) {
 	}
 
 	for contentType, count := range distribution {
-		fmt.Fprintf(os.Stdout, "  %s: %d\n", contentType, count)
+		_, _ = fmt.Fprintf(os.Stdout, "  %s: %d\n", contentType, count)
 	}
 }
